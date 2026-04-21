@@ -1,22 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
-import axios from "axios";
 
 export default function RegisterPage() {
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-
-    const handleSubmit = async(e) => {
-        e.preventDefault();
-        try {
-            const response = await axios.post('/api/users', {name, email, password});
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
@@ -31,7 +16,7 @@ export default function RegisterPage() {
             <h1 className="text-2xl font-bold text-gray-900 mb-6">Registration</h1>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form className="space-y-4">
                 {/* Name */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -39,7 +24,6 @@ export default function RegisterPage() {
                     </label>
                     <input
                         type="text"
-                        onChange={(e) => setName(e.target.value)}
                         placeholder="Enter your name"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
                         required
@@ -53,7 +37,6 @@ export default function RegisterPage() {
                     </label>
                     <input
                         type="email"
-                        onChange={(e) => setEmail(e.target.value)}
                         placeholder="Enter your email"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
                         required
@@ -67,7 +50,6 @@ export default function RegisterPage() {
                     </label>
                     <input
                         type="password"
-                        onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter your password"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
                         required
