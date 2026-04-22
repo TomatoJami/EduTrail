@@ -87,7 +87,7 @@ Body: {
   lastName: "Иванов",
   email: "ivan@example.com",
   password: "123456",
-  role: "student" | "teacher",
+  role: "student",
   grade: 9  // для студентов
 }
 ```
@@ -104,7 +104,6 @@ Body: {
 ## 🧑‍💼 Роли пользователей
 
 - **student** - школьник (может иметь класс)
-- **teacher** - учитель (может создавать курсы)
 - **admin** - администратор
 
 ## 📚 Следующие шаги

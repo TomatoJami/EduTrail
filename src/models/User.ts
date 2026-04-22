@@ -4,7 +4,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   name: string;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'admin';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,8 +14,10 @@ const UserSchema = new Schema<IUser>(
     email: {
       type: String,
       required: [true, 'Please provide an email'],
+      index: true,
       unique: true,
       lowercase: true,
+      trim: true,
       match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email'],
     },
     password: {
@@ -26,6 +28,7 @@ const UserSchema = new Schema<IUser>(
     name: {
       type: String,
       required: [true, 'Please provide a name'],
+      trim: true,
     },
     role: {
       type: String,
@@ -35,7 +38,15 @@ const UserSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
+    versionKey: false,
   }
 );
+
+UserSchema.set('toJSON', {
+  transform: (_, returnedObject: any) => {
+    delete returnedObject.password;
+    return returnedObject;
+  },
+});
 
 export const User = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

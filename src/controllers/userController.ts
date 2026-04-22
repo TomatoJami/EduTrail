@@ -1,14 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { userService } from '@/services/userService';
 import { SignupPayload, AuthPayload, ApiResponse } from '@/types';
 import connectDB from '@/config/database';
 
 export class UserController {
-  async signup(request: NextRequest): Promise<NextResponse> {
+  async signup(body: SignupPayload): Promise<NextResponse> {
     try {
       await connectDB();
-
-      const body: SignupPayload = await request.json();
 
       // Validate input
       if (!body.email || !body.password || !body.name) {
@@ -46,11 +44,9 @@ export class UserController {
     }
   }
 
-  async login(request: NextRequest): Promise<NextResponse> {
+  async login(body: AuthPayload): Promise<NextResponse> {
     try {
       await connectDB();
-
-      const body: AuthPayload = await request.json();
 
       if (!body.email || !body.password) {
         return NextResponse.json(
@@ -85,7 +81,7 @@ export class UserController {
     }
   }
 
-  async getUser(request: NextRequest, id: string): Promise<NextResponse> {
+  async getUser(id: string): Promise<NextResponse> {
     try {
       await connectDB();
 

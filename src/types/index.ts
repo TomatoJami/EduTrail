@@ -3,7 +3,7 @@ export interface User {
   email: string;
   password: string;
   name: string;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'admin';
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -22,5 +22,5 @@ export interface AuthPayload {
 
 export interface SignupPayload extends AuthPayload {
   name: string;
-  role?: 'student' | 'teacher';
+  role?: 'student';
 }

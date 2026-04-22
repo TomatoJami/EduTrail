@@ -11,7 +11,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'admin';
 }
 
 interface UseAuthReturn {

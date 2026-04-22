@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "EduTrail - Master Your Skills",
-  description: "Learn the courses you need without any hassle. Track your progress, build your skills, and achieve your learning goals.",
+  description:
+    "Learn the courses you need without any hassle. Track your progress, build your skills, and achieve your learning goals.",
 };
 
 export default function RootLayout({

@@ -6,10 +6,10 @@ import { Footer } from "@/components/common/Footer";
 export default function Home() {
   return (
     <>
-    <Header />
-      
-    <main className="flex-1">
-      {/* Hero Section */}
+      <Header />
+
+      <main className="flex-1">
+        {/* Hero Section */}
         <section className="bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 pt-32 pb-40 min-h-screen flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div className="text-center">
@@ -17,13 +17,16 @@ export default function Home() {
                 Master Your Skills with{" "}
                 <span className="text-indigo-600">EduTrail</span>
               </h1>
-                
+
               <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-10">
                 Learn the courses you need without any hassle. Track your
                 progress, build your skills, and achieve your learning goals.
               </p>
 
-              <Link href="/login" className="inline-block px-8 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition text-lg">
+              <Link
+                href="/signup"
+                className="inline-block px-8 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition text-lg"
+              >
                 Get Started
               </Link>
             </div>
