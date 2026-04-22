@@ -1,7 +1,62 @@
+'use client';
+
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    // Validate password length
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'signup',
+          name,
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = data.details || data.message || 'Registration failed';
+        setError(errorMessage);
+        return;
+      }
+
+      // Success - redirect to login
+      router.push('/login');
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
@@ -20,8 +75,15 @@ export default function RegisterPage() {
         {/* Heading */}
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Registration</h1>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Form */}
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -30,8 +92,11 @@ export default function RegisterPage() {
             <input
               type="text"
               placeholder="Enter your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-              required
+              // required
+              disabled={loading}
             />
           </div>
 
@@ -41,10 +106,13 @@ export default function RegisterPage() {
               Email
             </label>
             <input
-              type="email"
+              type="text"
               placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-              required
+              // required
+              disabled={loading}
             />
           </div>
 
@@ -56,18 +124,32 @@ export default function RegisterPage() {
             <input
               type="password"
               placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-              required
+              // required
+              disabled={loading}
             />
+            <div className="mt-2 flex items-center gap-2">
+              <div
+                className={`h-1 flex-1 rounded ${
+                  password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'
+                }`}
+              />
+              <span className={`text-xs ${password.length >= 8 ? 'text-green-600' : 'text-gray-600'}`}>
+                {password.length >= 8 ? '✓ 8+ characters' : '8+ characters required'}
+              </span>
+            </div>
           </div>
 
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition font-medium mt-6"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition font-medium mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Continue
-            <span>→</span>
+            {loading ? 'Creating account...' : 'Continue'}
+            {!loading && <span>→</span>}
           </button>
         </form>
 

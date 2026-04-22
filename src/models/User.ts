@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import crypto from 'crypto';
 
 export interface IUser extends Document {
   email: string;
@@ -7,6 +8,7 @@ export interface IUser extends Document {
   role: 'student' | 'admin';
   createdAt: Date;
   updatedAt: Date;
+  comparePassword(password: string): Promise<boolean>;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -18,11 +20,12 @@ const UserSchema = new Schema<IUser>(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email'],
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please provide a valid email'],
     },
     password: {
       type: String,
       required: [true, 'Please provide a password'],
+      minlength: [8, 'Password must be at least 8 characters long'],
       select: false,
     },
     name: {
@@ -41,6 +44,32 @@ const UserSchema = new Schema<IUser>(
     versionKey: false,
   }
 );
+
+// Pre-save middleware to hash password using PBKDF2
+UserSchema.pre<IUser>('save', async function () {
+  if (!this.isModified('password')) {
+    return;
+  }
+
+  try {
+    const salt = crypto.randomBytes(32).toString('hex');
+    const hash = crypto.pbkdf2Sync(this.password, salt, 100000, 64, 'sha512').toString('hex');
+    this.password = `${salt}$${hash}`;
+  } catch (error) {
+    throw error;
+  }
+});
+
+// Method to compare passwords
+UserSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
+  try {
+    const [salt, hash] = this.password.split('$');
+    const testHash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
+    return hash === testHash;
+  } catch (error) {
+    return false;
+  }
+};
 
 UserSchema.set('toJSON', {
   transform: (_, returnedObject: any) => {

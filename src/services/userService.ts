@@ -11,19 +11,24 @@ export class UserService {
         role: payload.role || 'student',
       });
 
+      console.log('Creating user:', { email: user.email, name: user.name });
       await user.save();
+      console.log('User created successfully:', user._id);
       return user;
     } catch (error) {
-      throw new Error(`Failed to create user: ${error}`);
+      console.error('Error in createUser:', error);
+      throw error; // Прокидываем оригинальный error для обработки в controller
     }
   }
 
   async getUserByEmail(email: string): Promise<IUser | null> {
     try {
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ email }).select('+password');
       return user;
     } catch (error) {
-      throw new Error(`Failed to fetch user: ${error}`);
+      console.error('Error in getUserByEmail:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to fetch user: ${errorMessage}`);
     }
   }
 

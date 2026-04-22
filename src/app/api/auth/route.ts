@@ -12,10 +12,12 @@ interface AuthRequestBody {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as AuthRequestBody;
-  const { action } = body;
+  try {
+    const body = (await request.json()) as AuthRequestBody;
+    const { action } = body;
+    console.log('Auth POST received, action:', action);
 
-  switch (action) {
+    switch (action) {
     case 'signup': {
       if (!body.email || !body.password || !body.name) {
         return NextResponse.json(
@@ -52,5 +54,13 @@ export async function POST(request: Request) {
         { success: false, message: 'Invalid action' },
         { status: 400 }
       );
+    }
+  } catch (error) {
+    console.error('Auth route error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error', error: errorMessage },
+      { status: 500 }
+    );
   }
 }

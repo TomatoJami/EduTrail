@@ -37,8 +37,33 @@ export class UserController {
         { status: 201 }
       );
     } catch (error) {
+      console.error('Signup error:', error);
+      
+      const err = error as any;
+      
+      // Handle Mongoose validation errors
+      if (err.name === 'ValidationError' && err.errors) {
+        const messages = Object.values(err.errors)
+          .map((e: any) => e.message)
+          .join(', ');
+        return NextResponse.json(
+          { success: false, message: 'Validation error', details: messages },
+          { status: 400 }
+        );
+      }
+
+      // Handle duplicate key errors
+      if (err.code === 11000) {
+        const field = Object.keys(err.keyPattern)[0];
+        return NextResponse.json(
+          { success: false, message: `${field} already exists` },
+          { status: 409 }
+        );
+      }
+
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return NextResponse.json(
-        { success: false, message: 'Internal server error', error: String(error) },
+        { success: false, message: 'Internal server error', error: errorMessage },
         { status: 500 }
       );
     }
@@ -63,7 +88,14 @@ export class UserController {
         );
       }
 
-      // TODO: Implement password verification
+      // Compare password
+      const isPasswordValid = await user.comparePassword(body.password);
+      if (!isPasswordValid) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid credentials' },
+          { status: 401 }
+        );
+      }
 
       return NextResponse.json(
         {
@@ -74,8 +106,10 @@ export class UserController {
         { status: 200 }
       );
     } catch (error) {
+      console.error('Login error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return NextResponse.json(
-        { success: false, message: 'Internal server error', error: String(error) },
+        { success: false, message: 'Internal server error', error: errorMessage },
         { status: 500 }
       );
     }
