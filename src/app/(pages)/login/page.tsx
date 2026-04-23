@@ -37,6 +37,11 @@ export default function LoginPage() {
         return;
       }
 
+      if (data?.data) {
+        localStorage.setItem('user', JSON.stringify(data.data));
+        window.dispatchEvent(new Event('auth-state-changed'));
+      }
+
       // Success - redirect to home
       router.push('/');
     } catch (err) {
