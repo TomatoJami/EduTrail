@@ -1,11 +1,5 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/edutrail';
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
-
 let cached = global as any;
 
 if (!cached.mongoose) {
@@ -13,6 +7,16 @@ if (!cached.mongoose) {
 }
 
 async function connectDB() {
+  const rawMongoUri = process.env.MONGODB_URI ?? process.env.MONGODB__URI;
+  const MONGODB_URI = rawMongoUri
+    ?.trim()
+    .replace(/^['\"]|['\"]$/g, '')
+    .replace(/^MONGODB_URI=/, '');
+
+  if (!MONGODB_URI) {
+    throw new Error('Please define the MONGODB_URI environment variable in .env.local');
+  }
+
   if (cached.mongoose.conn) {
     return cached.mongoose.conn;
   }
