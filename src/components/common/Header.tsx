@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 
 export function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [userProfile, setUserProfile] = useState<{ name: string; email: string } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
@@ -15,7 +16,24 @@ export function Header() {
   useEffect(() => {
     const syncAuthState = () => {
       const storedUser = localStorage.getItem("user");
-      setIsLoggedIn(Boolean(storedUser));
+
+      if (!storedUser) {
+        setIsLoggedIn(false);
+        setUserProfile(null);
+        return;
+      }
+
+      try {
+        const parsedUser = JSON.parse(storedUser) as { name?: string; email?: string };
+        setIsLoggedIn(true);
+        setUserProfile({
+          name: parsedUser.name ?? "User",
+          email: parsedUser.email ?? "",
+        });
+      } catch {
+        setIsLoggedIn(true);
+        setUserProfile(null);
+      }
     };
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -51,10 +69,15 @@ export function Header() {
     router.push("/");
   };
 
+  const handleSettingsClick = () => {
+    setIsMenuOpen(false);
+    router.push("/account");
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 text-2xl font-bold">
             <Image src="/logoblack.png" alt="EduTrail Logo" width={200} height={100} />
@@ -86,14 +109,15 @@ export function Header() {
                         <Image src="/account.png" alt="Account" width={24} height={24} />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-gray-900">User User</p>
-                        <p className="truncate text-sm text-gray-500">user@gmail.com</p>
+                        <p className="truncate text-sm font-semibold text-gray-900">{userProfile?.name ?? "User"}</p>
+                        <p className="truncate text-sm text-gray-500">{userProfile?.email ?? ""}</p>
                       </div>
                     </div>
 
                     <button
                       type="button"
                       role="menuitem"
+                      onClick={handleSettingsClick}
                       className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
                     >
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500">

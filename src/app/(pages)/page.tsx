@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
+import { Sidebar } from "@/components/common/Sidebar";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -34,32 +35,38 @@ export default function Home() {
           <section className="bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 pt-32 pb-40 min-h-screen" />
         ) : isLoggedIn ? (
           <>
-            <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 pt-32 pb-24 min-h-screen">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                  Welcome back to <span className="text-indigo-600">EduTrail</span>
-                </h1>
-                <p className="text-lg text-gray-600 mb-10 max-w-2xl">
-                  Continue your learning journey. Pick up where you left off and keep building your skills.
-                </p>
+            <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-[calc(100vh-4rem)]">
+              <div className="flex min-h-[calc(100vh-4rem)] flex-col md:flex-row">
+                <Sidebar />
 
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <p className="text-sm text-gray-500 mb-2">In Progress</p>
-                    <p className="text-3xl font-bold text-gray-900">3</p>
-                    <p className="text-sm text-gray-600 mt-2">Courses currently active</p>
-                  </div>
+                <div className="min-w-0 flex-1 py-8 sm:py-10">
+                  <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                      Welcome back to <span className="text-indigo-600">EduTrail</span>
+                    </h1>
+                    <p className="text-lg text-gray-600 mb-10 max-w-2xl">
+                      Continue your learning journey. Pick up where you left off and keep building your skills.
+                    </p>
 
-                  <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <p className="text-sm text-gray-500 mb-2">Completed</p>
-                    <p className="text-3xl font-bold text-gray-900">7</p>
-                    <p className="text-sm text-gray-600 mt-2">Courses completed so far</p>
-                  </div>
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+                        <p className="text-sm text-gray-500 mb-2">In Progress</p>
+                        <p className="text-3xl font-bold text-gray-900">3</p>
+                        <p className="text-sm text-gray-600 mt-2">Courses currently active</p>
+                      </div>
 
-                  <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <p className="text-sm text-gray-500 mb-2">Weekly Goal</p>
-                    <p className="text-3xl font-bold text-gray-900">68%</p>
-                    <p className="text-sm text-gray-600 mt-2">Progress toward this week's target</p>
+                      <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+                        <p className="text-sm text-gray-500 mb-2">Completed</p>
+                        <p className="text-3xl font-bold text-gray-900">7</p>
+                        <p className="text-sm text-gray-600 mt-2">Courses completed so far</p>
+                      </div>
+
+                      <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+                        <p className="text-sm text-gray-500 mb-2">Weekly Goal</p>
+                        <p className="text-3xl font-bold text-gray-900">68%</p>
+                        <p className="text-sm text-gray-600 mt-2">Progress toward this week's target</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
