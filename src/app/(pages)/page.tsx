@@ -9,11 +9,25 @@ import { Sidebar } from "@/components/common/Sidebar";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const syncAuthState = () => {
       const storedUser = localStorage.getItem("user");
-      setIsLoggedIn(Boolean(storedUser));
+      if (!storedUser) {
+        setIsLoggedIn(false);
+        setIsAdmin(false);
+        return;
+      }
+
+      setIsLoggedIn(true);
+
+      try {
+        const parsedUser = JSON.parse(storedUser) as { role?: 'student' | 'admin' };
+        setIsAdmin(parsedUser.role === 'admin');
+      } catch {
+        setIsAdmin(false);
+      }
     };
 
     syncAuthState();
@@ -41,6 +55,17 @@ export default function Home() {
 
                 <div className="min-w-0 flex-1 py-8 sm:py-10">
                   <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                    {isAdmin ? (
+                      <div className="mb-6">
+                        <Link
+                          href="/admin"
+                          className="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                        >
+                          Open Admin Panel
+                        </Link>
+                      </div>
+                    ) : null}
+
                     <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
                       Welcome back to <span className="text-indigo-600">EduTrail</span>
                     </h1>
@@ -64,7 +89,7 @@ export default function Home() {
                       <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
                         <p className="text-sm text-gray-500 mb-2">Weekly Goal</p>
                         <p className="text-3xl font-bold text-gray-900">68%</p>
-                        <p className="text-sm text-gray-600 mt-2">Progress toward this week's target</p>
+                        <p className="text-sm text-gray-600 mt-2">Progress toward this week&apos;s target</p>
                       </div>
                     </div>
                   </div>
