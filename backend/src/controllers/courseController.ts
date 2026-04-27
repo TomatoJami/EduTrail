@@ -174,7 +174,7 @@ export class CourseController {
     }
   }
 
-  async getCourse(req: Request, res: Response): Promise<void> {
+  async getCourseById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
 

@@ -6,6 +6,7 @@ const router = Router();
 
 // Public routes
 router.get('/', (req, res) => subjectController.getAllSubjects(req, res));
+router.get('/:id', (req, res) => subjectController.getSubjectById(req, res));
 
 // Protected routes (admin only)
 router.post('/', adminMiddleware, (req, res) => subjectController.createSubject(req, res));

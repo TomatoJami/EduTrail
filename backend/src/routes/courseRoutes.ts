@@ -6,7 +6,7 @@ const router = Router();
 
 // Public routes
 router.get('/', (req, res) => courseController.getAllCourses(req, res));
-router.get('/:id', (req, res) => courseController.getCourse(req, res));
+router.get('/:id', (req, res) => courseController.getCourseById(req, res));
 
 // Protected routes (admin only)
 router.post('/', adminMiddleware, (req, res) => courseController.createCourse(req, res));

@@ -2,9 +2,10 @@ import 'express-async-errors';
 import express, { Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 // Import routes
 import userRoutes from './routes/userRoutes';
