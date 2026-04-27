@@ -149,33 +149,7 @@ export class SubjectController {
       } as ApiResponse);
     }
   }
-
-  async getSubject(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-
-      const subject = await subjectService.getSubjectById(id);
-      if (!subject) {
-        res.status(404).json({
-          success: false,
-          message: 'Subject not found',
-        } as ApiResponse);
-        return;
-      }
-
-      res.status(200).json({
-        success: true,
-        message: 'Subject fetched successfully',
-        data: subject,
-      } as ApiResponse);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to fetch subject',
-        error: error instanceof Error ? error.message : String(error),
-      } as ApiResponse);
-    }
-  }
 }
+
 
 export const subjectController = new SubjectController();
