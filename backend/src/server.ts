@@ -11,6 +11,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 import userRoutes from './routes/userRoutes';
 import courseRoutes from './routes/courseRoutes';
 import subjectRoutes from './routes/subjectRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 
 // Import middleware
 import { loggingMiddleware, errorHandler } from './middleware/authMiddleware';
@@ -38,6 +39,7 @@ app.use(loggingMiddleware);
 app.use('/api/auth', userRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/subjects', subjectRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

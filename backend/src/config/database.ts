@@ -6,8 +6,6 @@ if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable');
 }
 
-console.log('🔗 Connecting to MongoDB:', MONGODB_URI.split('@')[1] ? '✓ Cloud DB (MongoDB Atlas)' : '✗ Local DB');
-
 let cached = (global as any).mongoose || { conn: null, promise: null };
 
 async function connectDB() {
