@@ -15,8 +15,8 @@ const menuItems = [
     },
   },
   {
-    href: "/account",
-    label: "Skills Paths",
+    href: "/courses",
+    label: "Search Courses",
     icon: {
       default: "/courses.png",
       active: "/courses_picked.png",

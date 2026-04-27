@@ -1,13 +1,14 @@
 export interface User {
   _id?: string;
   email: string;
+  password: string;
   name: string;
   role: 'student' | 'admin';
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-export interface ApiResponse<T> {
+export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
   data?: T;
@@ -49,8 +50,14 @@ export interface UserCourse {
   _id?: string;
   user_id: string;
   course_id: string;
-  is_completed: boolean;
-  is_saved: boolean;
+  progress: number;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface AuthResponse {
+  id: string;
+  email: string;
+  name: string;
+  role: 'student' | 'admin';
 }

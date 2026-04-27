@@ -1,29 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { subjectController } from '@/controllers/subjectController';
-import { requireAdmin } from '@/utils/requireAdmin';
+import mongoose from 'mongoose';
 
-export async function GET(request: NextRequest) {
-  const adminCheck = await requireAdmin(request);
-  if (!adminCheck.ok) {
-    return adminCheck.response;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+function getAuthHeaders(request: NextRequest) {
+  const userId = request.headers.get('x-user-id');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (userId) {
+    headers['x-user-id'] = userId;
   }
 
-  return subjectController.getAllSubjects();
+  return headers;
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const headers = getAuthHeaders(request);
+
+    const response = await fetch(`${API_URL}/subjects`, {
+      method: 'GET',
+      headers,
+    });
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Failed to fetch subjects',
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const adminCheck = await requireAdmin(request);
-  if (!adminCheck.ok) {
-    return adminCheck.response;
-  }
-
   try {
-    const body = (await request.json()) as { subject_name?: string; subject_img?: string };
+    const userId = request.headers.get('x-user-id');
 
-    return subjectController.createSubject({
-      subject_name: body.subject_name?.trim() || '',
-      subject_img: body.subject_img?.trim() || '',
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized: invalid user id' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const headers = getAuthHeaders(request);
+
+    const response = await fetch(`${API_URL}/subjects`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
     });
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
     return NextResponse.json(
       { success: false, message: 'Invalid request payload', error: String(error) },
@@ -33,17 +70,17 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const adminCheck = await requireAdmin(request);
-  if (!adminCheck.ok) {
-    return adminCheck.response;
-  }
-
   try {
-    const body = (await request.json()) as {
-      id?: string;
-      subject_name?: string;
-      subject_img?: string;
-    };
+    const userId = request.headers.get('x-user-id');
+
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized: invalid user id' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
 
     if (!body.id) {
       return NextResponse.json(
@@ -52,10 +89,16 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    return subjectController.updateSubject(body.id, {
-      subject_name: body.subject_name?.trim(),
-      subject_img: body.subject_img?.trim(),
+    const headers = getAuthHeaders(request);
+
+    const response = await fetch(`${API_URL}/subjects/${body.id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(body),
     });
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
     return NextResponse.json(
       { success: false, message: 'Invalid request payload', error: String(error) },
@@ -65,13 +108,17 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const adminCheck = await requireAdmin(request);
-  if (!adminCheck.ok) {
-    return adminCheck.response;
-  }
-
   try {
-    const body = (await request.json()) as { id?: string };
+    const userId = request.headers.get('x-user-id');
+
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized: invalid user id' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
 
     if (!body.id) {
       return NextResponse.json(
@@ -80,7 +127,15 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    return subjectController.deleteSubject(body.id);
+    const headers = getAuthHeaders(request);
+
+    const response = await fetch(`${API_URL}/subjects/${body.id}`, {
+      method: 'DELETE',
+      headers,
+    });
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
     return NextResponse.json(
       { success: false, message: 'Invalid request payload', error: String(error) },

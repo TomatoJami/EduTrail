@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { userController } from '@/controllers/userController';
-import { AuthPayload, SignupPayload } from '@/types';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 type AuthAction = 'signup' | 'login';
 
@@ -14,46 +14,55 @@ interface AuthRequestBody {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as AuthRequestBody;
-    const { action } = body;
+    const { action, email, password, name } = body;
     console.log('Auth POST received, action:', action);
 
     switch (action) {
-    case 'signup': {
-      if (!body.email || !body.password || !body.name) {
-        return NextResponse.json(
-          { success: false, message: 'Missing required fields' },
-          { status: 400 }
-        );
+      case 'signup': {
+        if (!email || !password || !name) {
+          return NextResponse.json(
+            { success: false, message: 'Missing required fields' },
+            { status: 400 }
+          );
+        }
+
+        const response = await fetch(`${API_URL}/auth/signup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password, name }),
+        });
+
+        const data = await response.json();
+        return NextResponse.json(data, { status: response.status });
       }
 
-      const signupPayload: SignupPayload = {
-        email: body.email,
-        password: body.password,
-        name: body.name,
-      };
+      case 'login': {
+        if (!email || !password) {
+          return NextResponse.json(
+            { success: false, message: 'Email and password are required' },
+            { status: 400 }
+          );
+        }
 
-      return userController.signup(signupPayload);
-    }
-    case 'login': {
-      if (!body.email || !body.password) {
-        return NextResponse.json(
-          { success: false, message: 'Email and password are required' },
-          { status: 400 }
-        );
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+        return NextResponse.json(data, { status: response.status });
       }
 
-      const loginPayload: AuthPayload = {
-        email: body.email,
-        password: body.password,
-      };
-
-      return userController.login(loginPayload);
-    }
-    default:
-      return NextResponse.json(
-        { success: false, message: 'Invalid action' },
-        { status: 400 }
-      );
+      default:
+        return NextResponse.json(
+          { success: false, message: 'Invalid action' },
+          { status: 400 }
+        );
     }
   } catch (error) {
     console.error('Auth route error:', error);

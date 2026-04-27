@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Course, ICourse, CourseAgeGroup } from '@/models/Course';
+import { Course, ICourse, CourseAgeGroup } from '../models/Course';
 
 export interface CoursePayload {
   title: string;
@@ -21,7 +21,7 @@ export class CourseService {
     });
 
     await course.save();
-    return course;
+    return course.populate('subject_id');
   }
 
   async updateCourse(id: string, payload: Partial<CoursePayload>): Promise<ICourse | null> {
@@ -50,6 +50,14 @@ export class CourseService {
     }
 
     return Course.findByIdAndDelete(id).populate('subject_id');
+  }
+
+  async getCourseById(id: string): Promise<ICourse | null> {
+    if (!mongoose.isValidObjectId(id)) {
+      throw new Error('Invalid course id');
+    }
+
+    return Course.findById(id).populate('subject_id');
   }
 }
 

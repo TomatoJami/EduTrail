@@ -1,5 +1,5 @@
-import { User, IUser } from '@/models/User';
-import { SignupPayload, AuthPayload, User as UserType } from '@/types';
+import { User, IUser } from '../models/User';
+import { SignupPayload, AuthPayload, User as UserType } from '../types';
 
 export class UserService {
   async createUser(payload: SignupPayload): Promise<IUser> {
@@ -17,7 +17,7 @@ export class UserService {
       return user;
     } catch (error) {
       console.error('Error in createUser:', error);
-      throw error; // Прокидываем оригинальный error для обработки в controller
+      throw error;
     }
   }
 

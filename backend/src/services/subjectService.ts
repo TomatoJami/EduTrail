@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { ISubject, Subject } from '@/models/Subject';
+import { ISubject, Subject } from '../models/Subject';
 
 export interface SubjectPayload {
   subject_name: string;
@@ -34,6 +34,14 @@ export class SubjectService {
     }
 
     return Subject.findByIdAndDelete(id);
+  }
+
+  async getSubjectById(id: string): Promise<ISubject | null> {
+    if (!mongoose.isValidObjectId(id)) {
+      throw new Error('Invalid subject id');
+    }
+
+    return Subject.findById(id);
   }
 }
 
