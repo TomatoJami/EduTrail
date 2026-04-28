@@ -21,10 +21,11 @@ export class SupabaseService {
   async uploadImage(file: Buffer, fileName: string, folder: 'subjects' | 'courses'): Promise<string> {
     try {
       const resizedImage = await sharp(file)
-        .resize(400, 300, {
+        .resize(400, 400, {
           fit: 'cover',
           position: 'center',
         })
+        .flatten({ background: '#fff' })
         .jpeg({ quality: 85 })
         .toBuffer();
 

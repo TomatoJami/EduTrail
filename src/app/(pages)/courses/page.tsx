@@ -96,10 +96,10 @@ export default function Courses() {
                     {courses.map((course) => (
                       <div
                         key={course._id}
-                        className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col"
+                        className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col w-72 mx-auto h-full"
                       >
                         {/* Image Container */}
-                        <div className="relative h-44 bg-white p-3 flex items-center justify-center">
+                        <div className="relative h-56 bg-white p-3 flex items-center justify-center">
                           {course.course_img ? (
                             <img
                               src={course.course_img}
@@ -117,41 +117,38 @@ export default function Courses() {
                               </svg>
                             </div>
                           )}
-
-                          {/* Bookmark Icon */}
-                          <button
-                            onClick={() => toggleSaveCourse(course._id)}
-                            className="absolute top-3 right-3 p-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                          >
-                            <svg
-                              className={`w-5 h-5 ${
-                                savedCourses.has(course._id || "")
-                                  ? "fill-indigo-600 text-indigo-600"
-                                  : "text-slate-400"
-                              }`}
-                              fill="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                            </svg>
-                          </button>
                         </div>
 
                         {/* Content */}
                         <div className="p-4 flex flex-col">
-                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                            Course
-                          </p>
-
-                          <h3 className="text-base font-bold text-slate-900 mb-3 line-clamp-2">
-                            {course.title}
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                              Course
+                            </p>
+                            <button
+                              onClick={() => toggleSaveCourse(course._id)}
+                              className="p-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                            >
+                              <svg
+                                className={`w-5 h-5 ${
+                                  savedCourses.has(course._id || "")
+                                    ? "fill-indigo-600 text-indigo-600"
+                                    : "text-slate-400"
+                                }`}
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                              </svg>
+                            </button>
+                          </div>
+                          <h3 className="text-base font-bold text-slate-900 mb-3 overflow-hidden break-words line-clamp-2">
+                            <span className="truncate overflow-hidden whitespace-nowrap block">{course.title}</span>
                           </h3>
-
-                          <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-end justify-between gap-2 mt-auto">
                             <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
                               Ages {course.ageGroup}
                             </span>
-
                             <Link
                               href={`/courses/${course._id}`}
                               className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-semibold text-sm transition-colors"
