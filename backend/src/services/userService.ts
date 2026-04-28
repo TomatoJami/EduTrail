@@ -79,6 +79,58 @@ export class UserService {
       throw new Error(`Failed to fetch users: ${error}`);
     }
   }
+
+  async addToWishlist(userId: string, subjectId: string): Promise<IUser | null> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        return null;
+      }
+
+      // Check if subject already in wishlist
+      const subjectObjectId = require('mongoose').Types.ObjectId;
+      const subjectObjId = new subjectObjectId(subjectId);
+
+      if (!user.wishlistSubjects.includes(subjectObjId)) {
+        user.wishlistSubjects.push(subjectObjId);
+        await user.save();
+      }
+
+      return user.populate('wishlistSubjects');
+    } catch (error) {
+      throw new Error(`Failed to add to wishlist: ${error}`);
+    }
+  }
+
+  async removeFromWishlist(userId: string, subjectId: string): Promise<IUser | null> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        return null;
+      }
+
+      const subjectObjectId = require('mongoose').Types.ObjectId;
+      const subjectObjId = new subjectObjectId(subjectId);
+
+      user.wishlistSubjects = user.wishlistSubjects.filter(
+        (id: any) => id.toString() !== subjectObjId.toString()
+      );
+      await user.save();
+
+      return user.populate('wishlistSubjects');
+    } catch (error) {
+      throw new Error(`Failed to remove from wishlist: ${error}`);
+    }
+  }
+
+  async getWishlist(userId: string): Promise<IUser | null> {
+    try {
+      const user = await User.findById(userId).populate('wishlistSubjects');
+      return user;
+    } catch (error) {
+      throw new Error(`Failed to fetch wishlist: ${error}`);
+    }
+  }
 }
 
 export const userService = new UserService();

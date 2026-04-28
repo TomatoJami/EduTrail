@@ -5,7 +5,9 @@ export interface IUser extends Document {
   email: string;
   password: string;
   name: string;
+  ageGroup: '1-3' | '4-9' | '10-12';
   role: 'student' | 'admin';
+  wishlistSubjects: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
@@ -37,6 +39,11 @@ const UserSchema = new Schema<IUser>(
       type: String,
       enum: ['student', 'admin'],
       default: 'student',
+    },
+    wishlistSubjects: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: 'Subject',
+      default: [],
     },
   },
   {
