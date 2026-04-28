@@ -6,6 +6,7 @@ import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
 import { Course } from "@/types";
+import { ProtectedPage } from "@/components/common/ProtectedPage";
 
 export default function Courses() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -58,7 +59,8 @@ export default function Courses() {
 
   return (
     <>
-      <Header />
+    <ProtectedPage>
+    <Header />
       <main className="flex-1">
         <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-[calc(100vh-4rem)]">
           <div className="flex min-h-[calc(100vh-4rem)] flex-col md:flex-row">
@@ -181,7 +183,8 @@ export default function Courses() {
         </section>
       </main>
 
-      <Footer />
+    <Footer />
+    </ProtectedPage>
     </>
   );
 }

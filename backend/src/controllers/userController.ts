@@ -189,6 +189,197 @@ export class UserController {
       } as ApiResponse);
     }
   }
+
+  async updateUser(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const body = req.body as {
+        name?: string;
+        email?: string;
+        password?: string;
+      };
+
+      // Validate input
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          message: 'User ID is required',
+        } as ApiResponse);
+        return;
+      }
+
+      const updates: any = {};
+      if (body.name) updates.name = body.name;
+      if (body.email) updates.email = body.email;
+      if (body.password) updates.password = body.password;
+
+      if (Object.keys(updates).length === 0) {
+        res.status(400).json({
+          success: false,
+          message: 'No fields to update',
+        } as ApiResponse);
+        return;
+      }
+
+      const user = await userService.updateUser(id, updates);
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found',
+        } as ApiResponse);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'User updated successfully',
+        data: {
+          id: user._id?.toString() || '',
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        },
+      } as ApiResponse);
+    } catch (error) {
+      console.error('Update user error:', error);
+
+      const err = error as any;
+
+      // Handle duplicate key errors (e.g., email already exists)
+      if (err.code === 11000) {
+        const field = Object.keys(err.keyPattern)[0];
+        res.status(409).json({
+          success: false,
+          message: `${field} already exists`,
+        } as ApiResponse);
+        return;
+      }
+
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: errorMessage,
+      } as ApiResponse);
+    }
+  }
+
+  async addToWishlist(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { subjectId } = req.body;
+
+      if (!id || !subjectId) {
+        res.status(400).json({
+          success: false,
+          message: 'User ID and Subject ID are required',
+        } as ApiResponse);
+        return;
+      }
+
+      const user = await userService.addToWishlist(id, subjectId);
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found',
+        } as ApiResponse);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Subject added to wishlist',
+        data: user,
+      } as ApiResponse);
+    } catch (error) {
+      console.error('Add to wishlist error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: errorMessage,
+      } as ApiResponse);
+    }
+  }
+
+  async removeFromWishlist(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { subjectId } = req.body;
+
+      if (!id || !subjectId) {
+        res.status(400).json({
+          success: false,
+          message: 'User ID and Subject ID are required',
+        } as ApiResponse);
+        return;
+      }
+
+      const user = await userService.removeFromWishlist(id, subjectId);
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found',
+        } as ApiResponse);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Subject removed from wishlist',
+        data: user,
+      } as ApiResponse);
+    } catch (error) {
+      console.error('Remove from wishlist error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: errorMessage,
+      } as ApiResponse);
+    }
+  }
+
+  async getWishlist(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          message: 'User ID is required',
+        } as ApiResponse);
+        return;
+      }
+
+      const user = await userService.getWishlist(id);
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found',
+        } as ApiResponse);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Wishlist fetched successfully',
+        data: user.wishlistSubjects,
+      } as ApiResponse);
+    } catch (error) {
+      console.error('Get wishlist error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: errorMessage,
+      } as ApiResponse);
+    }
+  }
 }
 
 export const userController = new UserController();

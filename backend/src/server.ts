@@ -37,6 +37,7 @@ app.use(loggingMiddleware);
 
 // Routes
 app.use('/api/auth', userRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/upload', uploadRoutes);
@@ -69,10 +70,10 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`
 ╔═════════════════════════════════════════════╗
-║        EduTrail Backend Server       ║
-║              Server running on             ║
-║           http://localhost:${PORT}              ║
-║     CORS Origin: ${CORS_ORIGIN}               ║
+║        EduTrail Backend Server              ║
+║              Server running on              ║
+║           http://localhost:${PORT}             ║
+║     CORS Origin: ${CORS_ORIGIN}      ║
 ╚═════════════════════════════════════════════╝
       `);
     });

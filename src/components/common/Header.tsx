@@ -4,7 +4,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -12,6 +12,8 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+  const pathname = usePathname(); 
+  const isAccountPage = pathname === "/account";
 
   useEffect(() => {
     const syncAuthState = () => {
@@ -83,85 +85,87 @@ export function Header() {
             <Image src="/logoblack.png" alt="EduTrail Logo" width={200} height={100} />
           </Link>
           {/* Auth buttons */}
-          <div className="hidden md:flex gap-3">
-            {isLoggedIn === null ? (
-              <div className="h-10 w-40" aria-hidden="true" />
-            ) : isLoggedIn ? (
-              <div ref={menuRef} className="relative">
-                <button
-                  type="button"
-                  aria-label="Account menu"
-                  aria-haspopup="menu"
-                  aria-expanded={isMenuOpen}
-                  onClick={() => setIsMenuOpen((value) => !value)}
-                  className="flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  <Image src="/account.png" alt="Account" width={40} height={40} className="rounded-full" />
-                </button>
-
-                {isMenuOpen ? (
-                  <div
-                    role="menu"
-                    className="absolute right-0 mt-3 w-64 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden"
+          {!isAccountPage && (
+            <div className="hidden md:flex gap-3">
+              {isLoggedIn === null ? (
+                <div className="h-10 w-40" aria-hidden="true" />
+              ) : isLoggedIn ? (
+                <div ref={menuRef} className="relative">
+                  <button
+                    type="button"
+                    aria-label="Account menu"
+                    aria-haspopup="menu"
+                    aria-expanded={isMenuOpen}
+                    onClick={() => setIsMenuOpen((value) => !value)}
+                    className="flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                   >
-                    <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                        <Image src="/account.png" alt="Account" width={24} height={24} />
+                    <Image src="/account.png" alt="Account" width={40} height={40} className="rounded-full" />
+                  </button>
+
+                  {isMenuOpen ? (
+                    <div
+                      role="menu"
+                      className="absolute right-0 mt-3 w-64 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden"
+                    >
+                      <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                          <Image src="/account.png" alt="Account" width={24} height={24} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-gray-900">{userProfile?.name ?? "User"}</p>
+                          <p className="truncate text-sm text-gray-500">{userProfile?.email ?? ""}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-gray-900">{userProfile?.name ?? "User"}</p>
-                        <p className="truncate text-sm text-gray-500">{userProfile?.email ?? ""}</p>
-                      </div>
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={handleSettingsClick}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        <span className="flex h-8 w-8 items-center justify-center text-gray-500">
+                          <Image src="/settings.png" alt="Settings" width={20} height={20} />
+                        </span>
+                        <span>Settings</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        <span className="flex h-8 w-8 items-center justify-center text-gray-500">
+                          <Image src="/feedback.png" alt="Feedback" width={20} height={20} />
+                        </span>
+                        <span>Share feedback</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={handleLogout}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        <span className="flex h-8 w-8 items-center justify-center text-gray-500">
+                          <Image src="/logout.png" alt="Logout" width={20} height={20} />
+                        </span>
+                        <span>Logout</span>
+                      </button>
                     </div>
-
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={handleSettingsClick}
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                        ⚙
-                      </span>
-                      <span>Settings</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                        +
-                      </span>
-                      <span>Share feedback</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                        ↪
-                      </span>
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <>
-                <Link href="/login" className="px-4 py-2 text-gray-700 hover:text-gray-900 transition border border-gray-300 rounded-lg">
-                  Login
-                </Link>
-                <Link href="/signup" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
+                  ) : null}
+                </div>
+              ) : (
+                <>
+                  <Link href="/login" className="px-4 py-2 text-gray-700 hover:text-gray-900 transition border border-gray-300 rounded-lg">
+                    Login
+                  </Link>
+                  <Link href="/signup" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
+                    Register
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </header>
