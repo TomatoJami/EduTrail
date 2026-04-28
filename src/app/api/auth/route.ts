@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-type AuthAction = 'signup' | 'login';
+type AuthAction = 'signup' | 'login' | 'update';
 
 interface AuthRequestBody {
   action?: AuthAction;
   email?: string;
   password?: string;
   name?: string;
+  userId?: string;
+  newPassword?: string;
 }
 
 export async function POST(request: Request) {
@@ -52,6 +54,33 @@ export async function POST(request: Request) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+        return NextResponse.json(data, { status: response.status });
+      }
+
+      case 'update': {
+        const { userId, name: updatedName, email: updatedEmail, newPassword } = body;
+
+        if (!userId) {
+          return NextResponse.json(
+            { success: false, message: 'User ID is required' },
+            { status: 400 }
+          );
+        }
+
+        const updateData: any = {};
+        if (updatedName) updateData.name = updatedName;
+        if (updatedEmail) updateData.email = updatedEmail;
+        if (newPassword) updateData.password = newPassword;
+
+        const response = await fetch(`${API_URL}/users/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updateData),
         });
 
         const data = await response.json();

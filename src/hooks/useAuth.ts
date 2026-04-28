@@ -21,6 +21,8 @@ interface UseAuthReturn {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
+  updateProfile: (name?: string, email?: string, newPassword?: string) => Promise<void>;
+  loadUser: () => void;
 }
 
 export const useAuth = (): UseAuthReturn => {
@@ -81,5 +83,55 @@ export const useAuth = (): UseAuthReturn => {
     localStorage.removeItem('user');
   }, []);
 
-  return { user, isLoading, error, login, signup, logout };
+  const updateProfile = useCallback(async (name?: string, email?: string, newPassword?: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (!user) {
+        setError('User not logged in');
+        return;
+      }
+
+      const updateData: any = {};
+      if (name) updateData.name = name;
+      if (email) updateData.email = email;
+      if (newPassword) updateData.password = newPassword;
+
+      const response = await fetch(`/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        const updatedUser = {
+          ...user,
+          ...(name && { name }),
+          ...(email && { email }),
+        };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      } else {
+        setError(data.message);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  const loadUser = useCallback(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error('Failed to parse stored user:', err);
+      }
+    }
+  }, []);
+
+  return { user, isLoading, error, login, signup, logout, updateProfile, loadUser };
 };

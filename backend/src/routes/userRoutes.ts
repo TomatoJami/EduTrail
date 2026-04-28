@@ -10,5 +10,6 @@ router.post('/login', (req, res) => userController.login(req, res));
 // Protected routes (TODO: Add auth middleware)
 router.get('/:id', (req, res) => userController.getUser(req, res));
 router.get('/', (req, res) => userController.getAllUsers(req, res));
+router.put('/:id', (req, res) => userController.updateUser(req, res));
 
 export default router;

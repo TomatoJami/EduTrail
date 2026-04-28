@@ -43,10 +43,19 @@ export class UserService {
 
   async updateUser(id: string, updates: Partial<UserType>): Promise<IUser | null> {
     try {
-      const user = await User.findByIdAndUpdate(id, updates, {
-        new: true,
-        runValidators: true,
-      });
+      const user = await User.findById(id);
+      if (!user) {
+        return null;
+      }
+
+      // Update fields
+      if (updates.name) user.name = updates.name;
+      if (updates.email) user.email = updates.email;
+      if (updates.password) user.password = updates.password;
+      if (updates.role) user.role = updates.role;
+
+      // Save will trigger pre-save middleware for password hashing
+      await user.save();
       return user;
     } catch (error) {
       throw new Error(`Failed to update user: ${error}`);
