@@ -182,6 +182,32 @@ class ApiClient {
   };
 
   /**
+   * Upload endpoints
+   */
+  upload = {
+    image: async (file: File, folder: 'subjects' | 'courses' = 'subjects') => {
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const response = await this.client.post(`/upload?folder=${folder}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        return response.data as ApiResponse<{
+          imageUrl: string;
+          fileName: string;
+          size: number;
+        }>;
+      } catch (error) {
+        return this.handleError(error);
+      }
+    },
+  };
+
+  /**
    * Error handling
    */
   private handleError(error: any): ApiResponse<any> {

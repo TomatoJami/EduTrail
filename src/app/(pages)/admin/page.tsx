@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { CourseAgeGroup } from '@/types';
+import { ImageUploader } from '@/components/ImageUploader';
+import { apiClient } from '@/utils/apiClient';
 
 type AuthUser = {
   id: string;
@@ -82,6 +84,11 @@ export default function AdminPage() {
   const [editingSubject, setEditingSubject] = useState<SubjectItem | null>(null);
   const [editingCourse, setEditingCourse] = useState<CourseItem | null>(null);
 
+  const [showSubjectImageUploader, setShowSubjectImageUploader] = useState(false);
+  const [showCourseImageUploader, setShowCourseImageUploader] = useState(false);
+  const [showEditSubjectImageUploader, setShowEditSubjectImageUploader] = useState(false);
+  const [showEditCourseImageUploader, setShowEditCourseImageUploader] = useState(false);
+
   const subjectNameById = useMemo(() => {
     return subjects.reduce<Record<string, string>>((acc, item) => {
       acc[item._id] = item.subject_name;
@@ -139,6 +146,7 @@ export default function AdminPage() {
     }
 
     setUser(currentUser);
+    apiClient.setUserId(currentUser.id);
     setCheckingAccess(false);
     void loadData({
       'Content-Type': 'application/json',
@@ -172,6 +180,7 @@ export default function AdminPage() {
 
       setNewSubjectName('');
       setNewSubjectImage('');
+      setShowSubjectImageUploader(false);
       await loadData(adminHeaders);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create subject');
@@ -198,6 +207,7 @@ export default function AdminPage() {
       }
 
       setEditingSubject(null);
+      setShowEditSubjectImageUploader(false);
       await loadData(adminHeaders);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update subject');
@@ -261,6 +271,7 @@ export default function AdminPage() {
       setNewCourseAgeGroup('1-3');
       setNewCourseImage('');
       setNewCourseSubjectId('');
+      setShowCourseImageUploader(false);
       await loadData(adminHeaders);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create course');
@@ -299,6 +310,7 @@ export default function AdminPage() {
       }
 
       setEditingCourse(null);
+      setShowEditCourseImageUploader(false);
       await loadData(adminHeaders);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update course');
@@ -369,14 +381,46 @@ export default function AdminPage() {
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
                 required
               />
-              <input
-                type="url"
-                placeholder="Subject image URL"
-                value={newSubjectImage}
-                onChange={(e) => setNewSubjectImage(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-                required
-              />
+              {!showSubjectImageUploader ? (
+                <div>
+                  {newSubjectImage && (
+                    <div className="mb-2 space-y-2">
+                      <img
+                        src={newSubjectImage}
+                        alt="Subject preview"
+                        className="h-20 w-20 rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewSubjectImage('');
+                          setShowSubjectImageUploader(true);
+                        }}
+                        className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                      >
+                        Change image
+                      </button>
+                    </div>
+                  )}
+                  {!newSubjectImage && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSubjectImageUploader(true)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      Select image
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <ImageUploader
+                  folder="subjects"
+                  onImageUpload={(imageUrl) => {
+                    setNewSubjectImage(imageUrl);
+                    setShowSubjectImageUploader(false);
+                  }}
+                />
+              )}
               <button
                 type="submit"
                 className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
@@ -401,14 +445,36 @@ export default function AdminPage() {
                           }
                           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                         />
-                        <input
-                          type="url"
-                          value={editingSubject.subject_img}
-                          onChange={(e) =>
-                            setEditingSubject({ ...editingSubject, subject_img: e.target.value })
-                          }
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                        />
+                        {!showEditSubjectImageUploader ? (
+                          <div>
+                            {editingSubject.subject_img && (
+                              <div className="mb-2 space-y-2">
+                                <img
+                                  src={editingSubject.subject_img}
+                                  alt="Subject preview"
+                                  className="h-20 w-20 rounded-lg object-cover"
+                                />
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setShowEditSubjectImageUploader(true)}
+                              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                            >
+                              Update image
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <ImageUploader
+                              folder="subjects"
+                              onImageUpload={(imageUrl) => {
+                                setEditingSubject({ ...editingSubject, subject_img: imageUrl });
+                                setShowEditSubjectImageUploader(false);
+                              }}
+                            />
+                          </div>
+                        )}
                         <div className="flex gap-2">
                           <button
                             type="button"
@@ -419,7 +485,10 @@ export default function AdminPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setEditingSubject(null)}
+                            onClick={() => {
+                              setEditingSubject(null);
+                              setShowEditSubjectImageUploader(false);
+                            }}
                             className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700"
                           >
                             Cancel
@@ -491,14 +560,46 @@ export default function AdminPage() {
                   </option>
                 ))}
               </select>
-              <input
-                type="url"
-                placeholder="Course image URL"
-                value={newCourseImage}
-                onChange={(e) => setNewCourseImage(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-                required
-              />
+              {!showCourseImageUploader ? (
+                <div>
+                  {newCourseImage && (
+                    <div className="mb-2 space-y-2">
+                      <img
+                        src={newCourseImage}
+                        alt="Course preview"
+                        className="h-20 w-20 rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewCourseImage('');
+                          setShowCourseImageUploader(true);
+                        }}
+                        className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                      >
+                        Change image
+                      </button>
+                    </div>
+                  )}
+                  {!newCourseImage && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCourseImageUploader(true)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      Select image
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <ImageUploader
+                  folder="courses"
+                  onImageUpload={(imageUrl) => {
+                    setNewCourseImage(imageUrl);
+                    setShowCourseImageUploader(false);
+                  }}
+                />
+              )}
               <select
                 value={newCourseSubjectId}
                 onChange={(e) => setNewCourseSubjectId(e.target.value)}
@@ -559,12 +660,36 @@ export default function AdminPage() {
                             </option>
                           ))}
                         </select>
-                        <input
-                          type="url"
-                          value={editingCourse.course_img}
-                          onChange={(e) => setEditingCourse({ ...editingCourse, course_img: e.target.value })}
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                        />
+                        {!showEditCourseImageUploader ? (
+                          <div>
+                            {editingCourse.course_img && (
+                              <div className="mb-2 space-y-2">
+                                <img
+                                  src={editingCourse.course_img}
+                                  alt="Course preview"
+                                  className="h-20 w-20 rounded-lg object-cover"
+                                />
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setShowEditCourseImageUploader(true)}
+                              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                            >
+                              Update image
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <ImageUploader
+                              folder="courses"
+                              onImageUpload={(imageUrl) => {
+                                setEditingCourse({ ...editingCourse, course_img: imageUrl });
+                                setShowEditCourseImageUploader(false);
+                              }}
+                            />
+                          </div>
+                        )}
                         <select
                           value={
                             typeof editingCourse.subject_id === 'string'
@@ -596,7 +721,10 @@ export default function AdminPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setEditingCourse(null)}
+                            onClick={() => {
+                              setEditingCourse(null);
+                              setShowEditCourseImageUploader(false);
+                            }}
                             className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700"
                           >
                             Cancel
