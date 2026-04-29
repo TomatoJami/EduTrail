@@ -2,10 +2,12 @@ import { NextResponse } from 'next/server';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-export async function PUT(request: Request) {
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const url = new URL(request.url);
-    const id = url.pathname.split('/').pop();
+    const { id } = await params;
     const body = await request.json();
 
     if (!id) {
@@ -37,10 +39,12 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const url = new URL(request.url);
-    const id = url.pathname.split('/').pop();
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json(

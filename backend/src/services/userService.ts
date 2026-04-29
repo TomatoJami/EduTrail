@@ -131,6 +131,41 @@ export class UserService {
       throw new Error(`Failed to fetch wishlist: ${error}`);
     }
   }
+
+  async savePreferences(userId: string, preferredSubjects: string[], ageGroup: '1-3' | '4-9' | '10-12'): Promise<IUser | null> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        return null;
+      }
+
+      // Convert string IDs to ObjectId
+      const mongoose = require('mongoose');
+      user.preferredSubjects = preferredSubjects.map((id: string) => new mongoose.Types.ObjectId(id));
+      user.ageGroup = ageGroup;
+      user.hasCompletedOnboarding = true;
+      
+      await user.save();
+      return user.populate('preferredSubjects');
+    } catch (error) {
+      throw new Error(`Failed to save preferences: ${error}`);
+    }
+  }
+
+  async skipPreferences(userId: string): Promise<IUser | null> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        return null;
+      }
+
+      user.hasCompletedOnboarding = true;
+      await user.save();
+      return user;
+    } catch (error) {
+      throw new Error(`Failed to skip preferences: ${error}`);
+    }
+  }
 }
 
 export const userService = new UserService();

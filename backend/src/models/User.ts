@@ -5,9 +5,10 @@ export interface IUser extends Document {
   email: string;
   password: string;
   name: string;
-  ageGroup: '1-3' | '4-9' | '10-12';
+  ageGroup?: '1-3' | '4-9' | '10-12';
   role: 'student' | 'admin';
-  wishlistSubjects: mongoose.Types.ObjectId[];
+  preferredSubjects: mongoose.Types.ObjectId[];
+  hasCompletedOnboarding: boolean;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
@@ -40,10 +41,19 @@ const UserSchema = new Schema<IUser>(
       enum: ['student', 'admin'],
       default: 'student',
     },
-    wishlistSubjects: {
+    preferredSubjects: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: 'Subject',
       default: [],
+    },
+    ageGroup: {
+      type: String,
+      enum: ['1-3', '4-9', '10-12'],
+      default: null,
+    },
+    hasCompletedOnboarding: {
+      type: Boolean,
+      default: false,
     },
   },
   {

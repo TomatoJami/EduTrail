@@ -17,4 +17,8 @@ router.post('/:id/wishlist/add', (req, res) => userController.addToWishlist(req,
 router.post('/:id/wishlist/remove', (req, res) => userController.removeFromWishlist(req, res));
 router.get('/:id/wishlist', (req, res) => userController.getWishlist(req, res));
 
+// Preferences routes
+router.post('/:id/preferences', (req, res) => userController.savePreferences(req, res));
+router.post('/:id/preferences/skip', (req, res) => userController.skipPreferences(req, res));
+
 export default router;

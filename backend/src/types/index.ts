@@ -4,6 +4,9 @@ export interface User {
   password: string;
   name: string;
   role: 'student' | 'admin';
+  ageGroup?: '1-3' | '4-9' | '10-12';
+  preferredSubjects?: string[];
+  hasCompletedOnboarding?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

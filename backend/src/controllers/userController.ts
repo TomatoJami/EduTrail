@@ -368,10 +368,117 @@ export class UserController {
       res.status(200).json({
         success: true,
         message: 'Wishlist fetched successfully',
-        data: user.wishlistSubjects,
+        data: user.preferredSubjects,
       } as ApiResponse);
     } catch (error) {
       console.error('Get wishlist error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: errorMessage,
+      } as ApiResponse);
+    }
+  }
+
+  async savePreferences(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { preferredSubjects, ageGroup } = req.body;
+
+      if (!id || !ageGroup) {
+        res.status(400).json({
+          success: false,
+          message: 'User ID and age group are required',
+        } as ApiResponse);
+        return;
+      }
+
+      // Validate age group
+      if (!['1-3', '4-9', '10-12'].includes(ageGroup)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid age group',
+        } as ApiResponse);
+        return;
+      }
+
+      // Validate preferred subjects array
+      if (!Array.isArray(preferredSubjects)) {
+        res.status(400).json({
+          success: false,
+          message: 'Preferred subjects must be an array',
+        } as ApiResponse);
+        return;
+      }
+
+      const user = await userService.savePreferences(id, preferredSubjects, ageGroup);
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found',
+        } as ApiResponse);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Preferences saved successfully',
+        data: {
+          id: user._id?.toString() || '',
+          email: user.email,
+          name: user.name,
+          ageGroup: user.ageGroup,
+          preferredSubjects: user.preferredSubjects,
+          hasCompletedOnboarding: user.hasCompletedOnboarding,
+        },
+      } as ApiResponse);
+    } catch (error) {
+      console.error('Save preferences error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: errorMessage,
+      } as ApiResponse);
+    }
+  }
+
+  async skipPreferences(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          message: 'User ID is required',
+        } as ApiResponse);
+        return;
+      }
+
+      const user = await userService.skipPreferences(id);
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found',
+        } as ApiResponse);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Preferences skipped',
+        data: {
+          id: user._id?.toString() || '',
+          email: user.email,
+          name: user.name,
+          hasCompletedOnboarding: user.hasCompletedOnboarding,
+        },
+      } as ApiResponse);
+    } catch (error) {
+      console.error('Skip preferences error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({
         success: false,
