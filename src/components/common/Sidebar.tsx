@@ -56,7 +56,7 @@ export function Sidebar() {
   return (
     <aside className="w-full border-b border-gray-200 bg-white md:w-56 md:shrink-0 md:border-b-0 md:border-r">
       <div className="h-full px-4 py-5 flex flex-col">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Learn</p>
+        <p className="mb-3 text-xs font-semibold text-center uppercase tracking-[0.2em] text-gray-400">Learn</p>
 
         <nav aria-label="Learning navigation" className="flex gap-2 md:flex-col">
           {menuItems.map((item) => {

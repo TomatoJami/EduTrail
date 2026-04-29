@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { ProtectedPage } from "@/components/common/ProtectedPage";
+import { AccountSidebar } from "@/components/common/AccountSidebar";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function AccountPage() {
@@ -75,24 +76,12 @@ export default function AccountPage() {
     <ProtectedPage>
       <Header />
       <main className="flex flex-1">
-        <section className="hidden md:block w-56 border-r border-gray-200 bg-white sticky top-0">
-          <div className="h-[calc(100vh-4rem)] p-4 flex flex-col">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium mb-6"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
-            </button>
-          </div>
-        </section>
+        <AccountSidebar />
+        
 
         <div className="flex-1 bg-white">
           <div className="min-h-[calc(100vh-4rem)] flex items-start justify-center pt-12 px-4">
             <div className="w-full max-w-2xl">
-              {/* Profile Header */}
               <div className="flex items-center gap-6 mb-12">
                 <div className="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
                   <svg className="w-10 h-10 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
@@ -114,7 +103,7 @@ export default function AccountPage() {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Your full name"
                   />
                 </div>
@@ -130,7 +119,7 @@ export default function AccountPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="your.email@gmail.com"
                   />
                 </div>
@@ -161,7 +150,7 @@ export default function AccountPage() {
                       name="newPassword"
                       value={formData.newPassword}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="New password (min 8 characters)"
                     />
                   )}

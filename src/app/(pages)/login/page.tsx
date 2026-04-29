@@ -42,8 +42,7 @@ export default function LoginPage() {
         window.dispatchEvent(new Event('auth-state-changed'));
       }
 
-      // Success - redirect to home
-      router.push('/');
+      router.push('/preferences');
     } catch (err) {
       setError('An error occurred. Please try again.');
       console.error(err);

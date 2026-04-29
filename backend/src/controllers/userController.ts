@@ -11,11 +11,31 @@ export class UserController {
         name?: string;
       };
 
+      const isValidEmail = (email: string) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      };
+
       // Validate input
       if (!body.email || !body.password || !body.name) {
         res.status(400).json({
           success: false,
           message: 'Missing required fields',
+        } as ApiResponse);
+        return;
+      }
+
+      if (!isValidEmail(body.email)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid email format',
+        } as ApiResponse);
+        return;
+      }
+
+      if (body.password.length < 8) {
+        res.status(400).json({
+          success: false,
+          message: 'Password must be at least 8 characters long',
         } as ApiResponse);
         return;
       }

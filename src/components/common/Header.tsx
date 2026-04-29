@@ -13,7 +13,7 @@ export function Header() {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const pathname = usePathname(); 
-  const isAccountPage = pathname === "/account";
+  const isAccountPage = pathname === "/account" || pathname === "/account/preferences";
 
   useEffect(() => {
     const syncAuthState = () => {

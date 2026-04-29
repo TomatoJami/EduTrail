@@ -18,10 +18,10 @@ export default function RegisterPage() {
     setError('');
 
     // Validate password length
-    //if (password.length < 8) {
-    //  setError('Password must be at least 8 characters long');
-    //  return;
-    //}
+    // if (password.length < 8) {
+    //   setError('Password must be at least 8 characters long');
+    //   return;
+    // }
 
     setLoading(true);
 
@@ -47,15 +47,12 @@ export default function RegisterPage() {
         return;
       }
 
-      // Success - save user info to sessionStorage and redirect to preferences
       if (data.data?.id) {
         sessionStorage.setItem('newUserData', JSON.stringify({
           id: data.data.id,
           email: data.data.email,
           name: data.data.name,
         }));
-        router.push('/preferences');
-      } else {
         router.push('/login');
       }
     } catch (err) {

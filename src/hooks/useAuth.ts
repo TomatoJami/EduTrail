@@ -1,11 +1,6 @@
-/**
- * Custom Hook для работы с аутентификацией на фронтенде
- * Используется в React компонентах
- */
-
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export interface User {
   id: string;
@@ -18,6 +13,7 @@ interface UseAuthReturn {
   user: User | null;
   isLoading: boolean;
   error: string | null;
+  initialized: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
@@ -29,6 +25,9 @@ export const useAuth = (): UseAuthReturn => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 👇 НОВОЕ СОСТОЯНИЕ
+  const [initialized, setInitialized] = useState(false);
 
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
@@ -122,16 +121,33 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [user]);
 
+  // 👇 ИЗМЕНЁННЫЙ loadUser
   const loadUser = useCallback(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
+    try {
+      const storedUser = localStorage.getItem('user');
+
+      if (storedUser) {
         setUser(JSON.parse(storedUser));
-      } catch (err) {
-        console.error('Failed to parse stored user:', err);
+      } else {
+        setUser(null);
       }
+    } catch (err) {
+      console.error('Failed to parse stored user:', err);
+      setUser(null);
+    } finally {
+      setInitialized(true);
     }
   }, []);
 
-  return { user, isLoading, error, login, signup, logout, updateProfile, loadUser };
+  return {
+    user,
+    isLoading,
+    error,
+    initialized,
+    login,
+    signup,
+    logout,
+    updateProfile,
+    loadUser,
+  };
 };

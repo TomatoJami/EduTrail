@@ -31,8 +31,8 @@ export default function PreferencesPage() {
     // Check if user is newly registered
     const newUserData = sessionStorage.getItem('newUserData');
     if (!newUserData) {
-      // Not a new user - redirect to login
-      router.push('/login');
+      // Not a new user - redirect to main page
+      router.push('/');
       return;
     }
 
@@ -40,7 +40,7 @@ export default function PreferencesPage() {
       const user = JSON.parse(newUserData);
       setUserData(user);
     } catch (err) {
-      router.push('/login');
+      router.push('/');
       return;
     }
 
@@ -99,8 +99,7 @@ export default function PreferencesPage() {
         setError(data.message || 'Failed to save preferences');
         return;
       }
-
-      // Success - clear sessionStorage and redirect to home
+      
       sessionStorage.removeItem('newUserData');
       router.push('/');
     } catch (err) {
@@ -130,7 +129,6 @@ export default function PreferencesPage() {
         return;
       }
 
-      // Success - clear sessionStorage and redirect to home
       sessionStorage.removeItem('newUserData');
       router.push('/');
     } catch (err) {
@@ -223,17 +221,17 @@ export default function PreferencesPage() {
                     className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition"
                   >
                     <input
-                      type="radio"
-                      name="ageGroup"
-                      value={group}
+                      type="checkbox"
                       checked={ageGroup === group}
-                      onChange={(e) => setAgeGroup(e.target.value as '1-3' | '4-9' | '10-12')}
-                      className="w-5 h-5 text-indigo-600 border-gray-300 cursor-pointer"
+                      onChange={() =>
+                        setAgeGroup(ageGroup === group ? '' : (group as '1-3' | '4-9' | '10-12'))
+                      }
+                      className="w-5 h-5 text-indigo-600 border-gray-300 rounded cursor-pointer"
                     />
                     <span className="text-gray-700 font-medium">
-                      {group === '1-3' && 'Primary general education (Grades 1-3)'}
-                      {group === '4-9' && 'Basic general education (Grades 4-9)'}
-                      {group === '10-12' && 'Secondary general education (Grades 10-12)'}
+                      {group === '1-3' && 'Grades 1-3'}
+                      {group === '4-9' && 'Grades 4-9'}
+                      {group === '10-12' && 'Grades 10-12'}
                     </span>
                   </label>
                 ))}
