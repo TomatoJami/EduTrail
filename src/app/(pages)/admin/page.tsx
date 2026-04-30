@@ -378,7 +378,7 @@ export default function AdminPage() {
                 placeholder="Subject name"
                 value={newSubjectName}
                 onChange={(e) => setNewSubjectName(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border text-gray-900 border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
                 required
               />
               {!showSubjectImageUploader ? (
@@ -538,21 +538,21 @@ export default function AdminPage() {
                 placeholder="Course title"
                 value={newCourseTitle}
                 onChange={(e) => setNewCourseTitle(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border border-slate-300 text-gray-900 px-3 py-2 text-sm outline-none focus:border-indigo-500"
                 required
               />
               <textarea
                 placeholder="Course description"
                 value={newCourseDescription}
                 onChange={(e) => setNewCourseDescription(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border border-slate-300 text-gray-900 px-3 py-2 text-sm outline-none focus:border-indigo-500"
                 rows={3}
                 required
               />
               <select
                 value={newCourseAgeGroup}
                 onChange={(e) => setNewCourseAgeGroup(e.target.value as CourseAgeGroup)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border border-slate-300 text-gray-900 px-3 py-2 text-sm outline-none focus:border-indigo-500"
               >
                 {ageGroups.map((group) => (
                   <option key={group} value={group}>
@@ -603,7 +603,7 @@ export default function AdminPage() {
               <select
                 value={newCourseSubjectId}
                 onChange={(e) => setNewCourseSubjectId(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border border-slate-300 text-gray-900 px-3 py-2 text-sm outline-none focus:border-indigo-500"
                 required
               >
                 <option value="">Select subject</option>

@@ -89,7 +89,7 @@ export function Sidebar() {
         {isAdmin && (
           <>
             <div className="my-4 border-t border-gray-200"></div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Admin</p>
+            <p className="mb-3 text-xs font-semibold text-center uppercase tracking-[0.2em] text-gray-400">Admin</p>
             <Link
               href="/admin"
               className={[
