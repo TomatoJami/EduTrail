@@ -49,7 +49,6 @@ export default function PreferencesPage() {
         setSubjects(data.data || []);
       }
     } catch (err) {
-      console.error('Failed to fetch subjects:', err);
       setError('Failed to load subjects');
     }
   };
@@ -60,7 +59,6 @@ export default function PreferencesPage() {
       const data = await response.json();
 
       if (data.success && data.data) {
-        console.log('User preferences loaded:', data.data);
         
         if (data.data.preferredSubjects && Array.isArray(data.data.preferredSubjects)) {
           const subjectIds = data.data.preferredSubjects.map((subj: any) => {

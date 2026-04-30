@@ -3,6 +3,8 @@ export interface User {
   email: string;
   name: string;
   role: 'student' | 'admin';
+  ageGroup?: '1-3' | '4-9' | '10-12';
+  preferredSubjects?: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }

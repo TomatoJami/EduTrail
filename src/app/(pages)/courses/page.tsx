@@ -13,6 +13,7 @@ const COURSES_PER_PAGE = 6;
 export default function Courses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [savedCourses, setSavedCourses] = useState<Set<string>>(new Set());
@@ -22,6 +23,21 @@ export default function Courses() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Get current user from localStorage
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          // Fetch full user data with preferences
+          const userResponse = await fetch(`/api/users/${userData.id || userData._id}`);
+          const userDataFull = await userResponse.json();
+
+          if (userDataFull.success) {
+            setUser(userDataFull.data);
+          } else {
+            setUser(userData);
+          }
+        }
+
         // Fetch subjects
         const subjectsResponse = await fetch("/api/subjects");
         const subjectsData = await subjectsResponse.json();
@@ -70,16 +86,35 @@ export default function Courses() {
     localStorage.setItem("savedCourses", JSON.stringify(Array.from(newSaved)));
   };
 
-  // Get recommended courses (first 3)
-  const recommendedCourses = courses.slice(0, 3);
+  // Get recommended courses based on user preferences
+  const recommendedCourses = (() => {
+    
+    if (!user || !user.preferredSubjects || user.preferredSubjects.length === 0) {
+      const filtered = courses.filter(course => !user?.ageGroup || course.ageGroup === user.ageGroup).slice(0, 3);
+      return filtered;
+    }
+    
+    const filtered = courses.filter((course) => {
+      const ageGroupMatch = !user.ageGroup || course.ageGroup === user.ageGroup;
+      const courseSubjectId = typeof course.subject_id === 'string' 
+        ? course.subject_id 
+        : (course.subject_id as any)?._id || (course.subject_id as any)?.toString?.() || '';
+      
+      const subjectMatch = user.preferredSubjects.some((id: any) => {
+        const idString = typeof id === 'string' ? id : (id as any)?._id || (id as any)?.toString?.() || '';
+        return idString === courseSubjectId;
+      });
+      return ageGroupMatch && subjectMatch;
+    }).slice(0, 3);
+    return filtered;
+  })();
 
-  // Get all courses, optionally filtered by subject
   const filteredCourses = selectedSubject
     ? courses.filter(course => course.subject_id === selectedSubject)
     : courses;
 
   const displayedSubjects = subjects.slice(0, 4);
-  // Get displayed courses for "Browse all" section
+
   const displayedCourses = filteredCourses.slice(0, displayedCoursesCount);
 
   const hasMoreCourses = displayedCoursesCount < filteredCourses.length;
@@ -95,7 +130,7 @@ export default function Courses() {
 
   // Reusable course card component
   const CourseCard = ({ course }: { course: Course }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col w-72 mx-auto h-full">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
       {/* Image Container */}
       <div className="relative h-56 bg-white p-3 flex items-center justify-center">
         {course.course_img ? (
@@ -201,7 +236,7 @@ export default function Courses() {
                         </div>
                         <div className="flex items-center justify-between mb-6">
                           <h2 className="text-xl font-bold text-slate-900">Subjects</h2>
-                          <a href="#" className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm">
+                          <a href="/subjects" className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm">
                             All subjects →
                           </a>
                         </div>
@@ -261,22 +296,53 @@ export default function Courses() {
                         )}
 
                         {/* Recommended Section */}
+                        {displayedCourses.length > 0 && (
                         <div className="mb-16">
-                          <h2 className="text-xl font-bold text-slate-900 mb-6">
-                            Recommended for you
-                          </h2>
-                          {recommendedCourses.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                              {recommendedCourses.map((course) => (
-                                <CourseCard key={course._id} course={course} />
-                              ))}
+                          <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-xl font-bold text-slate-900">
+                              Recommended for you
+                            </h2>
+
+                            {(!user?.preferredSubjects || user.preferredSubjects.length === 0) && (
+                              <Link
+                                href="/account/preferences"
+                                className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+                              >
+                                Add preferences
+                              </Link>
+                            )}
+                          </div>
+
+                          {/* Если нет preferences */}
+                          {(!user?.preferredSubjects || user.preferredSubjects.length === 0) ? (
+                            <div className="text-center py-12">
+                              <p className="text-slate-600 text-lg mb-4">
+                                You haven't set your preferences yet.
+                              </p>
+                              <p className="text-sm text-slate-500">
+                                Add your interests to get personalized course recommendations.
+                              </p>
                             </div>
                           ) : (
-                            <div className="text-center py-12">
-                              <p className="text-slate-600 text-lg">No courses available.</p>
-                            </div>
+                            /* Если есть preferences → показываем курсы */
+                            <>
+                              {recommendedCourses.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                  {recommendedCourses.map((course) => (
+                                    <CourseCard key={course._id} course={course} />
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-center py-12">
+                                  <p className="text-slate-600 text-lg">
+                                    No matching courses found for your preferences.
+                                  </p>
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
+                        )}
 
                         {/* Browse All Section */}
                         <div>
