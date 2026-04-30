@@ -59,6 +59,7 @@ export default function PreferencesPage() {
       const data = await response.json();
 
       if (data.success && data.data) {
+        console.log('User preferences loaded:', data.data);
         
         if (data.data.preferredSubjects && Array.isArray(data.data.preferredSubjects)) {
           const subjectIds = data.data.preferredSubjects.map((subj: any) => {

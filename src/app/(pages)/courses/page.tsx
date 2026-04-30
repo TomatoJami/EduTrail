@@ -7,6 +7,7 @@ import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
 import { Course, Subject } from "@/types";
 import { ProtectedPage } from "@/components/common/ProtectedPage";
+import { CourseSearch } from '@/components/common/CourseSearch';
 
 const COURSES_PER_PAGE = 6;
 
@@ -227,6 +228,7 @@ export default function Courses() {
                   </div>
                 ) : (
                 <div className="min-w-0 flex-1 py-8 sm:py-10">
+                  <CourseSearch courses={courses} /> 
                     <div className="mb-16 bg-white p-8 md:p-10 ">
                       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                         <div className="mb-10">
