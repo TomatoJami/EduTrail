@@ -245,8 +245,9 @@ export default function Courses() {
                         {displayedSubjects.length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           {displayedSubjects.map((subject) => (
-                            <div
+                            <Link
                               key={subject._id}
+                              href={`/filterSearch?subject=${subject._id}`}
                               className="p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-indigo-300 transition-all cursor-pointer"
                             >
                               <div className="flex flex-col items-center gap-3">
@@ -271,7 +272,7 @@ export default function Courses() {
                                   {subject.subject_name}
                                 </p>
                               </div>
-                            </div>
+                            </Link>
                           ))}
                         </div>
                         ) : (
@@ -350,9 +351,9 @@ export default function Courses() {
                         <div>
                           <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-slate-900">Browse all</h2>
-                            <button className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm">
-                              Explore with filter →
-                            </button>
+                            <a href="/filterSearch" className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm">
+                              All subjects →
+                            </a>
                           </div>
 
                           {displayedCourses.length > 0 ? (

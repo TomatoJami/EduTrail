@@ -1,12 +1,12 @@
 'use client';
 
+import Link from "next/link";
 import { Footer } from "@/components/common/Footer";
 import { Header } from "@/components/common/Header";
 import { ProtectedPage } from "@/components/common/ProtectedPage";
 import { Sidebar } from "@/components/common/Sidebar";
 import { useState, useEffect } from "react";
 import { Subject } from "@/types";
-
 
 export default function Subjects() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -57,8 +57,9 @@ export default function Subjects() {
                     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {subjects.map((subject) => (
-                          <div
+                          <Link
                             key={subject._id}
+                            href={`/filterSearch?subject=${subject._id}`}
                             className="p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-indigo-300 transition-all cursor-pointer"
                           >
                             <div className="flex flex-col items-center gap-3">
@@ -83,7 +84,7 @@ export default function Subjects() {
                                 {subject.subject_name}
                               </p>
                             </div>
-                          </div>
+                          </Link>
                         ))}
                       </div>
                     </div>
