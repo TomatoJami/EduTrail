@@ -112,7 +112,6 @@ export default function FilterSearch() {
   const CourseCard = ({ course }: { course: Course }) => (
     <Link href={`/courses/${course._id}`} className="block h-full">
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex items-stretch h-full">
-        {/* Content - Left Side */}
         <div className="p-6 flex flex-col justify-between flex-1">
             <div>
             <h3 className="text-lg font-bold text-slate-900 mb-3 line-clamp-2">

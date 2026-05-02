@@ -18,6 +18,7 @@ import { loggingMiddleware, errorHandler } from './middleware/authMiddleware';
 
 // Import database
 import connectDB from './config/database';
+import moduleRoutes from './routes/moduleRoutes';
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +42,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/modules', moduleRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

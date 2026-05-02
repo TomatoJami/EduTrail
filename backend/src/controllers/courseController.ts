@@ -24,6 +24,33 @@ export class CourseController {
     }
   }
 
+  async getCourseById(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      const course = await courseService.getCourseById(id);
+      if (!course) {
+        res.status(404).json({
+          success: false,
+          message: 'Course not found',
+        } as ApiResponse);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Course fetched successfully',
+        data: course,
+      } as ApiResponse);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch course',
+        error: error instanceof Error ? error.message : String(error),
+      } as ApiResponse);
+    }
+  }
+
   async createCourse(req: Request, res: Response): Promise<void> {
     try {
       const body = req.body as {
@@ -169,33 +196,6 @@ export class CourseController {
       res.status(500).json({
         success: false,
         message: 'Failed to delete course',
-        error: error instanceof Error ? error.message : String(error),
-      } as ApiResponse);
-    }
-  }
-
-  async getCourseById(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-
-      const course = await courseService.getCourseById(id);
-      if (!course) {
-        res.status(404).json({
-          success: false,
-          message: 'Course not found',
-        } as ApiResponse);
-        return;
-      }
-
-      res.status(200).json({
-        success: true,
-        message: 'Course fetched successfully',
-        data: course,
-      } as ApiResponse);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to fetch course',
         error: error instanceof Error ? error.message : String(error),
       } as ApiResponse);
     }
