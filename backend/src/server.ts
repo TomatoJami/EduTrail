@@ -12,13 +12,14 @@ import userRoutes from './routes/userRoutes';
 import courseRoutes from './routes/courseRoutes';
 import subjectRoutes from './routes/subjectRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import moduleRoutes from './routes/moduleRoutes';
+import chapterRoutes from './routes/chapterRoutes';
 
 // Import middleware
 import { loggingMiddleware, errorHandler } from './middleware/authMiddleware';
 
 // Import database
 import connectDB from './config/database';
-import moduleRoutes from './routes/moduleRoutes';
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
@@ -43,6 +44,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/modules', moduleRoutes);
+app.use('/api/chapters', chapterRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

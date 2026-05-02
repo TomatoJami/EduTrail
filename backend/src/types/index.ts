@@ -49,11 +49,30 @@ export interface Course {
   updatedAt?: Date;
 }
 
+export interface Module {
+  _id?: string;
+  title: string;
+  order: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface UserCourse {
   _id?: string;
   user_id: string;
   course_id: string;
-  progress: number;
+  is_completed: boolean;
+  is_saved: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface UserModule {
+  _id?: string;
+  user_id: string;
+  module_id: string;
+  is_completed: boolean;
+  is_saved: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
