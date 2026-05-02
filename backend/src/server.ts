@@ -14,6 +14,7 @@ import subjectRoutes from './routes/subjectRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import moduleRoutes from './routes/moduleRoutes';
 import chapterRoutes from './routes/chapterRoutes';
+import questionRoutes from './routes/questionRoutes';
 
 // Import middleware
 import { loggingMiddleware, errorHandler } from './middleware/authMiddleware';
@@ -45,6 +46,7 @@ app.use('/api/subjects', subjectRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/modules', moduleRoutes);
 app.use('/api/chapters', chapterRoutes);
+app.use('/api/questions', questionRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

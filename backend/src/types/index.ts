@@ -57,6 +57,18 @@ export interface Module {
   updatedAt?: Date;
 }
 
+export interface Question {
+  _id?: string;
+  module_id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+
 export interface UserCourse {
   _id?: string;
   user_id: string;
@@ -67,12 +79,11 @@ export interface UserCourse {
   updatedAt?: Date;
 }
 
-export interface UserModule {
+export interface UserChapter {
   _id?: string;
   user_id: string;
-  module_id: string;
+  chapter_id: string;
   is_completed: boolean;
-  is_saved: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
