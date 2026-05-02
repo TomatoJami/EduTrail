@@ -88,6 +88,15 @@ export interface UserChapter {
   updatedAt?: Date;
 }
 
+export interface UserQuestion {
+  _id?: string;
+  user_id: string;
+  question_id: string;
+  is_completed: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface AuthResponse {
   id: string;
   email: string;
