@@ -4,6 +4,7 @@ import { Course, ICourse, CourseAgeGroup } from '../models/Course';
 export interface CoursePayload {
   title: string;
   description: string;
+  goals: string[];
   ageGroup: CourseAgeGroup;
   course_img: string;
   subject_id: string;

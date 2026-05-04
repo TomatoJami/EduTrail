@@ -5,6 +5,7 @@ export type CourseAgeGroup = '1-3' | '4-9' | '10-12';
 export interface ICourse extends Document {
   title: string;
   description: string;
+  goals: string[];
   ageGroup: CourseAgeGroup;
   course_img: string;
   subject_id: mongoose.Types.ObjectId;
@@ -23,6 +24,10 @@ const CourseSchema = new Schema<ICourse>(
     description: {
       type: String,
       required: [true, 'Course description is required'],
+      trim: true,
+    },
+    goals: {
+      type: [String],
       trim: true,
     },
     ageGroup: {

@@ -56,6 +56,7 @@ export class CourseController {
       const body = req.body as {
         title?: string;
         description?: string;
+        goals: string[];
         ageGroup?: CourseAgeGroup;
         course_img?: string;
         subject_id?: string;
@@ -88,6 +89,7 @@ export class CourseController {
       const payload: CoursePayload = {
         title: body.title.trim(),
         description: body.description.trim(),
+        goals: body.goals,
         ageGroup: body.ageGroup,
         course_img: body.course_img.trim(),
         subject_id: body.subject_id.trim(),
@@ -114,6 +116,7 @@ export class CourseController {
       const body = req.body as {
         title?: string;
         description?: string;
+        goals: string[];
         ageGroup?: CourseAgeGroup;
         course_img?: string;
         subject_id?: string;
@@ -138,6 +141,7 @@ export class CourseController {
       const payload: Partial<CoursePayload> = {
         title: body.title?.trim(),
         description: body.description?.trim(),
+        goals: body.goals,
         ageGroup: body.ageGroup,
         course_img: body.course_img?.trim(),
         subject_id: body.subject_id?.trim(),

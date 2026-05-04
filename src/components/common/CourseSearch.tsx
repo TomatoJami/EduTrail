@@ -31,7 +31,7 @@ export const CourseSearch = ({ courses }: Props) => {
           onBlur={() => {
             setTimeout(() => setIsFocused(false), 150);
           }}
-          className="w-full px-4 py-2 bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
