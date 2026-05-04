@@ -12,6 +12,13 @@ export class ModuleService {
     return Module.find().populate('course_id').sort({ order: 1 });
   }
 
+  async getModulesByCourseId(courseId: string): Promise<IModule[]> {
+    if (!mongoose.isValidObjectId(courseId)) {
+      throw new Error('Invalid course id');
+    }
+    return Module.find({ course_id: courseId }).populate('course_id').sort({ order: 1 });
+  }
+
   async createModule(payload: ModulePayload): Promise<IModule> {
     const courseId = new mongoose.Types.ObjectId(payload.course_id);
     

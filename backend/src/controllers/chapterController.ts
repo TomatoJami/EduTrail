@@ -6,7 +6,15 @@ import { ApiResponse } from '../types';
 export class ChapterController {
     async getAllChapters(req: Request, res: Response): Promise<void> {
         try {
-            const chapters = await chapterService.getAllChapters();
+            const { module_id } = req.query;
+            
+            let chapters;
+            if (module_id && typeof module_id === 'string') {
+                chapters = await chapterService.getChaptersByModuleId(module_id);
+            } else {
+                chapters = await chapterService.getAllChapters();
+            }
+            
             res.status(200).json({
                 success: true,
                 message: 'Chapters fetched successfully',

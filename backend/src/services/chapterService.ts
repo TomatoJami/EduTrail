@@ -13,6 +13,13 @@ export class ChapterService {
     return Chapter.find().populate('module_id').sort({ order: 1 });
   }
 
+  async getChaptersByModuleId(moduleId: string): Promise<IChapter[]> {
+    if (!mongoose.isValidObjectId(moduleId)) {
+      throw new Error('Invalid module id');
+    }
+    return Chapter.find({ module_id: moduleId }).populate('module_id').sort({ order: 1 });
+  }
+
   async createChapter(payload: ChapterPayload): Promise<IChapter> {
     const moduleId = new mongoose.Types.ObjectId(payload.module_id);
     

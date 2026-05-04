@@ -6,7 +6,15 @@ import { ApiResponse } from '../types';
 export class QuestionController {
     async getAllQuestions(req: Request, res: Response): Promise<void> {
         try {
-            const questions = await questionService.getAllQuestions();
+            const { module_id } = req.query;
+            
+            let questions;
+            if (module_id && typeof module_id === 'string') {
+                questions = await questionService.getQuestionsByModuleId(module_id);
+            } else {
+                questions = await questionService.getAllQuestions();
+            }
+            
             res.status(200).json({
                 success: true,
                 message: 'Questions fetched successfully',

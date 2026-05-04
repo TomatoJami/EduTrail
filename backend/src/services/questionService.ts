@@ -14,6 +14,13 @@ export class QuestionService {
     return Question.find().populate('module_id').sort({ order: 1 });
   }
 
+  async getQuestionsByModuleId(moduleId: string): Promise<IQuestion[]> {
+    if (!mongoose.isValidObjectId(moduleId)) {
+      throw new Error('Invalid module id');
+    }
+    return Question.find({ module_id: moduleId }).populate('module_id').sort({ order: 1 });
+  }
+
   async createQuestion(payload: QuestionPayload): Promise<IQuestion> {
     const moduleId = new mongoose.Types.ObjectId(payload.module_id);
 

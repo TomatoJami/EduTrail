@@ -6,7 +6,15 @@ import { ApiResponse } from '../types';
 export class ModuleController {
     async getAllModules(req: Request, res: Response): Promise<void> {
         try {
-            const modules = await moduleService.getAllModules();
+            const { course_id } = req.query;
+            
+            let modules;
+            if (course_id && typeof course_id === 'string') {
+                modules = await moduleService.getModulesByCourseId(course_id);
+            } else {
+                modules = await moduleService.getAllModules();
+            }
+            
             res.status(200).json({
                 success: true,
                 message: 'Modules fetched successfully',
