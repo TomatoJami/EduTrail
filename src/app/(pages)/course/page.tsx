@@ -5,6 +5,8 @@ import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
 import { ProtectedPage } from "@/components/common/ProtectedPage";
 
+const pageContainer = "mx-auto max-w-5xl px-4 sm:px-6 lg:px-8";
+
 const learningGoals = [
 	"Understand the relationship between exponents and logarithms and convert expressions between them.",
 	"Apply logarithms to analyze real-world processes such as growth, decay, and working with very large numbers.",
@@ -117,15 +119,15 @@ export default function CoursePage() {
         <ProtectedPage>
 		    <Header />    
 			<main className="flex-1">
-					<section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen">
-						<div className="flex min-h-screen flex-col md:flex-row">
-                            <Sidebar />	
-                            <div className="min-w-0 flex-1" >
-								{/* Hero Section */}
-								<div className="overflow-hidden bg-white/75 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur mb-8">
-									<div className="relative overflow-hidden bg-[#111827] px-5 py-5 text-white sm:px-8 sm:py-7 lg:px-10 lg:py-8">
-										<div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.32),_transparent_34%),radial-gradient(circle_at_bottom_left,_rgba(56,189,248,0.18),_transparent_30%)]" />
-										<div className="relative max-w-4xl mx-auto">
+				<section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen">
+					<div className="flex min-h-screen flex-col md:flex-row">
+                        <Sidebar />	
+                        <div className="min-w-0 flex-1" >
+							{/* Hero Section */}
+							<div className="overflow-hidden bg-white/75 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur mb-8">
+								<div className="relative overflow-hidden bg-[#111827] px-5 py-5 text-white sm:px-8 sm:py-7 lg:px-10 lg:py-8">
+									<div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.32),_transparent_34%),radial-gradient(circle_at_bottom_left,_rgba(56,189,248,0.18),_transparent_30%)]" />
+										<div className={pageContainer}>
 											<div className="mb-3 text-sm text-white/70">
 												Home &gt; Learning Path &gt; <span className="font-semibold text-white">Logarithms</span>
 											</div>
@@ -145,103 +147,86 @@ export default function CoursePage() {
 										</div>
 									</div>
 								</div>
-                                <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-								{/* Content centered */}
-								<div className="mx-auto max-w-5xl grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
-								<div className="space-y-6">
-									<section>
-										<div className="mb-4 flex items-end justify-between gap-4">
-											<h2 className="text-2xl font-semibold tracking-tight text-slate-900">Learning Goals</h2>
-											<div className="hidden h-px flex-1 bg-slate-200 sm:block" aria-hidden="true" />
-										</div>
-                                        <div className="max-w-2xl">
-                                            <div className="grid gap-4 lg:grid-cols-2">
-                                                <div className="space-y-3 text-sm leading-6 text-slate-700">
-                                                    {learningGoals.slice(0, 2).map((goal) => (
-                                                        <p key={goal} className="flex gap-3">
+                                <div className={pageContainer + " py-6"}>
+                                    <div className="mx-auto max-w-5xl grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+                                        <div className="space-y-6">
+                                            <section>
+                                                <div className="mb-4 flex items-end justify-between gap-4">
+                                                    <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Learning Goals</h2>
+                                                    <div className="hidden h-px flex-1 bg-slate-200 sm:block" aria-hidden="true" />
+                                                </div>
+                                                <div className="max-w-2xl">
+                                                    <div className="space-y-3">
+                                                        <div className="space-y-3 text-sm leading-6 text-slate-700">
+                                                        {learningGoals.map((goal) => (
+                                                            <p key={goal} className="flex gap-3">
                                                             <span className="mt-1 text-indigo-500">✓</span>
                                                             <span>{goal}</span>
-                                                        </p>
-                                                    ))}
+                                                            </p>
+                                                        ))}
+                                                        </div>
+                                                        <div className="space-y-3 text-sm leading-6 text-slate-700">
+                                                            <p className="flex gap-3">
+                                                                <span className="mt-1 text-indigo-500">✓</span>
+                                                                <span>{learningGoals[2]}</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-3 text-sm leading-6 text-slate-700">
-                                                    <p className="flex gap-3">
-                                                        <span className="mt-1 text-indigo-500">✓</span>
-                                                        <span>{learningGoals[2]}</span>
-                                                    </p>
+                                            </section>
+
+                                            <section>
+                                                <div className="mb-3 flex items-end justify-between gap-4">
+                                                    <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Path Content</h2>
+                                                    <div className="hidden h-px flex-1 bg-slate-200 sm:block" aria-hidden="true" />
                                                 </div>
-                                            </div>
-                                        </div>
-									</section>
-
-									<section>
-										<div className="mb-3 flex items-end justify-between gap-4">
-											<h2 className="text-2xl font-semibold tracking-tight text-slate-900">Path Content</h2>
-											<div className="hidden h-px flex-1 bg-slate-200 sm:block" aria-hidden="true" />
-										</div>
-                                        <div className="max-w-2xl">
-                                            <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm">
-                                                <div className="h-1.5 bg-indigo-500" />
-                                                <div className="space-y-6 px-4 py-4 sm:px-5 sm:py-5">
-                                                    {sections.map((section) => (
-                                                        <article key={section.number} className="space-y-3">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-600 ring-1 ring-indigo-200">
-                                                                    {section.number}
-                                                                </div>
-                                                                <h3 className="text-[15px] font-semibold text-slate-900">{section.title}</h3>
-                                                            </div>
-
-                                                            <div className="space-y-2.5 pl-0.5">
-                                                                {section.lessons.map((lesson) => (
-                                                                    <div key={lesson.label} className="flex items-start gap-3 text-sm text-slate-700">
-                                                                        <LessonIcon status={lesson.status} />
-                                                                        <span className={lesson.status === "done" ? "font-medium text-slate-900" : "text-slate-700"}>
-                                                                            {lesson.label}
-                                                                        </span>
+                                                <div className="max-w-2xl">
+                                                    <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm">
+                                                        <div className="h-1.5 bg-indigo-500" />
+                                                        <div className="space-y-6 px-4 py-4 sm:px-5 sm:py-5">
+                                                            {sections.map((section) => (
+                                                                <article key={section.number} className="space-y-3">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-600 ring-1 ring-indigo-200">
+                                                                            {section.number}
+                                                                        </div>
+                                                                        <h3 className="text-[15px] font-semibold text-slate-900">{section.title}</h3>
                                                                     </div>
-                                                                ))}
-                                                            </div>
-                                                        </article>
-                                                    ))}
+
+                                                                    <div className="space-y-2.5 pl-0.5">
+                                                                        {section.lessons.map((lesson) => (
+                                                                            <div key={lesson.label} className="flex items-start gap-3 text-sm text-slate-700">
+                                                                                <LessonIcon status={lesson.status} />
+                                                                                <span className={lesson.status === "done" ? "font-medium text-slate-900" : "text-slate-700"}>
+                                                                                    {lesson.label}
+                                                                                </span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </article>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
+                                            </section>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <Link
+                                                href="/login"
+                                                className="block rounded-xl bg-indigo-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_12px_24px_rgba(79,70,229,0.28)] transition hover:bg-indigo-600"
+                                            >
+                                                Start Learning
+                                            </Link>
+
+                                            <div className="flex flex-wrap gap-2">
+                                                <StatPill icon="folder" label="12 Lessons" />
+                                                <StatPill icon="quiz" label="4 Quizzes" />
                                             </div>
                                         </div>
-									</section>
-								</div>
-
-								<div className="space-y-4">
-									<Link
-										href="/login"
-										className="block rounded-xl bg-indigo-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_12px_24px_rgba(79,70,229,0.28)] transition hover:bg-indigo-600"
-									>
-										Start Learning
-									</Link>
-
-									<div className="flex flex-wrap gap-2">
-										<StatPill icon="folder" label="12 Lessons" />
-										<StatPill icon="quiz" label="4 Quizzes" />
-									</div>
-
-									<div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-										<p className="text-sm font-semibold text-slate-500">Course status</p>
-										<div className="mt-3 space-y-3 text-sm text-slate-700">
-											<div className="flex items-center justify-between gap-3">
-												<span>Completed</span>
-												<span className="font-semibold text-slate-900">1 of 12</span>
-											</div>
-											<div className="h-2 rounded-full bg-slate-100">
-												<div className="h-2 w-[8%] rounded-full bg-emerald-500" />
-											</div>
-											<p className="text-xs leading-5 text-slate-500">
-												Continue from the current lesson to keep your path progress in sync.
-											</p>
-										</div>
-									</div>
-								</div>
-								</div>
-							</div>
-						</div>
+								    </div>
+							    </div>
+						    </div>
                         </div>
 					</section>
 			</main>
