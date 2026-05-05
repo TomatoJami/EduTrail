@@ -12,6 +12,7 @@ const menuItems = [
     icon: {
       default: "/progress.png",
       active: "/progress_picked.png",
+      hover: "/progres_clicked.png",
       alt: "Progress",
     },
   },
@@ -21,6 +22,7 @@ const menuItems = [
     icon: {
       default: "/courses.png",
       active: "/courses_picked.png",
+      hover: "/courses_clicked.png",
       alt: "Courses",
     },
   },
@@ -29,6 +31,7 @@ const menuItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAdmin = () => {
@@ -59,31 +62,37 @@ export function Sidebar() {
         <p className="mb-3 text-xs font-semibold text-center uppercase tracking-[0.2em] text-gray-400">Learn</p>
 
         <nav aria-label="Learning navigation" className="flex gap-2 md:flex-col">
-          {menuItems.map((item) => {
-            const isActive = pathname === item.href;
+        {menuItems.map((item) => {
+          const isActive = pathname === item.href;
+          const isHovered = hoveredItem === item.href;
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={[
-                  "flex items-center gap-3 rounded-md border px-3 py-2 text-sm transition",
-                  isActive
-                    ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-                    : "border-transparent text-[#757D88] hover:border-gray-200 hover:bg-gray-50 hover:text-gray-900",
-                ].join(" ")}
-              >
-                <Image
-                  src={isActive ? item.icon.active : item.icon.default}
-                  alt={item.icon.alt}
-                  width={24}
-                  height={24}
-                  className="h-6 w-6 shrink-0"
-                />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+          const iconSrc: typeof item.icon.default | typeof item.icon.active | typeof item.icon.hover = 
+            isActive ? item.icon.active : isHovered ? item.icon.hover : item.icon.default;
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onMouseEnter={() => setHoveredItem(item.href)}
+              onMouseLeave={() => setHoveredItem(null)}
+              className={[
+                "flex items-center gap-3 rounded-md border px-3 py-2 text-sm transition",
+                isActive
+                  ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+                  : "border-transparent text-[#757D88] hover:border-gray-200 hover:bg-gray-50 hover:text-gray-900",
+              ].join(" ")}
+            >
+              <Image
+                src={iconSrc}
+                alt={item.icon.alt}
+                width={24}
+                height={24}
+                className="h-6 w-6 shrink-0"
+              />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
         </nav>
 
         {isAdmin && (
