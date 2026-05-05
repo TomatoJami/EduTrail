@@ -13,7 +13,7 @@ export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [activeTab, setActiveTab] = useState("In Progress");
-  const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const syncAuthState = () => {
@@ -36,8 +36,6 @@ export default function Home() {
 
     const fetchCourses = async () => {
       try {
-        setLoading(true);
-  
         const res = await fetch("/api/courses");
         if (!res.ok) throw new Error("Failed to fetch courses");
   
@@ -46,14 +44,13 @@ export default function Home() {
       } catch (err) {
         console.error(err);
         setCourses([]);
-      } finally {
-        setLoading(false);
       }
     };
   
-    fetchCourses();
-
     syncAuthState();
+    fetchCourses();
+    setIsInitialized(true);
+
     window.addEventListener("storage", syncAuthState);
     window.addEventListener("auth-state-changed", syncAuthState);
 
@@ -126,13 +123,14 @@ export default function Home() {
 
   return (
     <>
-      <Header />
-
       <main className="flex-1">
-        {isLoggedIn === null ? (
-          <section className="bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 pt-32 pb-40 min-h-screen" />
+        {!isInitialized ? (
+          <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 pt-32 pb-40 min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          </section>
         ) : isLoggedIn ? (
           <>
+            <Header />
             <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-[calc(100vh-4rem)]">
             <div className="flex min-h-[calc(100vh-4rem)] flex-col md:flex-row">
               <Sidebar />
@@ -176,7 +174,8 @@ export default function Home() {
           </>
         ) : (
           <>
-            <section className="bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 pt-32 pb-40 min-h-screen flex items-center">
+            <Header />
+            <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 pt-32 pb-40 min-h-screen flex items-center">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 <div className="text-center">
                   <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">

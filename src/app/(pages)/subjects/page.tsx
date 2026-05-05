@@ -1,58 +1,77 @@
 'use client';
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Footer } from "@/components/common/Footer";
 import { Header } from "@/components/common/Header";
-import { ProtectedPage } from "@/components/common/ProtectedPage";
 import { Sidebar } from "@/components/common/Sidebar";
 import { useState, useEffect } from "react";
 import { Subject } from "@/types";
 
 export default function Subjects() {
+  const router = useRouter();
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) {
+          router.push("/login");
+          return;
+        }
         // Fetch subjects
         const subjectsResponse = await fetch("/api/subjects");
         const subjectsData = await subjectsResponse.json();
+
         if (subjectsData.success) {
           setSubjects(subjectsData.data || []);
         } else {
           setError(subjectsData.message || "Failed to load subjects");
         }
+
+        setIsInitialized(true);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load subjects");
-      } finally {
-        setLoading(false);
+        setIsInitialized(true);
       }
     };
     fetchData();
-  }, []);
+  }, [router]);
+
+  	if (!isInitialized) {
+		return (
+			<main className="flex-1">
+				<section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen flex items-center justify-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+				</section>
+			</main>
+		);
+	}
+
+	if (error) {
+		return (
+			<main className="flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
+				<div className="text-center">
+					<p className="text-red-600">{error || "No subjects available"}</p>
+					<Link href="/courses" className="text-indigo-600 hover:text-indigo-700 mt-4 inline-block">
+						Back to courses
+					</Link>
+				</div>
+			</main>
+		);
+	}
 
   return (
     <>
-      <ProtectedPage>
         <Header />
         <main className="flex-1">
           <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-[calc(100vh-4rem)]">
             <div className="flex min-h-screen flex-col md:flex-row">
               <Sidebar />
               <div className="min-w-0 flex-1">
-                {error && (
-                  <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-red-700">
-                    {error}
-                  </div>
-                )}
-
-                {loading ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                  </div>
-                ) : subjects.length > 0 ? (
                   <div className="py-8 sm:py-10">
                     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -89,17 +108,11 @@ export default function Subjects() {
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-slate-600 text-lg">No subjects available.</p>
-                  </div>
-                )}
               </div>
             </div>
           </section>
         </main>
         <Footer />
-      </ProtectedPage>
     </>
   );
 }

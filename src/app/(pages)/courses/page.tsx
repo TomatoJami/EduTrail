@@ -1,21 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
 import { Course, Subject } from "@/types";
-import { ProtectedPage } from "@/components/common/ProtectedPage";
 import { CourseSearch } from '@/components/common/CourseSearch';
 
 const COURSES_PER_PAGE = 6;
 
 export default function Courses() {
+  const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState("");
   const [savedCourses, setSavedCourses] = useState<Set<string>>(new Set());
   const [displayedCoursesCount, setDisplayedCoursesCount] = useState(COURSES_PER_PAGE);
@@ -24,19 +25,22 @@ export default function Courses() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Get current user from localStorage
+        // Check authentication first
         const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          // Fetch full user data with preferences
-          const userResponse = await fetch(`/api/users/${userData.id || userData._id}`);
-          const userDataFull = await userResponse.json();
+        if (!storedUser) {
+          router.push("/login");
+          return;
+        }
 
-          if (userDataFull.success) {
-            setUser(userDataFull.data);
-          } else {
-            setUser(userData);
-          }
+        const userData = JSON.parse(storedUser);
+        // Fetch full user data with preferences
+        const userResponse = await fetch(`/api/users/${userData.id || userData._id}`);
+        const userDataFull = await userResponse.json();
+
+        if (userDataFull.success) {
+          setUser(userDataFull.data);
+        } else {
+          setUser(userData);
         }
 
         // Fetch subjects
@@ -54,25 +58,26 @@ export default function Courses() {
         } else {
           setError(coursesData.message || "Failed to load courses");
         }
+
+        // Load saved courses from localStorage
+        const saved = localStorage.getItem("savedCourses");
+        if (saved) {
+          try {
+            setSavedCourses(new Set(JSON.parse(saved)));
+          } catch {
+            setSavedCourses(new Set());
+          }
+        }
+
+        setIsInitialized(true);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load courses");
-      } finally {
-        setLoading(false);
+        setIsInitialized(true);
       }
     };
 
     fetchData();
-
-    // Load saved courses from localStorage
-    const saved = localStorage.getItem("savedCourses");
-    if (saved) {
-      try {
-        setSavedCourses(new Set(JSON.parse(saved)));
-      } catch {
-        setSavedCourses(new Set());
-      }
-    }
-  }, []);
+  }, [router]);
 
   const toggleSaveCourse = (courseId: string | undefined) => {
     if (!courseId) return;
@@ -128,6 +133,16 @@ export default function Courses() {
     setSelectedSubject(subjectId);
     setDisplayedCoursesCount(COURSES_PER_PAGE);
   };
+
+  if (!isInitialized) {
+		return (
+			<main className="flex-1">
+				<section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen flex items-center justify-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+				</section>
+			</main>
+		);
+	}
 
   // Reusable course card component
   const CourseCard = ({ course }: { course: Course }) => (
@@ -209,9 +224,8 @@ export default function Courses() {
 
   return (
     <>
-      <ProtectedPage>
-        <Header />
         <main className="flex-1">
+          <Header />
           <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen">
             <div className="flex min-h-screen flex-col md:flex-row">
               <Sidebar />
@@ -222,11 +236,6 @@ export default function Courses() {
                 </div>
                 )}
 
-                {loading ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                  </div>
-                ) : (
                 <div className="min-w-0 flex-1 py-8 sm:py-10">
                   <CourseSearch courses={courses} /> 
                     <div className="mb-16 bg-white p-8 md:p-10 ">
@@ -385,14 +394,11 @@ export default function Courses() {
                       </>
                   </div>
                 </div>
-                )}
               </div>
             </div>
           </section>
-        </main>
-
-        <Footer />
-      </ProtectedPage>
+          <Footer />
+      </main>
     </>
   );
 }

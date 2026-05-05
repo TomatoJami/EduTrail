@@ -1,20 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
 import { Course, Subject } from "@/types";
-import { ProtectedPage } from "@/components/common/ProtectedPage";
 import { CourseSearch } from "@/components/common/CourseSearch";
+import { set } from "mongoose";
 
 export default function FilterSearch() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [courses, setCourses] = useState<Course[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<string[]>([]);
   const [savedCourses, setSavedCourses] = useState<Set<string>>(new Set());
@@ -30,6 +32,12 @@ export default function FilterSearch() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) {
+          router.push("/login");
+          return;
+        }
+
         // Fetch subjects
         const subjectsResponse = await fetch("/api/subjects");
         const subjectsData = await subjectsResponse.json();
@@ -43,10 +51,10 @@ export default function FilterSearch() {
         if (coursesData.success) {
           setCourses(coursesData.data || []);
         }
+        setIsInitialized(true);
       } catch (err) {
         console.error("Failed to load data:", err);
-      } finally {
-        setLoading(false);
+        setIsInitialized(true);
       }
     };
 
@@ -152,9 +160,18 @@ export default function FilterSearch() {
     </Link>
   );
 
+  if (!isInitialized) {
+    return (
+        <main className="flex-1">
+          <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          </section>
+        </main>
+      );
+    }
+
   return (
     <>
-      <ProtectedPage>
         <Header />
         <main className="flex-1">
           <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen">
@@ -251,16 +268,12 @@ export default function FilterSearch() {
                         {/* Results */}
                         <div className="flex-1 min-w-0">
                         {/* Results Grid */}
-                        {loading ? (
-                            <div className="flex justify-center items-center h-64">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                            </div>
-                        ) : filteredCourses.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-6">
-                            {filteredCourses.map((course) => (
-                                <CourseCard key={course._id} course={course} />
-                            ))}
-                            </div>
+                        {filteredCourses.length > 0 ? (
+                          <div className="grid grid-cols-1 gap-6">
+                          {filteredCourses.map((course) => (
+                            <CourseCard key={course._id} course={course} />
+                          ))}
+                          </div>
                         ) : (
                             <div className="text-center py-12">
                             <p className="text-slate-600 text-lg">
@@ -278,7 +291,6 @@ export default function FilterSearch() {
         </main>
 
         <Footer />
-      </ProtectedPage>
     </>
   );
 }

@@ -17,12 +17,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
-    // Validate password length
-    // if (password.length < 8) {
-    //   setError('Password must be at least 8 characters long');
-    //   return;
-    // }
-
     setLoading(true);
 
     try {
@@ -64,7 +58,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
         {/* Logo */}
         <div className="flex justify-center mb-8">

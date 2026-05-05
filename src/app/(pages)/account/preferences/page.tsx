@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from "next/navigation";
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
-import { ProtectedPage } from '@/components/common/ProtectedPage';
 import { AccountSidebar } from '@/components/common/AccountSidebar';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -15,30 +15,38 @@ interface Subject {
 
 export default function PreferencesPage() {
   const { user, loadUser } = useAuth();
-
+  const router = useRouter();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [ageGroup, setAgeGroup] = useState<'1-3' | '4-9' | '10-12' | ''>('');
-  const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await fetchSubjects();
-      if (user?.id) {
-        await fetchUserPreferences();
-      }
-      setLoading(false);
-    };
-    loadData();
-  }, [user?.id]);
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      router.push("/login");
+      return;
+    }
 
-  useEffect(() => {
+    const loadData = async () => {
+      try {
+        await fetchSubjects();
+        if (user?.id) {
+          await fetchUserPreferences();
+        }
+      } catch (err) {
+        console.error('Failed to load data:', err);
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+
+    loadData();
     loadUser();
-  }, [loadUser]);
+  }, [router, user?.id, loadUser]);
 
   const fetchSubjects = async () => {
     try {
@@ -126,23 +134,19 @@ export default function PreferencesPage() {
     }
   };
 
-//    if (loading) {
-//      return (
-//        <ProtectedPage>
-//          <Header />
-//          <div className="flex-1 flex items-center justify-center">
-//            <div className="text-center">
-//              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-//              <p className="mt-4 text-gray-600">Loading preferences...</p>
-//            </div>
-//          </div>
-//          <Footer />
-//        </ProtectedPage>
-//      );
-//  }
+
+  if (!isInitialized) {
+		return (
+			<main className="flex-1 bg-white">
+				<section className="min-h-screen flex items-center justify-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+				</section>
+			</main>
+		);
+	}
 
   return (
-    <ProtectedPage>
+    <>
       <Header />
       <main className="flex flex-1">
         <AccountSidebar />
@@ -249,6 +253,6 @@ export default function PreferencesPage() {
         </div>
       </main>
       <Footer />
-    </ProtectedPage>
+    </>
   );
 }

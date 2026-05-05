@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
-import { ProtectedPage } from "@/components/common/ProtectedPage";
 import { AccountSidebar } from "@/components/common/AccountSidebar";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function AccountPage() {
   const router = useRouter();
   const { user, isLoading, error, updateProfile, loadUser } = useAuth();
+  const [isInitialized, setIsInitialized] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -21,8 +21,14 @@ export default function AccountPage() {
   const [showPasswordInput, setShowPasswordInput] = useState(false);
 
   useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      router.push("/login");
+      return;
+    }
+    setIsInitialized(true);
     loadUser();
-  }, [loadUser]);
+  }, [router, loadUser]);
 
   useEffect(() => {
     if (user) {
@@ -72,8 +78,18 @@ export default function AccountPage() {
     }
   };
 
+  if (!isInitialized) {
+		return (
+			<main className="flex-1 bg-white">
+				<section className="min-h-screen flex items-center justify-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+				</section>
+			</main>
+		);
+	}
+
   return (
-    <ProtectedPage>
+    <>
       <Header />
       <main className="flex flex-1">
         <AccountSidebar />
@@ -189,6 +205,6 @@ export default function AccountPage() {
         </div>
       </main>
       <Footer />
-    </ProtectedPage>
+    </>
   );
 }

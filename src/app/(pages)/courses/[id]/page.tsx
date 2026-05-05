@@ -2,12 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
-import { ProtectedPage } from "@/components/common/ProtectedPage";
 
 interface Course {
 	_id: string;
@@ -108,11 +107,12 @@ function StatPill({ icon, label }: { icon: "folder" | "quiz"; label: string }) {
 
 export default function CourseDetailPage() {
 	const params = useParams();
+	const router = useRouter();
 	const courseId = params.id as string;
 	const [course, setCourse] = useState<Course | null>(null);
 	const [modules, setModules] = useState<Module[]>([]);
 	const [userProgress, setUserProgress] = useState<UserProgress>({ chapters: {}, questions: {} });
-	const [loading, setLoading] = useState(true);
+	const [isInitialized, setIsInitialized] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -120,7 +120,11 @@ export default function CourseDetailPage() {
 
 		const fetchCourseData = async () => {
 			try {
-				setLoading(true);
+				const storedUser = localStorage.getItem("user");
+				if (!storedUser) {
+					router.push("/login");
+					return;
+				}
 
 				// Fetch course details
 				const courseResponse = await fetch(`/api/courses/${courseId}`);
@@ -146,48 +150,42 @@ export default function CourseDetailPage() {
 				}
 
 				setError(null);
+				setIsInitialized(true);
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "An error occurred");
 				setCourse(null);
 				setModules([]);
-			} finally {
-				setLoading(false);
+				setIsInitialized(true);
 			}
 		};
 
 		fetchCourseData();
-	}, [courseId]);
+	}, [courseId, router]);
 
-	if (loading) {
+	if (!isInitialized) {
 		return (
-			<>
-				<Header />
-				<main className="flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
-					<div className="flex justify-center items-center h-64">
-                    	<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                  	</div>
-				</main>
-				<Footer />
-			</>
+			<main className="flex-1">
+				<section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen flex items-center justify-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+				</section>
+			</main>
 		);
 	}
 
 	if (error || !course) {
 		return (
-			<>
-				<Header />
-				<main className="flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
-					<div className="text-center">
-						<p className="text-red-600">{error || "Course not found"}</p>
-						<Link href="/courses" className="text-indigo-600 hover:text-indigo-700 mt-4 inline-block">
-							Back to courses
-						</Link>
-					</div>
-				</main>
-				<Footer />
-			</>
+			<main className="flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
+				<div className="text-center">
+					<p className="text-red-600">{error || "Course not found"}</p>
+					<Link href="/courses" className="text-indigo-600 hover:text-indigo-700 mt-4 inline-block">
+						Back to courses
+					</Link>
+				</div>
+			</main>
 		);
 	}
+
+	
 
 	const goalsArray = Array.isArray(course.goals) ? course.goals : [];
 	const displayGoals = goalsArray.filter(g => g && g.trim());
@@ -199,14 +197,13 @@ export default function CourseDetailPage() {
 	const completedQuestions = Object.values(userProgress.questions).filter(Boolean).length;
 
 	return (
-		<>
-        <ProtectedPage>
-            <Header />    
-            <main className="flex-1">
-                <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen">
-                    <div className="flex min-h-screen flex-col md:flex-row">
-                        <Sidebar />	
-                        <div className="min-w-0 flex-1" >
+		<>	
+			<main className="flex-1">
+				<Header />
+				<section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen">
+					<div className="flex min-h-screen flex-col md:flex-row">
+						<Sidebar />
+						<div className="min-w-0 flex-1" >
 							{/* Hero Section */}
                             <div className="overflow-hidden bg-white/75 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur mb-8">
 								<div className="relative overflow-hidden bg-[#111827] px-5 py-5 text-white sm:px-8 sm:py-7 lg:px-10 lg:py-8">
@@ -347,10 +344,8 @@ export default function CourseDetailPage() {
 						</div>
 					</div>
 				</section>
+				<Footer />
 			</main>
-
-			<Footer />
-            </ProtectedPage>
 		</>
 	);
 }
