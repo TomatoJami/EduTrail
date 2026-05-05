@@ -6,10 +6,14 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
+import { Course } from "@/types";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [activeTab, setActiveTab] = useState("In Progress");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const syncAuthState = () => {
@@ -30,6 +34,25 @@ export default function Home() {
       }
     };
 
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+  
+        const res = await fetch("/api/courses");
+        if (!res.ok) throw new Error("Failed to fetch courses");
+  
+        const data = await res.json();
+        setCourses(data.data || []);
+      } catch (err) {
+        console.error(err);
+        setCourses([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchCourses();
+
     syncAuthState();
     window.addEventListener("storage", syncAuthState);
     window.addEventListener("auth-state-changed", syncAuthState);
@@ -39,6 +62,67 @@ export default function Home() {
       window.removeEventListener("auth-state-changed", syncAuthState);
     };
   }, []);
+
+  const CourseCard = ({ course }: { course: Course }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
+      {/* Image Container */}
+      <div className="relative h-56 bg-white p-3 flex items-center justify-center">
+        {course.course_img ? (
+          <img
+            src={course.course_img}
+            alt={course.title}
+            className="max-w-full max-h-full object-contain"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <svg
+              className="w-20 h-20 text-slate-300"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
+            </svg>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-4 flex flex-col">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            Course
+          </p>
+        </div>
+        <h3 className="text-base font-bold text-slate-900 mb-3 overflow-hidden break-words line-clamp-2">
+          <span className="truncate overflow-hidden whitespace-nowrap block">{course.title}</span>
+        </h3>
+        <div className="flex items-end justify-between gap-2 mt-auto">
+          <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
+            Ages {course.ageGroup}
+          </span>
+          <Link
+            href={`/courses/${course._id}`}
+            className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-semibold text-sm transition-colors"
+          >
+            Get Started
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -50,45 +134,48 @@ export default function Home() {
         ) : isLoggedIn ? (
           <>
             <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-[calc(100vh-4rem)]">
-              <div className="flex min-h-[calc(100vh-4rem)] flex-col md:flex-row">
-                <Sidebar />
+            <div className="flex min-h-[calc(100vh-4rem)] flex-col md:flex-row">
+              <Sidebar />
 
-                <div className="min-w-0 flex-1 py-8 sm:py-10">
-                  <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                      Welcome back to <span className="text-indigo-600">EduTrail</span>
-                    </h1>
-                    <p className="text-lg text-gray-600 mb-10 max-w-2xl">
-                      Continue your learning journey. Pick up where you left off and keep building your skills.
-                    </p>
+              <div className="min-w-0 flex-1 py-8 sm:py-10">
+                <div className="mx-auto justify-center max-w-6xl px-4 sm:px-6 lg:px-8">
 
-                    <div className="grid md:grid-cols-3 gap-6">
-                      <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-                        <p className="text-sm text-gray-500 mb-2">In Progress</p>
-                        <p className="text-3xl font-bold text-gray-900">3</p>
-                        <p className="text-sm text-gray-600 mt-2">Courses currently active</p>
-                      </div>
-
-                      <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-                        <p className="text-sm text-gray-500 mb-2">Completed</p>
-                        <p className="text-3xl font-bold text-gray-900">7</p>
-                        <p className="text-sm text-gray-600 mt-2">Courses completed so far</p>
-                      </div>
-
-                      <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-                        <p className="text-sm text-gray-500 mb-2">Weekly Goal</p>
-                        <p className="text-3xl font-bold text-gray-900">68%</p>
-                        <p className="text-sm text-gray-600 mt-2">Progress toward this week&apos;s target</p>
-                      </div>
-                    </div>
+                  {/* Tabs */}
+                  <div className="flex justify-center gap-50 mb-10 text-sm font-medium text-gray-500">
+                    {["In Progress", "Saved", "Completed"].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`text-lg pb-2 transition ${
+                          activeTab === tab
+                            ? "text-indigo-600 border-b-2 border-indigo-600"
+                            : "hover:text-gray-900"
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
                   </div>
+
+                  {/* Title */}
+                  <h2 className="text-lg text-center font-semibold text-gray-700 mb-6">
+                    {activeTab}
+                  </h2>
+
+                  {/* Courses grid */}
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {courses.map((course, i) => (
+                      <CourseCard key={i} course={course} />
+                    ))}
+                  </div>
+
                 </div>
               </div>
+            </div>
             </section>
           </>
         ) : (
           <>
-            {/* Hero Section */}
             <section className="bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 pt-32 pb-40 min-h-screen flex items-center">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 <div className="text-center">
@@ -112,7 +199,6 @@ export default function Home() {
               </div>
             </section>
 
-            {/* Features Section */}
             <section id="why" className="py-24 bg-white">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h2 className="text-4xl font-bold text-center mb-16 text-gray-900">
@@ -120,7 +206,6 @@ export default function Home() {
                 </h2>
 
                 <div className="grid md:grid-cols-3 gap-8">
-                  {/* Track Progress */}
                   <div className="p-8 bg-purple-50 rounded-xl hover:shadow-lg transition">
                     <div className="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center mb-6 text-lg">
                       📊
@@ -134,7 +219,6 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {/* Skill Paths */}
                   <div className="p-8 bg-blue-50 rounded-xl hover:shadow-lg transition">
                     <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center mb-6 text-lg">
                       📚
@@ -148,7 +232,6 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {/* Fast Learning */}
                   <div className="p-8 bg-pink-50 rounded-xl hover:shadow-lg transition">
                     <div className="w-12 h-12 bg-pink-200 rounded-lg flex items-center justify-center mb-6 text-lg">
                       ⚡

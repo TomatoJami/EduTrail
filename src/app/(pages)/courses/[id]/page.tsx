@@ -163,9 +163,9 @@ export default function CourseDetailPage() {
 			<>
 				<Header />
 				<main className="flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
-					<div className="text-center">
-						<p className="text-slate-600">Loading course...</p>
-					</div>
+					<div className="flex justify-center items-center h-64">
+                    	<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                  	</div>
 				</main>
 				<Footer />
 			</>
