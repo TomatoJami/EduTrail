@@ -3,7 +3,7 @@ import multer from 'multer';
 import { uploadController } from '../controllers/uploadController';
 import { adminMiddleware } from '../middleware/authMiddleware';
 
-// Конфигурация multer для хранения в памяти
+// Multer memory storage configuration
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
@@ -11,7 +11,7 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB
   },
   fileFilter: (req, file, cb) => {
-    // Проверка MIME типа
+    // MIME type validation
     const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
@@ -24,10 +24,47 @@ const upload = multer({
 const router = Router();
 
 /**
- * POST /api/upload?folder=subjects
- * Загрузить картинку в Supabase Storage
- * Query параметры:
- * - folder: 'subjects' или 'courses' (по умолчанию 'subjects')
+ * @swagger
+ * /upload:
+ *   post:
+ *     tags:
+ *       - Upload
+ *     summary: Upload image to Supabase Storage (Admin only)
+ *     security:
+ *       - userId: []
+ *     parameters:
+ *       - in: query
+ *         name: folder
+ *         schema:
+ *           type: string
+ *           enum: [subjects, courses]
+ *         description: Folder for uploading image
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Image uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 url:
+ *                   type: string
+ *       400:
+ *         description: Error uploading file
+ *       403:
+ *         description: Insufficient permissions
  */
 router.post('/', adminMiddleware, upload.single('image'), (req, res) =>
   uploadController.uploadImage(req, res)

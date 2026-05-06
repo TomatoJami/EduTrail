@@ -22,6 +22,10 @@ import userQuestionRoutes from './routes/userQuestionRoutes';
 // Import middleware
 import { loggingMiddleware, errorHandler } from './middleware/authMiddleware';
 
+// Import Swagger
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
+
 // Import database
 import connectDB from './config/database';
 
@@ -40,6 +44,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(loggingMiddleware);
+
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
 app.use('/api/auth', userRoutes);
