@@ -1,0 +1,47 @@
+import mongoose, { Schema, Document, Model } from 'mongoose';
+
+export type CourseStatus = 'in_progress' | 'completed';
+
+export interface ICourseProgress extends Document {
+  user_id: mongoose.Types.ObjectId;
+  course_id: mongoose.Types.ObjectId;
+  status?: CourseStatus;  // опционально - только для учащихся/завершивших
+  is_bookmarked: boolean; // независимый флаг закладки
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const CourseProgressSchema = new Schema<ICourseProgress>(
+  {
+    user_id: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
+    course_id: {
+      type: Schema.Types.ObjectId,
+      ref: 'Course',
+      required: true,
+      index: true,
+    },
+    status: {
+      type: String,
+      enum: ['in_progress', 'completed'],
+      default: null,
+      index: true,
+    },
+    is_bookmarked: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+  },
+  { timestamps: true, versionKey: false }
+);
+
+CourseProgressSchema.index({ user_id: 1, course_id: 1 }, { unique: true });
+
+export const CourseProgress =
+  mongoose.models.CourseProgress ||
+  mongoose.model<ICourseProgress>('CourseProgress', CourseProgressSchema);

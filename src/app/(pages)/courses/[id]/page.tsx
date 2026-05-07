@@ -114,6 +114,9 @@ export default function CourseDetailPage() {
 	const [userProgress, setUserProgress] = useState<UserProgress>({ chapters: {}, questions: {} });
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [isBookmarked, setIsBookmarked] = useState(false);
+	const [courseProgress, setCourseProgress] = useState<any>(null);
 
 	useEffect(() => {
 		if (!courseId) return;
@@ -147,6 +150,18 @@ export default function CourseDetailPage() {
 				if (progressResponse.ok) {
 					const progressData = await progressResponse.json();
 					setUserProgress(progressData.data || { chapters: {}, questions: {} });
+				}
+
+				// Fetch course progress (CourseProgress model)
+				const courseProgressResponse = await fetch(`/api/progress/courses/${courseId}`, {
+					headers: {
+						'x-user-id': JSON.parse(storedUser)._id || JSON.parse(storedUser).id,
+					},
+				});
+				if (courseProgressResponse.ok) {
+					const courseProgressData = await courseProgressResponse.json();
+					setCourseProgress(courseProgressData.data || null);
+					setIsBookmarked(courseProgressData.data?.is_bookmarked || false);
 				}
 
 				setError(null);
@@ -187,8 +202,106 @@ export default function CourseDetailPage() {
 
 	
 
-	const goalsArray = Array.isArray(course.goals) ? course.goals : [];
-	const displayGoals = goalsArray.filter(g => g && g.trim());
+	const handleStartCourse = async () => {
+		try {
+			setIsLoading(true);
+			const storedUser = localStorage.getItem('user');
+
+			if (!storedUser) {
+				router.push('/login');
+				return;
+			}
+
+			const user = JSON.parse(storedUser);
+			const userId = user._id || user.id;
+
+			const response = await fetch(`/api/progress/courses/${courseId}/start`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-user-id': userId,
+				},
+			});
+
+			if (!response.ok) {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = 'Failed to start course';
+
+				if (contentType?.includes('application/json')) {
+					try {
+						const errorData = await response.json();
+						errorMessage = errorData.message || errorMessage;
+					} catch (e) {
+						errorMessage = `Server error: ${response.status}`;
+					}
+				} else {
+					errorMessage = `Server error: ${response.status} ${response.statusText}`;
+				}
+
+				throw new Error(errorMessage);
+			}
+
+			const data = await response.json();
+			console.log('Course started:', data);
+
+			// Update course progress state and redirect
+			setCourseProgress(data.data);
+			router.push(`/courses/${courseId}/learn`);
+		} catch (err) {
+			console.error('Error starting course:', err);
+			alert(err instanceof Error ? err.message : 'Failed to start course');
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleBookmark = async () => {
+		try {
+			const storedUser = localStorage.getItem('user');
+
+			if (!storedUser) {
+				router.push('/login');
+				return;
+			}
+
+			const user = JSON.parse(storedUser);
+			const userId = user._id || user.id;
+
+			const response = await fetch(`/api/progress/courses/${courseId}/bookmark`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-user-id': userId,
+				},
+			});
+
+			if (!response.ok) {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = 'Failed to bookmark course';
+
+				if (contentType?.includes('application/json')) {
+					try {
+						const errorData = await response.json();
+						errorMessage = errorData.message || errorMessage;
+					} catch (e) {
+						errorMessage = `Server error: ${response.status}`;
+					}
+				} else {
+					errorMessage = `Server error: ${response.status} ${response.statusText}`;
+				}
+
+				throw new Error(errorMessage);
+			}
+
+			const data = await response.json();
+			setCourseProgress(data.data);
+			setIsBookmarked(data.data?.is_bookmarked || false);
+			console.log('Bookmark toggled:', data);
+		} catch (err) {
+			console.error('Error bookmarking course:', err);
+			alert(err instanceof Error ? err.message : 'Failed to bookmark course');
+		}
+	};
 
 	// Calculate statistics
 	const totalChapters = modules.reduce((sum, mod) => sum + mod.chapters.length, 0);
@@ -218,10 +331,15 @@ export default function CourseDetailPage() {
 												<button
 													type="button"
 													aria-label="Bookmark course"
-													className="mt-1 rounded-full border border-white/15 bg-white/5 p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
+													onClick={handleBookmark}
+													className={`mt-1 rounded-full border transition p-2 ${
+														isBookmarked
+															? 'border-yellow-400 bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+															: 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+													}`}
 												>
-												<BookmarkIcon />
-											</button>
+													<BookmarkIcon />
+												</button>
 										</div>
 										<p className="mt-4 max-w-3xl text-sm leading-7 text-white/70 sm:text-[15px]">
 											{course.description}
@@ -239,7 +357,7 @@ export default function CourseDetailPage() {
                                                 <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Learning Goals</h2>
                                                 <div className="hidden h-px flex-1 bg-slate-200 sm:block" aria-hidden="true" />
                                             </div>
-                                            <div className="max-w-2xl">
+                                            {/* <div className="max-w-2xl">
                                                 {displayGoals.length > 0 ? (
                                                     <div className="space-y-3">
                                                         <div className="space-y-3 text-sm leading-6 text-slate-700">
@@ -254,7 +372,7 @@ export default function CourseDetailPage() {
                                                 ) : (
                                                     <p className="text-sm text-slate-500">Data not found</p>
                                                 )}
-                                            </div>
+                                            </div> */}
                                         </section>
 
                                         <section>
@@ -302,12 +420,22 @@ export default function CourseDetailPage() {
                                     </div>
 
                                     <div className="space-y-4">
-                                        <Link
-                                            href="/login"
-                                            className="block rounded-xl bg-indigo-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_12px_24px_rgba(79,70,229,0.28)] transition hover:bg-indigo-600"
-                                        >
-                                            Start Learning
-                                        </Link>
+										{courseProgress?.status === 'in_progress' ? (
+											<button
+												onClick={() => router.push(`/courses/${courseId}/learn`)}
+												className="block rounded-xl bg-emerald-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_12px_24px_rgba(16,185,129,0.28)] transition hover:bg-emerald-600"
+											>
+												Continue Learning
+											</button>
+										) : (
+											<button
+												onClick={handleStartCourse}
+												disabled={isLoading}
+												className="block rounded-xl bg-indigo-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_12px_24px_rgba(79,70,229,0.28)] transition hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+											>
+												{isLoading ? 'Starting...' : 'Start Learning'}
+											</button>
+										)}
 
                                         <div className="flex flex-wrap gap-2">
                                             <StatPill icon="folder" label={`${totalChapters} Lessons`} />

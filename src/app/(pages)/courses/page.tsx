@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
+import { CourseCard } from "@/components/CourseCard";
 import { Course, Subject } from "@/types";
 import { CourseSearch } from '@/components/common/CourseSearch';
 
@@ -16,9 +17,9 @@ export default function Courses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState("");
-  const [savedCourses, setSavedCourses] = useState<Set<string>>(new Set());
   const [displayedCoursesCount, setDisplayedCoursesCount] = useState(COURSES_PER_PAGE);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
 
@@ -33,6 +34,8 @@ export default function Courses() {
         }
 
         const userData = JSON.parse(storedUser);
+        setUserId(userData._id || userData.id || null);
+        
         // Fetch full user data with preferences
         const userResponse = await fetch(`/api/users/${userData.id || userData._id}`);
         const userDataFull = await userResponse.json();
@@ -59,16 +62,6 @@ export default function Courses() {
           setError(coursesData.message || "Failed to load courses");
         }
 
-        // Load saved courses from localStorage
-        const saved = localStorage.getItem("savedCourses");
-        if (saved) {
-          try {
-            setSavedCourses(new Set(JSON.parse(saved)));
-          } catch {
-            setSavedCourses(new Set());
-          }
-        }
-
         setIsInitialized(true);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load courses");
@@ -79,18 +72,6 @@ export default function Courses() {
     fetchData();
   }, [router]);
 
-  const toggleSaveCourse = (courseId: string | undefined) => {
-    if (!courseId) return;
-
-    const newSaved = new Set(savedCourses);
-    if (newSaved.has(courseId)) {
-      newSaved.delete(courseId);
-    } else {
-      newSaved.add(courseId);
-    }
-    setSavedCourses(newSaved);
-    localStorage.setItem("savedCourses", JSON.stringify(Array.from(newSaved)));
-  };
 
   // Get recommended courses based on user preferences
   const recommendedCourses = (() => {
@@ -143,84 +124,6 @@ export default function Courses() {
 			</main>
 		);
 	}
-
-  // Reusable course card component
-  const CourseCard = ({ course }: { course: Course }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
-      {/* Image Container */}
-      <div className="relative h-56 bg-white p-3 flex items-center justify-center">
-        {course.course_img ? (
-          <img
-            src={course.course_img}
-            alt={course.title}
-            className="max-w-full max-h-full object-contain"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <svg
-              className="w-20 h-20 text-slate-300"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
-            </svg>
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="p-4 flex flex-col">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            Course
-          </p>
-          <button
-            onClick={() => toggleSaveCourse(course._id)}
-            className="p-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-          >
-            <svg
-              className={`w-5 h-5 ${
-                savedCourses.has(course._id || "")
-                  ? "fill-indigo-600 text-indigo-600"
-                  : "text-slate-400"
-              }`}
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-            </svg>
-          </button>
-        </div>
-        <h3 className="text-base font-bold text-slate-900 mb-3 overflow-hidden break-words line-clamp-2">
-          <span className="truncate overflow-hidden whitespace-nowrap block">{course.title}</span>
-        </h3>
-        <div className="flex items-end justify-between gap-2 mt-auto">
-          <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
-            Ages {course.ageGroup}
-          </span>
-          <Link
-            href={`/courses/${course._id}`}
-            className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-semibold text-sm transition-colors"
-          >
-            Get Started
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -341,7 +244,11 @@ export default function Courses() {
                               {recommendedCourses.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                   {recommendedCourses.map((course) => (
-                                    <CourseCard key={course._id} course={course} />
+                                    <CourseCard 
+                                      key={course._id} 
+                                      course={course}
+                                      userId={userId || undefined}
+                                    />
                                   ))}
                                 </div>
                               ) : (
@@ -369,7 +276,11 @@ export default function Courses() {
                             <>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
                                 {displayedCourses.map((course) => (
-                                  <CourseCard key={course._id} course={course} />
+                                  <CourseCard 
+                                    key={course._id} 
+                                    course={course}
+                                    userId={userId || undefined}
+                                  />
                                 ))}
                               </div>
 

@@ -15,9 +15,7 @@ import uploadRoutes from './routes/uploadRoutes';
 import moduleRoutes from './routes/moduleRoutes';
 import chapterRoutes from './routes/chapterRoutes';
 import questionRoutes from './routes/questionRoutes';
-import userCourseRoutes from './routes/userCourseRoutes';
-import userChapterRoutes from './routes/userChapterRoutes';
-import userQuestionRoutes from './routes/userQuestionRoutes';
+import progressRoutes from './routes/progressRoutes';
 
 // Import middleware
 import { loggingMiddleware, errorHandler } from './middleware/authMiddleware';
@@ -51,15 +49,13 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Routes
 app.use('/api/auth', userRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/user-courses', userCourseRoutes);
-app.use('/api/user-chapters', userChapterRoutes);
-app.use('/api/user-questions', userQuestionRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/modules', moduleRoutes);
 app.use('/api/chapters', chapterRoutes);
 app.use('/api/questions', questionRoutes);
+app.use('/api/progress', progressRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
