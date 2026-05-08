@@ -7,44 +7,7 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
-
-interface Course {
-	_id: string;
-	title: string;
-	description: string;
-	goals: string[];
-	ageGroup: string;
-	course_img: string;
-	subject_id: string;
-}
-
-interface Question {
-	_id: string;
-	question: string;
-	options: string[];
-	correctAnswer: number;
-	explanation?: string;
-}
-
-interface Chapter {
-	_id: string;
-	title: string;
-	content: string;
-	order: number;
-}
-
-interface Module {
-	_id: string;
-	title: string;
-	order: number;
-	chapters: Chapter[];
-	questions: Question[];
-}
-
-interface UserProgress {
-	chapters: Record<string, boolean>;
-	questions: Record<string, boolean>;
-}
+import { Course, Question, Chapter, Module, UserProgress } from "@/types";
 
 const pageContainer = "mx-auto max-w-5xl px-4 sm:px-6 lg:px-8";
 

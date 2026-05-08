@@ -7,7 +7,7 @@ import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
 import { CourseCard } from "@/components/CourseCard";
-import { Course, Subject } from "@/types";
+import { Course, Subject, CourseProgress } from "@/types";
 import { CourseSearch } from '@/components/common/CourseSearch';
 
 const COURSES_PER_PAGE = 6;
@@ -19,9 +19,12 @@ export default function Courses() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [error, setError] = useState("");
   const [displayedCoursesCount, setDisplayedCoursesCount] = useState(COURSES_PER_PAGE);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [courseProgressMap, setCourseProgressMap] = useState<Record<string, CourseProgress>>({});
+  const [isProgressLoaded, setIsProgressLoaded] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,6 +74,63 @@ export default function Courses() {
 
     fetchData();
   }, [router]);
+
+  useEffect(() => {
+    const fetchAllCourseProgress = async () => {
+      if (!userId) {
+        setCourseProgressMap({});
+        setIsProgressLoaded(true);
+        return;
+      }
+
+      if (courses.length === 0) {
+        setIsProgressLoaded(true);
+        return;
+      }
+
+      try {
+        setIsProgressLoaded(false);
+
+        const progressMap: Record<string, CourseProgress> = {};
+
+        await Promise.all(
+          courses.map(async (course) => {
+            if (!course._id) return;
+
+            try {
+              const response = await fetch(
+                `/api/progress/courses/${course._id}`,
+                {
+                  headers: {
+                    "x-user-id": userId,
+                  },
+                }
+              );
+
+              if (response.ok) {
+                const data = await response.json();
+
+                if (data.data) {
+                  progressMap[course._id] = data.data;
+                }
+              }
+            } catch (error) {
+              console.error(
+                `Error fetching progress for course ${course._id}:`,
+                error
+              );
+            }
+          })
+        );
+
+        setCourseProgressMap(progressMap);
+      } finally {
+        setIsProgressLoaded(true);
+      }
+    };
+
+    fetchAllCourseProgress();
+  }, [userId, courses]);
 
 
   // Get recommended courses based on user preferences
@@ -211,7 +271,11 @@ export default function Courses() {
                         )}
 
                         {/* Recommended Section */}
-                        {displayedCourses.length > 0 && (
+                        {!isProgressLoaded ? (
+                          <div className="flex justify-center py-12">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                          </div>
+                        ) : displayedCourses.length > 0 ? (
                         <div className="mb-16">
                           <div className="flex items-center justify-between mb-2">
                             <h2 className="text-xl font-bold text-slate-900">
@@ -244,10 +308,15 @@ export default function Courses() {
                               {recommendedCourses.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                   {recommendedCourses.map((course) => (
-                                    <CourseCard 
-                                      key={course._id} 
+                                    <CourseCard
+                                      key={course._id}
                                       course={course}
                                       userId={userId || undefined}
+                                      courseProgress={
+                                        course._id
+                                          ? courseProgressMap[course._id]
+                                          : null
+                                      }
                                     />
                                   ))}
                                 </div>
@@ -261,7 +330,7 @@ export default function Courses() {
                             </>
                           )}
                         </div>
-                        )}
+                        ) : null}
 
                         {/* Browse All Section */}
                         <div>
@@ -276,10 +345,15 @@ export default function Courses() {
                             <>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
                                 {displayedCourses.map((course) => (
-                                  <CourseCard 
-                                    key={course._id} 
+                                  <CourseCard
+                                    key={course._id}
                                     course={course}
                                     userId={userId || undefined}
+                                    courseProgress={
+                                      course._id
+                                        ? courseProgressMap[course._id]
+                                        : null
+                                    }
                                   />
                                 ))}
                               </div>

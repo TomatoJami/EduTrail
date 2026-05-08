@@ -6,17 +6,12 @@ import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
 import { AccountSidebar } from '@/components/common/AccountSidebar';
 import { useAuth } from '@/hooks/useAuth';
-
-interface Subject {
-  _id: string;
-  name?: string;
-  subject_name?: string;
-}
+import { SubjectPreference } from '@/types';
 
 export default function PreferencesPage() {
   const { user, loadUser } = useAuth();
   const router = useRouter();
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<SubjectPreference[]>([]);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [ageGroup, setAgeGroup] = useState<'1-3' | '4-9' | '10-12' | ''>('');
   const [isInitialized, setIsInitialized] = useState(false);

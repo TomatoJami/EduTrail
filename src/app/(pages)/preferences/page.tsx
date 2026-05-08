@@ -4,23 +4,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface Subject {
-  _id: string;
-  name?: string;
-  subject_name?: string;
-}
-
-interface NewUserData {
-  id: string;
-  email: string;
-  name: string;
-}
+import { SubjectPreference, NewUserData } from '@/types';
 
 export default function PreferencesPage() {
   const router = useRouter();
   const [userData, setUserData] = useState<NewUserData | null>(null);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<SubjectPreference[]>([]);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [ageGroup, setAgeGroup] = useState<'1-3' | '4-9' | '10-12' | ''>('');
   const [loading, setLoading] = useState(true);

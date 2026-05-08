@@ -16,6 +16,7 @@ import moduleRoutes from './routes/moduleRoutes';
 import chapterRoutes from './routes/chapterRoutes';
 import questionRoutes from './routes/questionRoutes';
 import progressRoutes from './routes/progressRoutes';
+import feedbackRoutes from './routes/feedbackRoutes';
 
 // Import middleware
 import { loggingMiddleware, errorHandler } from './middleware/authMiddleware';
@@ -56,7 +57,7 @@ app.use('/api/modules', moduleRoutes);
 app.use('/api/chapters', chapterRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/progress', progressRoutes);
-
+app.use('/api/feedback', feedbackRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({
