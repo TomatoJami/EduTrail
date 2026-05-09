@@ -26,8 +26,6 @@ export interface SignupPayload extends AuthPayload {
   role?: 'student';
 }
 
-export type CourseAgeGroup = '1-3' | '4-9' | '10-12';
-
 export interface Subject {
   _id?: string;
   subject_name: string;
@@ -35,6 +33,8 @@ export interface Subject {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+export type CourseAgeGroup = '1-3' | '4-9' | '10-12';
 
 export interface Course {
   _id?: string;
@@ -112,4 +112,14 @@ export interface SubjectPreference {
   _id: string;
   name?: string;
   subject_name?: string;
+}
+
+export type FeedbackType = 'Error' | 'Wish';
+
+export interface Feedback {
+  id: string;
+  user_id: string;
+  text: string;
+  feedbackType: FeedbackType;
+  created_at: string;
 }

@@ -76,6 +76,11 @@ export function Header() {
     router.push("/account");
   };
 
+    const handleFeedbackClick = () => {
+    setIsMenuOpen(false);
+    router.push("/feedback");
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
       <div className="w-full px-4 sm:px-6 lg:px-8">
@@ -132,6 +137,7 @@ export function Header() {
                       <button
                         type="button"
                         role="menuitem"
+                        onClick={handleFeedbackClick}
                         className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
                       >
                         <span className="flex h-8 w-8 items-center justify-center text-gray-500">
