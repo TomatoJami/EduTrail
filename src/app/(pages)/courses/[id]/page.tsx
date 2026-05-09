@@ -297,7 +297,7 @@ export default function CourseDetailPage() {
 													onClick={handleBookmark}
 													className={`mt-1 rounded-full border transition p-2 ${
 														isBookmarked
-															? 'border-yellow-400 bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+															? 'border-indigo-600 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
 															: 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
 													}`}
 												>
@@ -386,7 +386,7 @@ export default function CourseDetailPage() {
 										{courseProgress?.status === 'in_progress' ? (
 											<button
 												onClick={() => router.push(`/courses/${courseId}/learn`)}
-												className="block rounded-xl bg-emerald-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_12px_24px_rgba(16,185,129,0.28)] transition hover:bg-emerald-600"
+												className="block rounded-xl bg-indigo-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_12px_24px_rgba(79,70,229,0.28)] transition hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
 											>
 												Continue Learning
 											</button>

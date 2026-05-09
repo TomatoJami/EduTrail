@@ -45,22 +45,22 @@ export function CourseCard({
     try {
       setIsLoading(true);
 
-      const response = await fetch(
-        `/api/progress/courses/${course._id}/start`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": userId || "",
-          },
-        }
-      );
+      // const response = await fetch(
+      //   `/api/progress/courses/${course._id}/start`,
+      //   {
+      //     method: "POST",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //       "x-user-id": userId || "",
+      //     },
+      //   }
+      // );
 
-      if (!response.ok) {
-        throw new Error("Failed to start course");
-      }
+      // if (!response.ok) {
+      //   throw new Error("Failed to start course");
+      // }
 
-      router.push(`/courses/${course._id}/learn`);
+      router.push(`/courses/${course._id}`);
     } catch (err) {
       console.error("Error starting course:", err);
       alert("Failed to start course");
@@ -148,7 +148,7 @@ export function CourseCard({
                 disabled={isBookmarkLoading}
                 className={`rounded-full p-1.5 transition ${
                   isBookmarked
-                    ? "text-blue-400 hover:text-blue-500"
+                    ? "text-indigo-600 hover:text-indigo-700"
                     : "text-slate-400 hover:text-slate-600"
                 }`}
               >
@@ -172,7 +172,7 @@ export function CourseCard({
               courseProgress.status === "in_progress" ? (
                 <button
                   onClick={handleContinueCourse}
-                  className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-semibold text-sm transition-colors"
+                  className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-semibold text-sm transition-colors disabled:opacity-50"
                 >
                   Continue
                 </button>
@@ -182,7 +182,7 @@ export function CourseCard({
                     e.preventDefault();
                     router.push(`/courses/${course._id}`);
                   }}
-                  className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-700 font-semibold text-sm transition-colors"
+                  className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-semibold text-sm transition-colors disabled:opacity-50"
                 >
                   View
                 </button>
