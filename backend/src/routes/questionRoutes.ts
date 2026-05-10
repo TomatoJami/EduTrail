@@ -106,4 +106,28 @@ router.put('/:id', adminMiddleware, (req, res) => questionController.updateQuest
  */
 router.delete('/:id', adminMiddleware, (req, res) => questionController.deleteQuestion(req, res));
 
+/**
+ * @swagger
+ * /questions/user/{userId}/modules/{moduleId}/questions:
+ *   get:
+ *     tags:
+ *       - Questions
+ *     summary: Get user questions progress for a module
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: moduleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User questions progress
+ */
+router.get('/user/:userId/modules/:moduleId/questions', (req, res) => questionController.getUserQuestionsProgress(req, res));
+
 export default router;

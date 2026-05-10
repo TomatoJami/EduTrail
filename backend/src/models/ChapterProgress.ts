@@ -1,12 +1,9 @@
-// backend/src/models/ChapterProgress.ts
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IChapterProgress extends Document {
   user_id: mongoose.Types.ObjectId;
   chapter_id: mongoose.Types.ObjectId;
   is_completed: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 const ChapterProgressSchema = new Schema<IChapterProgress>(
@@ -26,14 +23,19 @@ const ChapterProgressSchema = new Schema<IChapterProgress>(
     is_completed: {
       type: Boolean,
       default: false,
-      index: true,
     },
   },
-  { timestamps: true, versionKey: false }
+  { timestamps: true }
 );
 
-ChapterProgressSchema.index({ user_id: 1, chapter_id: 1 }, { unique: true });
+ChapterProgressSchema.index(
+  { user_id: 1, chapter_id: 1 },
+  { unique: true }
+);
 
 export const ChapterProgress =
   mongoose.models.ChapterProgress ||
-  mongoose.model<IChapterProgress>('ChapterProgress', ChapterProgressSchema);
+  mongoose.model<IChapterProgress>(
+    'ChapterProgress',
+    ChapterProgressSchema
+  );

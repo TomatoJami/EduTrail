@@ -54,9 +54,11 @@ router.get('/:id', (req, res) => chapterController.getChapterById(req, res));
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               title:
  *                 type: string
- *               moduleId:
+ *               content:
+ *                type: string
+ *               module_id:
  *                 type: string
  *     responses:
  *       201:
@@ -105,5 +107,29 @@ router.put('/:id', adminMiddleware, (req, res) => chapterController.updateChapte
  *         description: Chapter deleted
  */
 router.delete('/:id', adminMiddleware, (req, res) => chapterController.deleteChapter(req, res));
+
+/**
+ * @swagger
+ * /chapters/user/{userId}/modules/{moduleId}/chapters:
+ *   get:
+ *     tags:
+ *       - Chapters
+ *     summary: Get user chapters progress for a module
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: moduleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User chapters progress
+ */
+router.get('/user/:userId/modules/:moduleId/chapters', (req, res) => chapterController.getUserChaptersProgress(req, res));
 
 export default router;

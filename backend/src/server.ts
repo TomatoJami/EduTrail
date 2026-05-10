@@ -58,6 +58,11 @@ app.use('/api/chapters', chapterRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/feedback', feedbackRoutes);
+
+// User progress endpoints
+app.use('/api/user-chapters', chapterRoutes);
+app.use('/api/user-questions', questionRoutes);
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({

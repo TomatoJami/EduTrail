@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { chapterService, ChapterPayload } from '../services/chapterService';
+import { Chapter } from '../models/Chapter';
+import { ChapterProgress } from '../models/ChapterProgress';
 import { ApiResponse } from '../types';
 
 export class ChapterController {
@@ -180,6 +182,49 @@ export class ChapterController {
             res.status(500).json({
                 success: false,
                 message: 'Failed to delete chapter',
+                error: error instanceof Error ? error.message : String(error),
+            } as ApiResponse);
+        }
+    }
+
+    async getUserChaptersProgress(req: Request, res: Response): Promise<void> {
+        try {
+            const { userId, moduleId } = req.params;
+
+            console.log(`[getUserChaptersProgress] START - userId: ${userId}, moduleId: ${moduleId}`);
+
+            if (!userId || !moduleId) {
+                res.status(400).json({
+                    success: false,
+                    message: 'userId and moduleId are required',
+                } as ApiResponse);
+                return;
+            }
+
+            // Get all chapters for this module
+            const chapters = await Chapter.find({ module_id: new mongoose.Types.ObjectId(moduleId) });
+            console.log(`[getUserChaptersProgress] Found chapters: ${chapters.length}`);
+
+            const chapterIds = chapters.map(ch => ch._id);
+
+            // Get progress for all these chapters
+            const progress = await ChapterProgress.find({
+                user_id: userId,
+                chapter_id: { $in: chapterIds },
+            });
+
+            console.log(`[getUserChaptersProgress] Found progress records: ${progress.length}`, progress.map(p => ({ chapter_id: String(p.chapter_id), is_completed: p.is_completed })));
+
+            res.status(200).json({
+                success: true,
+                message: 'User chapters progress fetched successfully',
+                data: progress,
+            } as ApiResponse);
+        } catch (error) {
+            console.error(`[getUserChaptersProgress] ERROR:`, error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to fetch user chapters progress',
                 error: error instanceof Error ? error.message : String(error),
             } as ApiResponse);
         }

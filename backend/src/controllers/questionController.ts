@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { questionService, QuestionPayload } from '../services/questionService';
+import { Question } from '../models/Question';
+import { QuestionProgress } from '../models/QuestionProgress';
 import { ApiResponse } from '../types';
 
 export class QuestionController {
@@ -184,6 +186,49 @@ export class QuestionController {
             res.status(500).json({
                 success: false,
                 message: 'Failed to delete question',
+                error: error instanceof Error ? error.message : String(error),
+            } as ApiResponse);
+        }
+    }
+
+    async getUserQuestionsProgress(req: Request, res: Response): Promise<void> {
+        try {
+            const { userId, moduleId } = req.params;
+
+            console.log(`[getUserQuestionsProgress] START - userId: ${userId}, moduleId: ${moduleId}`);
+
+            if (!userId || !moduleId) {
+                res.status(400).json({
+                    success: false,
+                    message: 'userId and moduleId are required',
+                } as ApiResponse);
+                return;
+            }
+
+            // Get all questions for this module
+            const questions = await Question.find({ module_id: new mongoose.Types.ObjectId(moduleId) });
+            console.log(`[getUserQuestionsProgress] Found questions: ${questions.length}`);
+
+            const questionIds = questions.map(q => q._id);
+
+            // Get progress for all these questions
+            const progress = await QuestionProgress.find({
+                user_id: userId,
+                question_id: { $in: questionIds },
+            });
+
+            console.log(`[getUserQuestionsProgress] Found progress records: ${progress.length}`, progress.map(p => ({ question_id: String(p.question_id), status: p.status })));
+
+            res.status(200).json({
+                success: true,
+                message: 'User questions progress fetched successfully',
+                data: progress,
+            } as ApiResponse);
+        } catch (error) {
+            console.error(`[getUserQuestionsProgress] ERROR:`, error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to fetch user questions progress',
                 error: error instanceof Error ? error.message : String(error),
             } as ApiResponse);
         }

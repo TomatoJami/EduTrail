@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { CourseProgress } from '../models/CourseProgress';
 import { ChapterProgress } from '../models/ChapterProgress';
 import { QuestionProgress } from '../models/QuestionProgress';
+import { Module } from '../models/Module';
+import { Chapter } from '../models/Chapter';
 import { ApiResponse } from '../types';
 
 export class ProgressController {
@@ -40,40 +42,100 @@ export class ProgressController {
   async getCourseProgress(req: Request, res: Response): Promise<void> {
     try {
       const { courseId } = req.params;
-      const userId = req.headers['x-user-id'] as string;
+      const userId = req.headers["x-user-id"] as string;
+
+      console.log(`[getCourseProgress] START - userId: ${userId}, courseId: ${courseId}`);
 
       if (!userId || !courseId) {
         res.status(400).json({
           success: false,
-          message: 'User ID and Course ID are required',
-        } as ApiResponse);
+          message: "User ID and Course ID are required",
+        });
+        return;
+      }
+
+      let courseObjectId: mongoose.Types.ObjectId;
+      try {
+        courseObjectId = new mongoose.Types.ObjectId(courseId);
+      } catch (e) {
+        console.error(`[getCourseProgress] Invalid courseId format:`, courseId);
+        res.status(400).json({
+          success: false,
+          message: "Invalid Course ID format",
+        });
         return;
       }
 
       const courseProgress = await CourseProgress.findOne({
         user_id: userId,
-        course_id: courseId,
-      }).populate('course_id');
+        course_id: courseObjectId,
+      }).populate("course_id");
 
-      if (!courseProgress) {
-        res.status(404).json({
-          success: false,
-          message: 'Course progress not found',
-        } as ApiResponse);
-        return;
+      console.log(`[getCourseProgress] courseProgress:`, courseProgress);
+
+      // Get all modules for this course
+      const modules = await Module.find({ course_id: courseObjectId });
+      console.log(`[getCourseProgress] Found modules for course: ${modules.length}`, modules.map(m => ({ _id: String(m._id), title: m.title })));
+
+      const moduleIds = modules.map((m: any) => new mongoose.Types.ObjectId(String(m._id)));
+
+      // Get all chapters for these modules
+      const courseChapters = await Chapter.find({ module_id: { $in: moduleIds } });
+      console.log(`[getCourseProgress] Found chapters for modules: ${courseChapters.length}`, courseChapters.map(c => ({ _id: String(c._id), title: c.title, module_id: String(c.module_id) })));
+
+      const chapterIds = courseChapters.map((ch: any) => new mongoose.Types.ObjectId(String(ch._id)));
+
+      // Get chapter progress only for chapters in this course
+      const chapters = await ChapterProgress.find({
+        user_id: userId,
+        chapter_id: { $in: chapterIds },
+      });
+
+      console.log(`[getCourseProgress] Found chapter progress for user: ${chapters.length}`, chapters.map(c => ({ chapter_id: String(c.chapter_id), is_completed: c.is_completed })));
+
+      // Get question progress only for questions in this course
+      const questions = await QuestionProgress.find({
+        user_id: userId,
+      });
+
+      const chaptersMap: Record<string, boolean> = {};
+
+      for (const ch of chapters) {
+        chaptersMap[String(ch.chapter_id)] = Boolean(ch.is_completed);
       }
+
+      const questionsMap: Record<string, string> = {};
+
+
+      for (const q of questions) {
+        const questionId =
+          q.question_id instanceof mongoose.Types.ObjectId
+            ? q.question_id.toString()
+            : String(q.question_id);
+
+        questionsMap[questionId] = q.status;
+      }
+
+      console.log(`[getCourseProgress] Final chaptersMap:`, chaptersMap);
+      console.log(`[getCourseProgress] Final questionsMap:`, questionsMap);
 
       res.status(200).json({
         success: true,
-        message: 'Course progress fetched successfully',
-        data: courseProgress,
-      } as ApiResponse);
+        message: "Course progress fetched successfully",
+        data: {
+          ...(courseProgress ? courseProgress.toObject() : {}),
+          chapters: chaptersMap,
+          questions: questionsMap,
+        },
+      });
+
     } catch (error) {
+      console.error(`[getCourseProgress] ERROR:`, error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch course progress',
+        message: "Failed to fetch course progress",
         error: error instanceof Error ? error.message : String(error),
-      } as ApiResponse);
+      });
     }
   }
 
@@ -248,39 +310,58 @@ export class ProgressController {
       const { is_completed } = req.body;
       const userId = req.headers['x-user-id'] as string;
 
+      console.log(`[UpdateProgress] User: ${userId}, Chapter: ${chapterId}, Completed: ${is_completed}`);
+
       if (!userId || !chapterId) {
         res.status(400).json({
           success: false,
           message: 'User ID and Chapter ID are required',
-        } as ApiResponse);
+        });
         return;
       }
 
       if (typeof is_completed !== 'boolean') {
         res.status(400).json({
           success: false,
-          message: 'is_completed must be a boolean',
-        } as ApiResponse);
+          message: 'is_completed must be boolean',
+        });
         return;
       }
 
+      const chapterObjectId = new mongoose.Types.ObjectId(chapterId);
+
       const chapterProgress = await ChapterProgress.findOneAndUpdate(
-        { user_id: userId, chapter_id: chapterId },
-        { is_completed },
-        { new: true, upsert: true }
-      ).populate('chapter_id');
+        {
+          user_id: userId,
+          chapter_id: chapterObjectId,
+        },
+        {
+          user_id: userId,
+          chapter_id: chapterObjectId,
+          is_completed,
+        },
+        {
+          new: true,
+          upsert: true,
+          setDefaultsOnInsert: true,
+        }
+      );
+
+      console.log(`[UpdateProgress] Saved:`, chapterProgress);
 
       res.status(200).json({
         success: true,
         message: 'Chapter progress updated successfully',
         data: chapterProgress,
-      } as ApiResponse);
+      });
+
     } catch (error) {
+      console.error(`[UpdateProgress] Error:`, error);
       res.status(500).json({
         success: false,
         message: 'Failed to update chapter progress',
         error: error instanceof Error ? error.message : String(error),
-      } as ApiResponse);
+      });
     }
   }
 
@@ -299,7 +380,7 @@ export class ProgressController {
 
       const chapterProgress = await ChapterProgress.findOne({
         user_id: userId,
-        chapter_id: chapterId,
+        chapter_id: new mongoose.Types.ObjectId(chapterId),
       }).populate('chapter_id');
 
       if (!chapterProgress) {

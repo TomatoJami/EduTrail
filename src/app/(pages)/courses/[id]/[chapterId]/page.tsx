@@ -96,8 +96,6 @@ export default function ChapterPage() {
 
   const [openModules, setOpenModules] = useState<Record<string, boolean>>({});
 
-  const [isChapterCompleted, setIsChapterCompleted] = useState(false);
-
   useEffect(() => {
     if (!courseId) return;
 
@@ -110,6 +108,7 @@ export default function ChapterPage() {
           router.push("/login");
           return;
         }
+        
 
         // Course
         const courseRes = await fetch(`/api/courses/${courseId}`);
@@ -131,30 +130,73 @@ export default function ChapterPage() {
         });
         setOpenModules(initialOpen);
 
+        const user = JSON.parse(storedUser);
+
         // Progress
-        const progressRes = await fetch(`/api/courses/${courseId}/progress`);
+        const progressRes = await fetch(`/api/courses/${courseId}/progress`, {
+          headers: {
+            "x-user-id": user._id || user.id || "",
+          },
+        });
 
         if (progressRes.ok) {
-            const progressData = await progressRes.json();
+          const progressData = await progressRes.json();
+          console.log("===== FETCH PROGRESS =====");
+          console.log("userId:", user._id || user.id);
+          console.log("courseId:", courseId);
 
-            const chaptersMap: Record<string, boolean> = {};
+          const chaptersMap: Record<string, boolean> = {};
+          const questionsMap: Record<string, boolean> = {};
 
-            const chapters = progressData.data?.chapters;
+          const progress = progressData.data || {};
 
-            if (Array.isArray(chapters)) {
-                for (const item of chapters) {
-                    chaptersMap[item.chapter_id] = item.is_completed;
-                }
-            } else if (chapters && typeof chapters === "object") {
-                for (const [key, value] of Object.entries(chapters)) {
-                    chaptersMap[key] = Boolean(value);
-                }
+
+          // Handle both possible formats:
+          // 1. { "chapterId": true }
+          // 2. { "chapterId": { is_completed: true } }
+
+          if (progress.chapters && typeof progress.chapters === "object") {
+            for (const [id, value] of Object.entries(progress.chapters)) {
+              if (typeof value === "boolean") {
+                chaptersMap[id] = value;
+              } else if (
+                value &&
+                typeof value === "object" &&
+                "is_completed" in value
+              ) {
+                chaptersMap[id] = Boolean(
+                  (value as { is_completed: boolean }).is_completed
+                );
+              }
             }
+          }
 
-            setUserProgress({
-                chapters: chaptersMap,
-                questions: {},
-            });
+          if (progress.questions && typeof progress.questions === "object") {
+            for (const [id, value] of Object.entries(progress.questions)) {
+              if (typeof value === "boolean") {
+                questionsMap[id] = value;
+              } else if (
+                value &&
+                typeof value === "object" &&
+                "is_completed" in value
+              ) {
+                questionsMap[id] = Boolean(
+                  (value as { is_completed: boolean }).is_completed
+                );
+              }
+            }
+          }
+
+          console.log("normalized chaptersMap:", chaptersMap);
+          console.log(
+            "is current chapter completed:",
+            !!chaptersMap[String(chapterId)]
+          );
+
+          setUserProgress({
+            chapters: chaptersMap,
+            questions: questionsMap,
+          });
         }
 
             setError(null);
@@ -170,52 +212,58 @@ export default function ChapterPage() {
         fetchData();
     }, [courseId, router]);
 
-    useEffect(() => {
-        if (!chapterId) return;
-        setIsChapterCompleted(!!userProgress.chapters[chapterId]);
-    }, [chapterId, userProgress.chapters]);
+    const handleNextClick = async () => {
+      const chapterKey = String(chapterId);
+      const isCompleted = !!userProgress.chapters[chapterKey];
 
-  const toggleChapterComplete = () => {
-        setIsChapterCompleted((prev) => !prev);
-  };
+      if (!currentItem) return;
 
-  const handleNextClick = async () => {
-    if (currentItem?.type === "chapter") {
-        const alreadySaved = !!userProgress.chapters[chapterId];
+      // save only if not saved yet
+      if (currentItem?.type === "chapter" && !isCompleted) {
+        try {
+          const storedUser = localStorage.getItem("user");
+          const user = storedUser ? JSON.parse(storedUser) : null;
+          const userId = user?._id || user?.id || "";
 
-        if (isChapterCompleted && !alreadySaved) {
-            try {
-                const storedUser = localStorage.getItem("user");
-                const user = storedUser ? JSON.parse(storedUser) : null;
+          console.log("===== SAVE PROGRESS =====");
+          console.log("userId:", userId);
+          console.log("chapterId:", chapterId);
+          console.log("isCompleted:", isCompleted);
 
-                await fetch(`/api/progress/chapters/${chapterId}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-user-id": user?._id || user?.id || "",
-                },
-                body: JSON.stringify({
-                    is_completed: true,
-                }),
-                });
+          const response = await fetch(`/api/progress/chapters/${chapterId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "x-user-id": userId,
+            },
+            body: JSON.stringify({
+              is_completed: true,
+            }),
+          });
 
-                // Обновляем локальный progress
-                setUserProgress((prev) => ({
-                ...prev,
-                chapters: {
-                    ...prev.chapters,
-                    [chapterId]: true,
-                },
-                }));
-            } catch (error) {
-                console.error("Failed to save chapter progress:", error);
-            }
+          if (!response.ok) {
+            throw new Error(`Failed to save progress: ${response.statusText}`);
+          }
+
+          const result = await response.json();
+          console.log("Chapter progress saved:", result);
+
+          setUserProgress((prev) => ({
+            ...prev,
+            chapters: {
+              ...prev.chapters,
+              [chapterKey]: true
+            },
+          }));
+        } catch (e) {
+          console.error("Error saving chapter progress:", e);
+          setError(e instanceof Error ? e.message : "Failed to save progress");
         }
-    }
+      }
 
-    if (nextItem) {
+      if (nextItem) {
         router.push(`/courses/${courseId}/${nextItem.id}`);
-    }
+      }
     };
 
   // Flat navigation list
@@ -378,7 +426,8 @@ export default function ChapterPage() {
                           {/* Chapters */}
                           {module.chapters.map((chapter) => {
                             const isActive = chapter._id === chapterId;
-                            const isDone = !!userProgress.chapters[chapter._id];
+                            const chapterKey = String(chapter._id);
+                            const isDone = Boolean(userProgress.chapters?.[chapterKey]);
 
                             return (
                             <Link
@@ -486,17 +535,17 @@ export default function ChapterPage() {
 
                   <div className="flex items-center gap-3">
                     {currentItem?.type === "chapter" && (
-                        <button
+                      <button
                         type="button"
-                        onClick={toggleChapterComplete}
+                        onClick={handleNextClick}
                         className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                            isChapterCompleted
+                          !!userProgress.chapters[String(chapterId)]
                             ? "bg-emerald-600 text-white"
                             : "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                         }`}
-                        >
-                        {isChapterCompleted ? "✓ Completed" : "Complete"}
-                        </button>
+                      >
+                        {!!userProgress.chapters[String(chapterId)] ? "✓ Completed" : "Complete"}
+                      </button>
                     )}
 
                     {nextItem && (
