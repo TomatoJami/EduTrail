@@ -201,24 +201,36 @@ export class ChapterController {
                 return;
             }
 
+            // Convert to ObjectId
+            const userObjectId = new mongoose.Types.ObjectId(userId);
+            const moduleObjectId = new mongoose.Types.ObjectId(moduleId);
+
             // Get all chapters for this module
-            const chapters = await Chapter.find({ module_id: new mongoose.Types.ObjectId(moduleId) });
+            const chapters = await Chapter.find({ module_id: moduleObjectId });
             console.log(`[getUserChaptersProgress] Found chapters: ${chapters.length}`);
 
             const chapterIds = chapters.map(ch => ch._id);
 
             // Get progress for all these chapters
             const progress = await ChapterProgress.find({
-                user_id: userId,
+                user_id: userObjectId,
                 chapter_id: { $in: chapterIds },
             });
 
             console.log(`[getUserChaptersProgress] Found progress records: ${progress.length}`, progress.map(p => ({ chapter_id: String(p.chapter_id), is_completed: p.is_completed })));
 
+            // Convert ObjectIds to strings for JSON response
+            const progressWithStringIds = progress.map(p => ({
+              _id: p._id.toString(),
+              user_id: p.user_id.toString(),
+              chapter_id: p.chapter_id.toString(),
+              is_completed: p.is_completed,
+            }));
+
             res.status(200).json({
                 success: true,
                 message: 'User chapters progress fetched successfully',
-                data: progress,
+                data: progressWithStringIds,
             } as ApiResponse);
         } catch (error) {
             console.error(`[getUserChaptersProgress] ERROR:`, error);

@@ -56,8 +56,14 @@ router.get('/:id', (req, res) => questionController.getQuestionById(req, res));
  *             properties:
  *               question:
  *                 type: string
- *               chapterId:
+ *               correctAnswer:
+ *                 type: integer
+ *               module_id:
  *                 type: string
+ *               options:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *     responses:
  *       201:
  *         description: Question created

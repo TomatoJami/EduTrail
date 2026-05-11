@@ -55,19 +55,21 @@ export class ProgressController {
       }
 
       let courseObjectId: mongoose.Types.ObjectId;
+      let userObjectId: mongoose.Types.ObjectId;
       try {
         courseObjectId = new mongoose.Types.ObjectId(courseId);
+        userObjectId = new mongoose.Types.ObjectId(userId);
       } catch (e) {
-        console.error(`[getCourseProgress] Invalid courseId format:`, courseId);
+        console.error(`[getCourseProgress] Invalid ID format:`, courseId, userId);
         res.status(400).json({
           success: false,
-          message: "Invalid Course ID format",
+          message: "Invalid ID format",
         });
         return;
       }
 
       const courseProgress = await CourseProgress.findOne({
-        user_id: userId,
+        user_id: userObjectId,
         course_id: courseObjectId,
       }).populate("course_id");
 
@@ -87,7 +89,7 @@ export class ProgressController {
 
       // Get chapter progress only for chapters in this course
       const chapters = await ChapterProgress.find({
-        user_id: userId,
+        user_id: userObjectId,
         chapter_id: { $in: chapterIds },
       });
 
@@ -119,15 +121,22 @@ export class ProgressController {
       console.log(`[getCourseProgress] Final chaptersMap:`, chaptersMap);
       console.log(`[getCourseProgress] Final questionsMap:`, questionsMap);
 
-      res.status(200).json({
+      // Build response with both progress data and courseProgress metadata
+      const responseData = {
         success: true,
         message: "Course progress fetched successfully",
         data: {
+          // Include courseProgress metadata (status, is_bookmarked, etc)
           ...(courseProgress ? courseProgress.toObject() : {}),
+          // Override/add chapters and questions from current calculation
           chapters: chaptersMap,
           questions: questionsMap,
         },
-      });
+      };
+
+      console.log(`[getCourseProgress] RESPONSE DATA:`, JSON.stringify(responseData, null, 2));
+
+      res.status(200).json(responseData);
 
     } catch (error) {
       console.error(`[getCourseProgress] ERROR:`, error);
@@ -329,14 +338,15 @@ export class ProgressController {
       }
 
       const chapterObjectId = new mongoose.Types.ObjectId(chapterId);
+      const userObjectId = new mongoose.Types.ObjectId(userId);
 
       const chapterProgress = await ChapterProgress.findOneAndUpdate(
         {
-          user_id: userId,
+          user_id: userObjectId,
           chapter_id: chapterObjectId,
         },
         {
-          user_id: userId,
+          user_id: userObjectId,
           chapter_id: chapterObjectId,
           is_completed,
         },

@@ -205,24 +205,36 @@ export class QuestionController {
                 return;
             }
 
+            // Convert to ObjectId
+            const userObjectId = new mongoose.Types.ObjectId(userId);
+            const moduleObjectId = new mongoose.Types.ObjectId(moduleId);
+
             // Get all questions for this module
-            const questions = await Question.find({ module_id: new mongoose.Types.ObjectId(moduleId) });
+            const questions = await Question.find({ module_id: moduleObjectId });
             console.log(`[getUserQuestionsProgress] Found questions: ${questions.length}`);
 
             const questionIds = questions.map(q => q._id);
 
             // Get progress for all these questions
             const progress = await QuestionProgress.find({
-                user_id: userId,
+                user_id: userObjectId,
                 question_id: { $in: questionIds },
             });
 
             console.log(`[getUserQuestionsProgress] Found progress records: ${progress.length}`, progress.map(p => ({ question_id: String(p.question_id), status: p.status })));
 
+            // Convert ObjectIds to strings for JSON response
+            const progressWithStringIds = progress.map(p => ({
+              _id: p._id.toString(),
+              user_id: p.user_id.toString(),
+              question_id: p.question_id.toString(),
+              status: p.status,
+            }));
+
             res.status(200).json({
                 success: true,
                 message: 'User questions progress fetched successfully',
-                data: progress,
+                data: progressWithStringIds,
             } as ApiResponse);
         } catch (error) {
             console.error(`[getUserQuestionsProgress] ERROR:`, error);

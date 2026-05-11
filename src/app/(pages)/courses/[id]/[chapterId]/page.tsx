@@ -20,9 +20,7 @@ type NavItem = {
 function CheckIcon({ done }: { done: boolean }) {
   if (done) {
     return (
-      <span className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white text-[10px]">
-        ✓
-      </span>
+      <span className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white text-[10px]"></span>
     );
   }
 
@@ -62,21 +60,6 @@ function FolderIcon() {
   );
 }
 
-function QuizIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    >
-      <path d="M7 4.5h10A2.5 2.5 0 0 1 19.5 7v10A2.5 2.5 0 0 1 17 19.5H7A2.5 2.5 0 0 1 4.5 17V7A2.5 2.5 0 0 1 7 4.5Z" />
-      <path d="M9 10.2h6M9 13.1h4.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export default function ChapterPage() {
   const params = useParams();
   const router = useRouter();
@@ -99,6 +82,9 @@ export default function ChapterPage() {
   useEffect(() => {
     if (!courseId) return;
 
+    // Create abort controller for this request
+    const abortController = new AbortController();
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -111,24 +97,28 @@ export default function ChapterPage() {
         
 
         // Course
-        const courseRes = await fetch(`/api/courses/${courseId}`);
+        const courseRes = await fetch(`/api/courses/${courseId}`, {
+          signal: abortController.signal,
+        });
         if (!courseRes.ok) throw new Error("Failed to fetch course");
         const courseData = await courseRes.json();
-        setCourse(courseData.data || courseData);
+        if (!abortController.signal.aborted) setCourse(courseData.data || courseData);
 
         // Modules + chapters + questions
-        const contentRes = await fetch(`/api/courses/${courseId}/content`);
+        const contentRes = await fetch(`/api/courses/${courseId}/content`, {
+          signal: abortController.signal,
+        });
         if (!contentRes.ok) throw new Error("Failed to fetch content");
         const contentData = await contentRes.json();
         const fetchedModules: Module[] = contentData.data || [];
-        setModules(fetchedModules);
+        if (!abortController.signal.aborted) setModules(fetchedModules);
 
         // Open all modules by default
         const initialOpen: Record<string, boolean> = {};
         fetchedModules.forEach((m) => {
             initialOpen[m._id] = true;
         });
-        setOpenModules(initialOpen);
+        if (!abortController.signal.aborted) setOpenModules(initialOpen);
 
         const user = JSON.parse(storedUser);
 
@@ -137,19 +127,16 @@ export default function ChapterPage() {
           headers: {
             "x-user-id": user._id || user.id || "",
           },
+          signal: abortController.signal,
         });
 
         if (progressRes.ok) {
           const progressData = await progressRes.json();
-          console.log("===== FETCH PROGRESS =====");
-          console.log("userId:", user._id || user.id);
-          console.log("courseId:", courseId);
 
           const chaptersMap: Record<string, boolean> = {};
           const questionsMap: Record<string, boolean> = {};
 
           const progress = progressData.data || {};
-
 
           // Handle both possible formats:
           // 1. { "chapterId": true }
@@ -187,29 +174,40 @@ export default function ChapterPage() {
             }
           }
 
-          console.log("normalized chaptersMap:", chaptersMap);
-          console.log(
-            "is current chapter completed:",
-            !!chaptersMap[String(chapterId)]
-          );
-
-          setUserProgress({
-            chapters: chaptersMap,
-            questions: questionsMap,
-          });
+          // Only update state if request wasn't aborted
+          if (!abortController.signal.aborted) {
+            setUserProgress({
+              chapters: chaptersMap,
+              questions: questionsMap,
+            });
+          }
         }
 
-            setError(null);
+        if (!abortController.signal.aborted) {
+          setError(null);
+        }
         } catch (err) {
+            // Don't show error if request was aborted
+            if (err instanceof Error && err.name === 'AbortError') {
+              console.log("Request was aborted, skipping error");
+              return;
+            }
             setError(
             err instanceof Error ? err.message : "An unexpected error occurred"
             );
         } finally {
-            setLoading(false);
+            if (!abortController.signal.aborted) {
+              setLoading(false);
+            }
         }
         };
 
         fetchData();
+
+        // Cleanup: Abort fetch if component unmounts or dependencies change
+        return () => {
+          abortController.abort();
+        };
     }, [courseId, router]);
 
     const handleNextClick = async () => {
@@ -224,11 +222,6 @@ export default function ChapterPage() {
           const storedUser = localStorage.getItem("user");
           const user = storedUser ? JSON.parse(storedUser) : null;
           const userId = user?._id || user?.id || "";
-
-          console.log("===== SAVE PROGRESS =====");
-          console.log("userId:", userId);
-          console.log("chapterId:", chapterId);
-          console.log("isCompleted:", isCompleted);
 
           const response = await fetch(`/api/progress/chapters/${chapterId}`, {
             method: "PUT",
@@ -246,7 +239,7 @@ export default function ChapterPage() {
           }
 
           const result = await response.json();
-          console.log("Chapter progress saved:", result);
+          console.log("[Chapter Progress] Saved chapter:", chapterId);
 
           setUserProgress((prev) => ({
             ...prev,
@@ -256,7 +249,7 @@ export default function ChapterPage() {
             },
           }));
         } catch (e) {
-          console.error("Error saving chapter progress:", e);
+          console.error("[Chapter Progress] Error:", e);
           setError(e instanceof Error ? e.message : "Failed to save progress");
         }
       }
@@ -461,7 +454,7 @@ export default function ChapterPage() {
                                 )}
                               />
                               <span className="flex items-center gap-2">
-                                <QuizIcon />
+                                
                                 Quiz: {module.title}
                               </span>
                             </Link>

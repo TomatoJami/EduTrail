@@ -35,74 +35,44 @@ export async function GET(
       );
     }
 
-    // Fetch modules for this course
-    const modulesResponse = await fetch(`${API_URL}/modules?course_id=${courseId}`, {
+    console.log(`[Course Progress] GET - courseId: ${courseId}, userId: ${userId}`);
+
+    // Call backend endpoint that already does all the work
+    const response = await fetch(`${API_URL}/progress/courses/${courseId}`, {
       method: 'GET',
       headers,
     });
 
-    if (!modulesResponse.ok) {
-      throw new Error('Failed to fetch modules');
+    if (!response.ok) {
+      console.error(`[Course Progress] Backend returned ${response.status}`);
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Failed to fetch course progress',
+          data: { chapters: {}, questions: {} },
+        },
+        { status: 200 }
+      );
     }
 
-    const modulesData = await modulesResponse.json();
-    const modules = modulesData.data || [];
+    const backendData = await response.json();
+    console.log(`[Course Progress] Backend response:`, JSON.stringify(backendData, null, 2));
 
-    const chapterProgressMap: Record<string, boolean> = {};
-    const questionProgressMap: Record<string, boolean> = {};
+    // Extract the full data object from backend (includes chapters, questions, status, is_bookmarked, etc)
+    const fullData = backendData.data || {};
 
-    // Fetch progress for all chapters and questions in this course
-    for (const module of modules) {
-      // Get chapter progress for this module
-      try {
-        const chapterProgressResponse = await fetch(
-          `${API_URL}/user-chapters/${userId}/modules/${module._id}/chapters`,
-          {
-            method: 'GET',
-            headers,
-          }
-        );
+    // Extract just chapters and questions for the frontend component
+    const chapters = fullData.chapters || {};
+    const questions = fullData.questions || {};
 
-        if (chapterProgressResponse.ok) {
-          const chapterProgressData = await chapterProgressResponse.json();
-          const completedChapters = chapterProgressData.data || [];
-
-          for (const completed of completedChapters) {
-            chapterProgressMap[completed.chapter_id] = completed.is_completed;
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching chapter progress:', err);
-      }
-
-      // Get question progress for this module
-      try {
-        const questionProgressResponse = await fetch(
-          `${API_URL}/user-questions/${userId}/modules/${module._id}/questions`,
-          {
-            method: 'GET',
-            headers,
-          }
-        );
-
-        if (questionProgressResponse.ok) {
-          const questionProgressData = await questionProgressResponse.json();
-          const completedQuestions = questionProgressData.data || [];
-
-          for (const completed of completedQuestions) {
-            questionProgressMap[completed.question_id] = completed.is_completed;
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching question progress:', err);
-      }
-    }
+    console.log(`[Course Progress] Final chapters:`, chapters);
+    console.log(`[Course Progress] Final questions:`, questions);
 
     return NextResponse.json({
       success: true,
       data: {
-        chapters: chapterProgressMap,
-        questions: questionProgressMap,
+        chapters,
+        questions,
       },
     });
   } catch (error) {
