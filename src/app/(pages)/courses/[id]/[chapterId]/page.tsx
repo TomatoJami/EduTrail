@@ -11,9 +11,9 @@ import { Course, Module, UserProgress, Question } from "@/types";
 type NavItem = {
   id: string;
   title: string;
-  type: "chapter" | "quiz";
-  moduleId: string;
-  moduleTitle: string;
+  type: "chapter" | "quiz" | "finish";
+  moduleId?: string;
+  moduleTitle?: string;
   questionIds?: string[];
 };
 
@@ -80,14 +80,16 @@ export default function ChapterPage() {
   const [openModules, setOpenModules] = useState<Record<string, boolean>>({});
 
   const [shouldComplete, setShouldComplete] = useState(true);
+  const [shouldCompleteQuiz, setShouldCompleteQuiz] = useState(true);
 
   // Quiz states
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
-  const [submittedAnswers, setSubmittedAnswers] = useState<Record<string, boolean>>({});
+  const [submittedAnswers, setSubmittedAnswers] = useState<Record<string, string>>({}); // "correct" | "incorrect"
 
   useEffect(() => {
     setShouldComplete(true);
+    setShouldCompleteQuiz(true);
   }, [chapterId]);
 
   // Load quiz questions when quiz item is selected
@@ -165,7 +167,7 @@ export default function ChapterPage() {
           const progressData = await progressRes.json();
 
           const chaptersMap: Record<string, boolean> = {};
-          const questionsMap: Record<string, boolean> = {};
+          const questionsMap: Record<string, string> = {};
 
           const progress = progressData.data || {};
 
@@ -191,16 +193,18 @@ export default function ChapterPage() {
 
           if (progress.questions && typeof progress.questions === "object") {
             for (const [id, value] of Object.entries(progress.questions)) {
-              if (typeof value === "boolean") {
+              if (typeof value === "string") {
                 questionsMap[id] = value;
+              } else if (typeof value === "boolean") {
+                questionsMap[id] = value ? "correct" : "incorrect";
               } else if (
                 value &&
                 typeof value === "object" &&
                 "is_completed" in value
               ) {
-                questionsMap[id] = Boolean(
-                  (value as { is_completed: boolean }).is_completed
-                );
+                questionsMap[id] = (value as { is_completed: boolean }).is_completed
+                  ? "correct"
+                  : "incorrect";
               }
             }
           }
@@ -304,21 +308,27 @@ export default function ChapterPage() {
 
   // Submit quiz and save results
   const handleSubmitQuiz = async () => {
-    const storedUser = localStorage.getItem("user");
-    const user = storedUser ? JSON.parse(storedUser) : null;
-    const userId = user?._id || user?.id || "";
-
-    // Check answers and save progress
-    const results: Record<string, boolean> = {};
-    const newSubmittedAnswers: Record<string, boolean> = {};
+    const newSubmittedAnswers: Record<string, string> = {};
 
     for (const question of quizQuestions) {
       const selectedIndex = selectedAnswers[question._id];
       const isCorrect = selectedIndex === question.correctAnswer;
-      results[question._id] = isCorrect;
-      newSubmittedAnswers[question._id] = isCorrect;
+      const status = isCorrect ? "correct" : "incorrect";
 
-      // Save to backend
+      newSubmittedAnswers[question._id] = status;
+    }
+
+    // Только локальное отображение результатов
+    setSubmittedAnswers(newSubmittedAnswers);
+  };
+
+  // Mark all unanswered questions as not_attempted
+  const markUnansweredAsNotAttempted = async (userId: string) => {
+    const unansweredQuestions = quizQuestions.filter(
+      (q) => selectedAnswers[q._id] === undefined
+    );
+
+    for (const question of unansweredQuestions) {
       try {
         await fetch(`/api/progress/questions/${question._id}`, {
           method: "PUT",
@@ -327,24 +337,13 @@ export default function ChapterPage() {
             "x-user-id": userId,
           },
           body: JSON.stringify({
-            status: isCorrect ? "correct" : "incorrect",
+            status: "not_attempted",
           }),
         });
       } catch (e) {
-        console.error("[Quiz] Error saving question progress:", e);
+        console.error("[Quiz] Error marking question as not_attempted:", e);
       }
     }
-
-    setSubmittedAnswers(newSubmittedAnswers);
-
-    // Update userProgress questions map
-    setUserProgress((prev) => ({
-      ...prev,
-      questions: {
-        ...prev.questions,
-        ...newSubmittedAnswers,
-      },
-    }));
   };
 
   // Complete quiz and mark as done
@@ -353,12 +352,35 @@ export default function ChapterPage() {
     const user = storedUser ? JSON.parse(storedUser) : null;
     const userId = user?._id || user?.id || "";
 
-    // Extract moduleId from quiz-{moduleId}
-    const moduleId = chapterId.substring(5);
     const quizId = chapterId;
 
     try {
-      // Save quiz completion to backend
+      const finalStatuses: Record<string, string> = {};
+
+      // Сохраняем последнюю попытку
+      for (const question of quizQuestions) {
+        let status = submittedAnswers[question._id];
+
+        // Если вопрос не был отвечен
+        if (!status) {
+          status = "not_attempted";
+        }
+
+        finalStatuses[question._id] = status;
+
+        await fetch(`/api/progress/questions/${question._id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": userId,
+          },
+          body: JSON.stringify({
+            status,
+          }),
+        });
+      }
+
+      // Помечаем quiz как завершённый
       await fetch(`/api/progress/chapters/${quizId}`, {
         method: "PUT",
         headers: {
@@ -370,17 +392,27 @@ export default function ChapterPage() {
         }),
       });
 
-      // Update local progress
+
       setUserProgress((prev) => ({
         ...prev,
         chapters: {
           ...prev.chapters,
           [quizId]: true,
         },
+        questions: {
+          ...prev.questions,
+          ...finalStatuses,
+        },
       }));
+
     } catch (e) {
       console.error("[Quiz] Error completing quiz:", e);
     }
+  };
+
+  const handleTryAgain = () => {
+    setSelectedAnswers({});
+    setSubmittedAnswers({});
   };
 
   // Flat navigation list
@@ -412,6 +444,13 @@ export default function ChapterPage() {
       }
     });
 
+    // Add Finish item at the end
+    items.push({
+      id: "finish",
+      title: "Finish",
+      type: "finish",
+    });
+
     return items;
   }, [modules]);
 
@@ -433,12 +472,15 @@ export default function ChapterPage() {
       : null;
 
   const totalItems = navItems.length;
-  const completedItems =
-    Object.values(userProgress.chapters).filter(Boolean).length +
-    Object.values(userProgress.questions).filter(Boolean).length;
+
+  const completedItems = navItems.reduce((count, item) => {
+    return userProgress.chapters[item.id] ? count + 1 : count;
+  }, 0);
 
   const progressPercent =
-    totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+    totalItems > 0
+      ? Math.round((completedItems / totalItems) * 100)
+      : 0;
 
   const markChapterComplete = async () => {
     // Optional API call for completion
@@ -570,7 +612,13 @@ export default function ChapterPage() {
                               (q) => userProgress.questions[q._id] !== undefined
                             );
                             const allCorrect = module.questions.every(
-                              (q) => userProgress.questions[q._id] === true
+                              (q) => userProgress.questions[q._id] === "correct"
+                            );
+                            const hasIncorrect = module.questions.some(
+                              (q) => {
+                                const status = userProgress.questions[q._id];
+                                return status === "incorrect" || status === "not_attempted";
+                              }
                             );
                             
                             let indicatorColor = "slate";
@@ -592,8 +640,8 @@ export default function ChapterPage() {
                                   indicatorColor === "red" ? "bg-red-500 text-white" :
                                   "border border-slate-300 bg-white"
                                 } text-[10px]`}>
-                                  {indicatorColor === "emerald" && "✓"}
-                                  {indicatorColor === "red" && "✗"}
+                                  {indicatorColor === "emerald"}
+                                  {indicatorColor === "red"}
                                 </span>
                                 <span className="flex items-center gap-2">
                                   Quiz: {module.title}
@@ -605,6 +653,19 @@ export default function ChapterPage() {
                       )}
                     </div>
                   ))}
+
+                  {/* Finish Item */}
+                  <Link
+                    href={`/courses/${courseId}/finish`}
+                    className={`flex items-start gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                      chapterId === "finish"
+                        ? "bg-indigo-50 text-indigo-700"
+                        : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <CheckIcon done={userProgress.chapters["finish"] ?? false} />
+                    <span className="leading-5 font-semibold">Finish</span>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -654,7 +715,8 @@ export default function ChapterPage() {
                     ) : (
                       quizQuestions.map((question, idx) => {
                         const isSubmitted = submittedAnswers[question._id] !== undefined;
-                        const isCorrect = submittedAnswers[question._id];
+                        const status = submittedAnswers[question._id]; // "correct" or "incorrect"
+                        const isCorrect = status === "correct";
                         const selectedIdx = selectedAnswers[question._id];
 
                         return (
@@ -759,11 +821,10 @@ export default function ChapterPage() {
 
                   {/* Results Summary */}
                   {Object.keys(submittedAnswers).length > 0 && (() => {
-                    const correctCount = Object.values(submittedAnswers).filter(Boolean).length;
+                    const correctCount = Object.values(submittedAnswers).filter(
+                      (status) => status === "correct"
+                    ).length;
                     const totalCount = Object.keys(submittedAnswers).length;
-                    const allCorrect = correctCount === totalCount;
-                    const quizId = chapterId;
-                    const isQuizCompleted = userProgress.chapters[quizId];
 
                     return (
                       <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-6">
@@ -775,25 +836,38 @@ export default function ChapterPage() {
                           You scored {correctCount} out of {totalCount}.
                         </p>
 
-                        {allCorrect && !isQuizCompleted && (
-                          <button
-                            type="button"
-                            onClick={handleCompleteQuiz}
-                            className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-                          >
-                            ✓ Mark as Complete
-                          </button>
-                        )}
-
-                        {isQuizCompleted && (
-                          <p className="mt-4 text-sm font-medium text-emerald-600">
-                            ✓ Quiz Completed
-                          </p>
-                        )}
+                        <button
+                          type="button"
+                          onClick={handleTryAgain}
+                          className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          Try Again
+                        </button>
                       </div>
                     );
                   })()}
                 </>
+              ) : currentItem?.type === "finish" ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  {/* Success Icon */}
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 mb-6">
+                    <svg className="h-12 w-12 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+
+                  <h1 className="text-4xl font-bold tracking-tight text-slate-900 text-center mb-3">
+                    Congratulations!
+                  </h1>
+
+                  <p className="text-xl text-slate-600 text-center mb-4 max-w-2xl">
+                    You have successfully completed the entire course. Great work!
+                  </p>
+
+                  <p className="text-lg text-slate-500 text-center mb-8 max-w-2xl">
+                    Now click the button below to finish the course and return to the main page.
+                  </p>
+                </div>
               ) : (
                 <div className="text-slate-500">Content not found.</div>
               )}
@@ -814,27 +888,93 @@ export default function ChapterPage() {
 
                   <div className="flex items-center gap-3">
                     {currentItem?.type === "chapter" && (
-                    <button
-                      type="button"
-                      onClick={() => setShouldComplete((prev) => !prev)}
-                      className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                        shouldComplete
-                          ? "bg-emerald-600 text-white"
-                          : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      {shouldComplete ? "✓ Will Complete" : "Mark as Complete"}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setShouldComplete((prev) => !prev)}
+                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                          shouldComplete
+                            ? "bg-emerald-600 text-white"
+                            : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        {shouldComplete ? "✓ Will Complete" : "Mark as Complete"}
+                      </button>
+                    )}
+
+                    {currentItem?.type === "quiz" && (
+                      <button
+                        type="button"
+                        onClick={() => setShouldCompleteQuiz((prev) => !prev)}
+                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                          shouldCompleteQuiz
+                            ? "bg-emerald-600 text-white"
+                            : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        {shouldCompleteQuiz ? "✓ Will Complete" : "Mark as Complete"}
+                      </button>
                     )}
 
                     {nextItem && (
-                    <button
+                      <button
                         type="button"
-                        onClick={handleNextClick}
+                        onClick={async () => {
+                          if (
+                            currentItem?.type === "quiz" &&
+                            shouldCompleteQuiz &&
+                            Object.keys(submittedAnswers).length > 0
+                          ) {
+                            await handleCompleteQuiz();
+                          }
+
+                          await handleNextClick();
+                        }}
                         className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-                    >
-                        Next →
-                    </button>
+                      >
+                        {currentItem?.type === "quiz" ? "Finish Module" : "Next →"}
+                      </button>
+                    )}
+
+                    {currentItem?.type === "finish" && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const storedUser = localStorage.getItem("user");
+                            const user = storedUser ? JSON.parse(storedUser) : null;
+                            const userId = user?._id || user?.id || "";
+
+                            // Mark course as completed
+                            await fetch(`/api/progress/courses/${courseId}/status`, {
+                              method: "PUT",
+                              headers: {
+                                "Content-Type": "application/json",
+                                "x-user-id": userId,
+                              },
+                              body: JSON.stringify({
+                                status: "completed",
+                              }),
+                            });
+
+                            // Mark finish page as completed
+                            setUserProgress((prev) => ({
+                              ...prev,
+                              chapters: {
+                                ...prev.chapters,
+                                ["finish"]: true,
+                              },
+                            }));
+
+                            // Navigate back to course
+                            router.push(`/courses/${courseId}`);
+                          } catch (e) {
+                            console.error("[Finish Course] Error:", e);
+                          }
+                        }}
+                        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                      >
+                        Finish Course
+                      </button>
                     )}
                   </div>
                 </div>
@@ -844,7 +984,6 @@ export default function ChapterPage() {
         </div>
       </main>
 
-      <Footer />
     </>
   );
 }

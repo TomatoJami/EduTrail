@@ -99,7 +99,7 @@ export interface Module {
 
 export interface UserProgress {
   chapters: Record<string, boolean>;
-  questions: Record<string, boolean>;
+  questions: Record<string, string>; // "correct" | "incorrect" | "not_attempted"
 }
 
 export interface NewUserData {
