@@ -132,12 +132,16 @@ export default function Courses() {
     fetchAllCourseProgress();
   }, [userId, courses]);
 
-
   // Get recommended courses based on user preferences
   const recommendedCourses = (() => {
     
     if (!user || !user.preferredSubjects || user.preferredSubjects.length === 0) {
-      const filtered = courses.filter(course => !user?.ageGroup || course.ageGroup === user.ageGroup).slice(0, 3);
+      const filtered = courses.filter(course => {
+        const ageGroupMatch = !user?.ageGroup || course.ageGroup === user.ageGroup;
+        const progress = course._id ? courseProgressMap[course._id] : null;
+        const statusMatch = !progress || (progress.status !== 'in_progress' && progress.status !== 'completed');
+        return ageGroupMatch && statusMatch;
+      }).slice(0, 3);
       return filtered;
     }
     
@@ -151,14 +155,29 @@ export default function Courses() {
         const idString = typeof id === 'string' ? id : (id as any)?._id || (id as any)?.toString?.() || '';
         return idString === courseSubjectId;
       });
-      return ageGroupMatch && subjectMatch;
+
+      const progress = course._id ? courseProgressMap[course._id] : null;
+      const statusMatch = !progress || (progress.status !== 'in_progress' && progress.status !== 'completed');
+
+      return ageGroupMatch && subjectMatch && statusMatch;
     }).slice(0, 3);
     return filtered;
   })();
 
-  const filteredCourses = selectedSubject
-    ? courses.filter(course => course.subject_id === selectedSubject)
-    : courses;
+  const filteredCourses = courses.filter(course => {
+    // Filter by subject if selected
+    if (selectedSubject && course.subject_id !== selectedSubject) {
+      return false;
+    }
+
+    // Exclude courses with status "in_progress" or "completed"
+    const progress = course._id ? courseProgressMap[course._id] : null;
+    if (progress && (progress.status === 'in_progress' || progress.status === 'completed')) {
+      return false;
+    }
+
+    return true;
+  });
 
   const displayedSubjects = subjects.slice(0, 4);
 

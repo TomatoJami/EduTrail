@@ -260,6 +260,26 @@ export default function ChapterPage() {
         };
     }, [courseId, router]);
 
+    // Check if user has access to this course
+    useEffect(() => {
+      if (!loading && courseProgress === null) {
+        // No courseProgress found or not started
+        router.push("/courses");
+        return;
+      }
+
+      if (!loading && courseProgress && !courseProgress.status) {
+        // Course status doesn't exist
+        router.push("/courses");
+        return;
+      }
+
+      if (!loading && courseProgress && courseProgress.status !== 'in_progress' && courseProgress.status !== 'completed') {
+        router.push("/courses");
+        return;
+      }
+    }, [loading, courseProgress, router]);
+
     const handleNextClick = async () => {
       const chapterKey = String(chapterId);
       const isCompleted = !!userProgress.chapters[chapterKey];

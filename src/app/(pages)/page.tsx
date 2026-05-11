@@ -244,11 +244,37 @@ export default function Home() {
                           />
                         ))
                       ) : (
-                        <div className="col-span-full text-center py-12">
-                          <p className="text-slate-500 text-lg">
-                            No courses found in this category
-                          </p>
-                        </div>
+                      <div className="col-span-full text-center py-12">
+                        <p className="text-slate-500 text-lg mb-6">
+                          No courses found in this category
+                        </p>
+
+                        <Link
+                          href="/courses"
+                          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl
+                                    bg-gradient-to-r from-indigo-600 to-blue-600
+                                    text-white font-semibold shadow-lg shadow-indigo-200
+                                    hover:from-indigo-700 hover:to-blue-700
+                                    hover:shadow-xl hover:shadow-indigo-300
+                                    hover:-translate-y-0.5
+                                    transition-all duration-300"
+                        >
+                          Explore Courses
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 7l5 5m0 0l-5 5m5-5H6"
+                            />
+                          </svg>
+                        </Link>
+                      </div>
                       )}
                     </div>
                   </div>
