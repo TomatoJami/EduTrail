@@ -1,12 +1,10 @@
 // backend/src/models/QuestionProgress.ts
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export type QuestionStatus = 'not_attempted' | 'correct' | 'incorrect';
-
 export interface IQuestionProgress extends Document {
   user_id: mongoose.Types.ObjectId;
   question_id: mongoose.Types.ObjectId;
-  status: QuestionStatus;
+  is_completed: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,10 +23,9 @@ const QuestionProgressSchema = new Schema<IQuestionProgress>(
       required: true,
       index: true,
     },
-    status: {
-      type: String,
-      enum: ['not_attempted', 'correct', 'incorrect'],
-      default: 'not_attempted',
+    is_completed: {
+      type: Boolean,
+      default: false,
       index: true,
     },
   },

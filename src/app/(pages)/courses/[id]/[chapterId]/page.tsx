@@ -82,10 +82,12 @@ export default function ChapterPage() {
   const [shouldComplete, setShouldComplete] = useState(true);
   const [shouldCompleteQuiz, setShouldCompleteQuiz] = useState(true);
 
+  const [courseProgress, setCourseProgress] = useState<any>(null);
+
   // Quiz states
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
-  const [submittedAnswers, setSubmittedAnswers] = useState<Record<string, string>>({}); // "correct" | "incorrect"
+  const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
 
   useEffect(() => {
     setShouldComplete(true);
@@ -97,7 +99,7 @@ export default function ChapterPage() {
     if (!chapterId?.startsWith("quiz-")) {
       setQuizQuestions([]);
       setSelectedAnswers({});
-      setSubmittedAnswers({});
+      setIsQuizSubmitted(false);
       return;
     }
 
@@ -108,7 +110,7 @@ export default function ChapterPage() {
     if (module?.questions) {
       setQuizQuestions(module.questions);
       setSelectedAnswers({});
-      setSubmittedAnswers({});
+      setIsQuizSubmitted(false);
     }
   }, [chapterId, modules]);
 
@@ -167,7 +169,7 @@ export default function ChapterPage() {
           const progressData = await progressRes.json();
 
           const chaptersMap: Record<string, boolean> = {};
-          const questionsMap: Record<string, string> = {};
+          const questionsMap: Record<string, boolean> = {};
 
           const progress = progressData.data || {};
 
@@ -193,19 +195,32 @@ export default function ChapterPage() {
 
           if (progress.questions && typeof progress.questions === "object") {
             for (const [id, value] of Object.entries(progress.questions)) {
-              if (typeof value === "string") {
+              if (typeof value === "boolean") {
                 questionsMap[id] = value;
-              } else if (typeof value === "boolean") {
-                questionsMap[id] = value ? "correct" : "incorrect";
               } else if (
                 value &&
                 typeof value === "object" &&
                 "is_completed" in value
               ) {
-                questionsMap[id] = (value as { is_completed: boolean }).is_completed
-                  ? "correct"
-                  : "incorrect";
+                questionsMap[id] = Boolean(
+                  (value as { is_completed: boolean }).is_completed
+                );
               }
+            }
+          }
+
+          const courseProgressRes = await fetch(`/api/progress/courses/${courseId}`, {
+            headers: {
+              "x-user-id": user._id || user.id || "",
+            },
+            signal: abortController.signal,
+          });
+
+          if (courseProgressRes.ok) {
+            const courseProgressData = await courseProgressRes.json();
+
+            if (!abortController.signal.aborted) {
+              setCourseProgress(courseProgressData.data || null);
             }
           }
 
@@ -306,113 +321,15 @@ export default function ChapterPage() {
     }));
   };
 
-  // Submit quiz and save results
-  const handleSubmitQuiz = async () => {
-    const newSubmittedAnswers: Record<string, string> = {};
-
-    for (const question of quizQuestions) {
-      const selectedIndex = selectedAnswers[question._id];
-      const isCorrect = selectedIndex === question.correctAnswer;
-      const status = isCorrect ? "correct" : "incorrect";
-
-      newSubmittedAnswers[question._id] = status;
-    }
-
-    // Только локальное отображение результатов
-    setSubmittedAnswers(newSubmittedAnswers);
+  // Submit quiz - show results locally only
+  const handleSubmitQuiz = () => {
+    setIsQuizSubmitted(true);
   };
 
-  // Mark all unanswered questions as not_attempted
-  const markUnansweredAsNotAttempted = async (userId: string) => {
-    const unansweredQuestions = quizQuestions.filter(
-      (q) => selectedAnswers[q._id] === undefined
-    );
-
-    for (const question of unansweredQuestions) {
-      try {
-        await fetch(`/api/progress/questions/${question._id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": userId,
-          },
-          body: JSON.stringify({
-            status: "not_attempted",
-          }),
-        });
-      } catch (e) {
-        console.error("[Quiz] Error marking question as not_attempted:", e);
-      }
-    }
-  };
-
-  // Complete quiz and mark as done
-  const handleCompleteQuiz = async () => {
-    const storedUser = localStorage.getItem("user");
-    const user = storedUser ? JSON.parse(storedUser) : null;
-    const userId = user?._id || user?.id || "";
-
-    const quizId = chapterId;
-
-    try {
-      const finalStatuses: Record<string, string> = {};
-
-      // Сохраняем последнюю попытку
-      for (const question of quizQuestions) {
-        let status = submittedAnswers[question._id];
-
-        // Если вопрос не был отвечен
-        if (!status) {
-          status = "not_attempted";
-        }
-
-        finalStatuses[question._id] = status;
-
-        await fetch(`/api/progress/questions/${question._id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": userId,
-          },
-          body: JSON.stringify({
-            status,
-          }),
-        });
-      }
-
-      // Помечаем quiz как завершённый
-      await fetch(`/api/progress/chapters/${quizId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": userId,
-        },
-        body: JSON.stringify({
-          is_completed: true,
-        }),
-      });
-
-
-      setUserProgress((prev) => ({
-        ...prev,
-        chapters: {
-          ...prev.chapters,
-          [quizId]: true,
-        },
-        questions: {
-          ...prev.questions,
-          ...finalStatuses,
-        },
-      }));
-
-    } catch (e) {
-      console.error("[Quiz] Error completing quiz:", e);
-    }
-  };
 
   const handleTryAgain = () => {
     setSelectedAnswers({});
-    setSubmittedAnswers({});
+    setIsQuizSubmitted(false);
   };
 
   // Flat navigation list
@@ -473,8 +390,32 @@ export default function ChapterPage() {
 
   const totalItems = navItems.length;
 
+  const isCourseFinished =
+    courseProgress?.status === "completed" ||
+    courseProgress?.status === "finished";
+
   const completedItems = navItems.reduce((count, item) => {
-    return userProgress.chapters[item.id] ? count + 1 : count;
+    if (item.id === "finish") {
+      return userProgress.chapters["finish"] || isCourseFinished
+        ? count + 1
+        : count;
+    }
+
+    if (item.type === "chapter") {
+      return userProgress.chapters[item.id] ? count + 1 : count;
+    }
+
+    if (item.type === "quiz") {
+      const questionIds = item.questionIds || [];
+
+      const isQuizCompleted = questionIds.every(
+        (qId) => userProgress.questions[qId]
+      );
+
+      return isQuizCompleted ? count + 1 : count;
+    }
+
+    return count;
   }, 0);
 
   const progressPercent =
@@ -482,19 +423,6 @@ export default function ChapterPage() {
       ? Math.round((completedItems / totalItems) * 100)
       : 0;
 
-  const markChapterComplete = async () => {
-    // Optional API call for completion
-    // await fetch(`/api/chapters/${chapterId}/complete`, { method: "POST" });
-
-    // Local optimistic update
-    setUserProgress((prev) => ({
-      ...prev,
-      chapters: {
-        ...prev.chapters,
-        [chapterId]: true,
-      },
-    }));
-  };
 
   if (loading) {
     return (
@@ -607,24 +535,10 @@ export default function ChapterPage() {
                           {/* Quiz */}
                           {module.questions?.length > 0 && (() => {
                             const quizId = `quiz-${module._id}`;
-                            const quizCompleted = userProgress.chapters[quizId];
-                            const allAnswered = module.questions.every(
-                              (q) => userProgress.questions[q._id] !== undefined
+                            // Check if all questions in this module are completed
+                            const isQuizDone = module.questions.every(
+                              (q) => userProgress.questions?.[q._id] === true
                             );
-                            const allCorrect = module.questions.every(
-                              (q) => userProgress.questions[q._id] === "correct"
-                            );
-                            const hasIncorrect = module.questions.some(
-                              (q) => {
-                                const status = userProgress.questions[q._id];
-                                return status === "incorrect" || status === "not_attempted";
-                              }
-                            );
-                            
-                            let indicatorColor = "slate";
-                            if (allAnswered) {
-                              indicatorColor = allCorrect ? "emerald" : "red";
-                            }
                             
                             return (
                               <Link
@@ -635,17 +549,8 @@ export default function ChapterPage() {
                                     : "text-slate-700 hover:bg-slate-50"
                                 }`}
                               >
-                                <span className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded-full ${
-                                  indicatorColor === "emerald" ? "bg-emerald-500 text-white" :
-                                  indicatorColor === "red" ? "bg-red-500 text-white" :
-                                  "border border-slate-300 bg-white"
-                                } text-[10px]`}>
-                                  {indicatorColor === "emerald"}
-                                  {indicatorColor === "red"}
-                                </span>
-                                <span className="flex items-center gap-2">
-                                  Quiz: {module.title}
-                                </span>
+                                <CheckIcon done={isQuizDone} />
+                                <span>Quiz: {module.title}</span>
                               </Link>
                             );
                           })()}
@@ -655,17 +560,23 @@ export default function ChapterPage() {
                   ))}
 
                   {/* Finish Item */}
-                  <Link
-                    href={`/courses/${courseId}/finish`}
-                    className={`flex items-start gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                      chapterId === "finish"
-                        ? "bg-indigo-50 text-indigo-700"
-                        : "text-slate-700 hover:bg-slate-50"
-                    }`}
-                  >
-                    <CheckIcon done={userProgress.chapters["finish"] ?? false} />
-                    <span className="leading-5 font-semibold">Finish</span>
-                  </Link>
+                <Link
+                  href={`/courses/${courseId}/finish`}
+                  className={`flex items-start gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                    chapterId === "finish"
+                      ? "bg-indigo-50 text-indigo-700"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <CheckIcon
+                    done={
+                      userProgress.chapters["finish"] === true ||
+                      courseProgress?.status === "completed" ||
+                      courseProgress?.status === "finished"
+                    }
+                  />
+                  <span className="leading-5 font-semibold">Finish</span>
+                </Link>
                 </div>
               </div>
             </div>
@@ -714,10 +625,8 @@ export default function ChapterPage() {
                       <p className="text-slate-600">No questions available for this quiz.</p>
                     ) : (
                       quizQuestions.map((question, idx) => {
-                        const isSubmitted = submittedAnswers[question._id] !== undefined;
-                        const status = submittedAnswers[question._id]; // "correct" or "incorrect"
-                        const isCorrect = status === "correct";
                         const selectedIdx = selectedAnswers[question._id];
+                        const isCorrect = selectedIdx === question.correctAnswer;
 
                         return (
                           <div
@@ -743,7 +652,7 @@ export default function ChapterPage() {
                                     let buttonClass =
                                       "w-full text-left rounded-lg border-2 p-3 transition ";
 
-                                    if (isSubmitted) {
+                                    if (isQuizSubmitted) {
                                       if (isCorrectAnswer) {
                                         buttonClass +=
                                           "border-emerald-500 bg-emerald-100 text-emerald-900";
@@ -769,22 +678,22 @@ export default function ChapterPage() {
                                         key={optIdx}
                                         type="button"
                                         onClick={() =>
-                                          !isSubmitted &&
+                                          !isQuizSubmitted &&
                                           handleAnswerSelect(question._id, optIdx)
                                         }
-                                        disabled={isSubmitted}
+                                        disabled={isQuizSubmitted}
                                         className={buttonClass}
                                       >
                                         <span className="font-medium">
                                           {String.fromCharCode(65 + optIdx)}.
                                         </span>{" "}
                                         {option}
-                                        {isSubmitted && isCorrectAnswer && (
+                                        {isQuizSubmitted && isCorrectAnswer && (
                                           <span className="ml-2 text-emerald-600">
                                             ✓
                                           </span>
                                         )}
-                                        {isSubmitted && isSelected && !isCorrect && (
+                                        {isQuizSubmitted && isSelected && !isCorrect && (
                                           <span className="ml-2 text-red-600">
                                             ✗
                                           </span>
@@ -795,7 +704,7 @@ export default function ChapterPage() {
                                 </div>
 
                                 {/* Explanation */}
-                                {isSubmitted && question.explanation && (
+                                {isQuizSubmitted && question.explanation && (
                                   <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
                                     <strong>Explanation:</strong> {question.explanation}
                                   </div>
@@ -809,7 +718,7 @@ export default function ChapterPage() {
                   </div>
 
                   {/* Submit Button */}
-                  {quizQuestions.length > 0 && Object.keys(submittedAnswers).length === 0 && (
+                  {quizQuestions.length > 0 && !isQuizSubmitted && (
                     <button
                       type="button"
                       onClick={handleSubmitQuiz}
@@ -820,11 +729,12 @@ export default function ChapterPage() {
                   )}
 
                   {/* Results Summary */}
-                  {Object.keys(submittedAnswers).length > 0 && (() => {
-                    const correctCount = Object.values(submittedAnswers).filter(
-                      (status) => status === "correct"
-                    ).length;
-                    const totalCount = Object.keys(submittedAnswers).length;
+                  {isQuizSubmitted && (() => {
+                    const correctCount = quizQuestions.filter((q) => {
+                      const selectedIdx = selectedAnswers[q._id];
+                      return selectedIdx === q.correctAnswer;
+                    }).length;
+                    const totalCount = quizQuestions.length;
 
                     return (
                       <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-6">
@@ -922,9 +832,40 @@ export default function ChapterPage() {
                           if (
                             currentItem?.type === "quiz" &&
                             shouldCompleteQuiz &&
-                            Object.keys(submittedAnswers).length > 0
+                            isQuizSubmitted
                           ) {
-                            await handleCompleteQuiz();
+                            // Save quiz as completed by marking all questions as completed
+                            try {
+                              const storedUser = localStorage.getItem("user");
+                              const user = storedUser ? JSON.parse(storedUser) : null;
+                              const userId = user?._id || user?.id || "";
+
+                              // Save each question as completed
+                              for (const question of quizQuestions) {
+                                await fetch(`/api/progress/questions/${question._id}`, {
+                                  method: "PUT",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                    "x-user-id": userId,
+                                  },
+                                  body: JSON.stringify({
+                                    is_completed: true,
+                                  }),
+                                });
+                              }
+
+                              setUserProgress((prev) => ({
+                                ...prev,
+                                questions: {
+                                  ...prev.questions,
+                                  ...Object.fromEntries(
+                                    quizQuestions.map(q => [q._id, true])
+                                  ),
+                                },
+                              }));
+                            } catch (e) {
+                              console.error("[Quiz] Error completing quiz:", e);
+                            }
                           }
 
                           await handleNextClick();

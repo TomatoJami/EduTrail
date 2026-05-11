@@ -325,7 +325,7 @@ router.get('/questions/:questionId', (req, res) =>
  *   put:
  *     tags:
  *       - Progress
- *     summary: Update question status (test result)
+ *     summary: Update question progress (mark as completed)
  *     security:
  *       - userId: []
  *     parameters:
@@ -342,22 +342,21 @@ router.get('/questions/:questionId', (req, res) =>
  *           schema:
  *             type: object
  *             properties:
- *               status:
- *                 type: string
- *                 enum: [not_attempted, correct, incorrect]
- *                 description: Question status
+ *               is_completed:
+ *                 type: boolean
+ *                 description: Question completion status
  *             required:
- *               - status
+ *               - is_completed
  *           examples:
- *             correct:
+ *             completed:
  *               value:
- *                 status: correct
- *             incorrect:
+ *                 is_completed: true
+ *             not_completed:
  *               value:
- *                 status: incorrect
+ *                 is_completed: false
  *     responses:
  *       200:
- *         description: Question status updated successfully
+ *         description: Question progress updated successfully
  *         content:
  *           application/json:
  *             schema:

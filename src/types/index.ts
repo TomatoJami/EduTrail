@@ -40,6 +40,7 @@ export interface Course {
   _id?: string;
   title: string;
   description: string;
+  goals?: string[];
   ageGroup: CourseAgeGroup;
   course_img: string;
   subject_id: string;
@@ -99,7 +100,7 @@ export interface Module {
 
 export interface UserProgress {
   chapters: Record<string, boolean>;
-  questions: Record<string, string>; // "correct" | "incorrect" | "not_attempted"
+  questions: Record<string, boolean>;
 }
 
 export interface NewUserData {

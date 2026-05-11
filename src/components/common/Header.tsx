@@ -12,8 +12,9 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
-  const pathname = usePathname(); 
-  const isAccountPage = pathname === "/account" || pathname === "/account/preferences" || pathname === "/courses/[id]/[chapterId]";
+  const pathname = usePathname();
+  const isChapterPage = pathname.split("/").length === 4 && pathname.startsWith("/courses/"); 
+  const isAccountPage = pathname === "/account" || pathname === "/account/preferences";
 
   useEffect(() => {
     const syncAuthState = () => {
@@ -90,7 +91,7 @@ export function Header() {
             <Image src="/logoblack.png" alt="EduTrail Logo" width={200} height={100} />
           </Link>
           {/* Auth buttons */}
-          {!isAccountPage && (
+          {!isAccountPage && !isChapterPage && (
             <div className="hidden md:flex gap-3">
               {isLoggedIn === null ? (
                 <div className="h-10 w-40" aria-hidden="true" />

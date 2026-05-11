@@ -106,8 +106,7 @@ export class ProgressController {
         chaptersMap[String(ch.chapter_id)] = Boolean(ch.is_completed);
       }
 
-      const questionsMap: Record<string, string> = {};
-
+      const questionsMap: Record<string, boolean> = {};
 
       for (const q of questions) {
         const questionId =
@@ -115,7 +114,7 @@ export class ProgressController {
             ? q.question_id.toString()
             : String(q.question_id);
 
-        questionsMap[questionId] = q.status;
+        questionsMap[questionId] = Boolean(q.is_completed);
       }
 
       console.log(`[getCourseProgress] Final chaptersMap:`, chaptersMap);
@@ -418,7 +417,7 @@ export class ProgressController {
   async updateQuestionStatus(req: Request, res: Response): Promise<void> {
     try {
       const { questionId } = req.params;
-      const { status } = req.body;
+      const { is_completed } = req.body;
       const userId = req.headers['x-user-id'] as string;
 
       if (!userId || !questionId) {
@@ -429,10 +428,10 @@ export class ProgressController {
         return;
       }
 
-      if (!['not_attempted', 'correct', 'incorrect'].includes(status)) {
+      if (typeof is_completed !== 'boolean') {
         res.status(400).json({
           success: false,
-          message: 'Invalid status. Must be: not_attempted, correct, or incorrect',
+          message: 'is_completed must be boolean',
         } as ApiResponse);
         return;
       }
@@ -445,20 +444,20 @@ export class ProgressController {
         { 
           user_id: userObjectId, 
           question_id: questionObjectId, 
-          status 
+          is_completed 
         },
         { new: true, upsert: true }
       ).populate('question_id');
 
       res.status(200).json({
         success: true,
-        message: 'Question status updated successfully',
+        message: 'Question progress updated successfully',
         data: questionProgress,
       } as ApiResponse);
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Failed to update question status',
+        message: 'Failed to update question progress',
         error: error instanceof Error ? error.message : String(error),
       } as ApiResponse);
     }

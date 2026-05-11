@@ -27,7 +27,7 @@ function BookmarkIcon() {
 
 function LessonIcon({ status }: { status: string }) {
 	if (status === "done") {
-		return <span className="mt-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" />;
+		return <span className="mt-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500" />;
 	}
 
 	return <span className="mt-0.5 h-3.5 w-3.5 rounded-full border border-slate-400 bg-white" />;
@@ -74,7 +74,10 @@ export default function CourseDetailPage() {
 	const courseId = params.id as string;
 	const [course, setCourse] = useState<Course | null>(null);
 	const [modules, setModules] = useState<Module[]>([]);
-	const [userProgress, setUserProgress] = useState<UserProgress>({ chapters: {}, questions: {} });
+		const [userProgress, setUserProgress] = useState<UserProgress>({
+		chapters: {},
+		questions: {},
+	});
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -93,27 +96,25 @@ export default function CourseDetailPage() {
 				}
 
 				// Fetch course details
+				const user = JSON.parse(storedUser);
+				const userId = user._id || user.id;
+
+				// COURSE
 				const courseResponse = await fetch(`/api/courses/${courseId}`);
-				if (!courseResponse.ok) {
-					throw new Error("Failed to fetch course");
-				}
 				const courseData = await courseResponse.json();
 				setCourse(courseData.data || courseData);
 
-				// Fetch course content (modules, chapters, questions)
+				// CONTENT
 				const contentResponse = await fetch(`/api/courses/${courseId}/content`);
-				if (!contentResponse.ok) {
-					throw new Error("Failed to fetch course content");
-				}
 				const contentData = await contentResponse.json();
 				setModules(contentData.data || []);
 
-				// Fetch user progress
-				const progressResponse = await fetch(`/api/courses/${courseId}/progress`);
-				if (progressResponse.ok) {
-					const progressData = await progressResponse.json();
-					setUserProgress(progressData.data || { chapters: {}, questions: {} });
-				}
+				// PROGRESS (✔ FIXED: x-user-id header added)
+				const progressResponse = await fetch(`/api/courses/${courseId}/progress`, {
+					headers: {
+						"x-user-id": userId,
+					},
+				});
 
 				// Fetch course progress (CourseProgress model)
 				const courseProgressResponse = await fetch(`/api/progress/courses/${courseId}`, {
@@ -121,11 +122,57 @@ export default function CourseDetailPage() {
 						'x-user-id': JSON.parse(storedUser)._id || JSON.parse(storedUser).id,
 					},
 				});
-				if (courseProgressResponse.ok) {
+
+				if (progressResponse.ok) {
 					const courseProgressData = await courseProgressResponse.json();
+
 					setCourseProgress(courseProgressData.data || null);
 					setIsBookmarked(courseProgressData.data?.is_bookmarked || false);
+					const progressData = await progressResponse.json();
+					const progress = progressData.data || {};
+
+					// ✔ NORMALIZATION FIX (same as working file)
+					const chaptersMap: Record<string, boolean> = {};
+					const questionsMap: Record<string, boolean> = {};
+
+					if (progress.chapters && typeof progress.chapters === "object") {
+						for (const [id, value] of Object.entries(progress.chapters)) {
+							if (typeof value === "boolean") {
+								chaptersMap[id] = value;
+							} else if (
+								value &&
+								typeof value === "object" &&
+								"is_completed" in value
+							) {
+								chaptersMap[id] = Boolean((value as any).is_completed);
+							}
+						}
+					}
+
+					if (progress.questions && typeof progress.questions === "object") {
+						for (const [id, value] of Object.entries(progress.questions)) {
+							if (typeof value === "boolean") {
+								questionsMap[id] = value;
+							} else if (
+								value &&
+								typeof value === "object" &&
+								"is_completed" in value
+							) {
+								questionsMap[id] = Boolean((value as any).is_completed);
+							}
+						}
+					}
+
+					setUserProgress({
+						chapters: chaptersMap,
+						questions: questionsMap,
+					});
 				}
+				// if (courseProgressResponse.ok) {
+				// 	const courseProgressData = await courseProgressResponse.json();
+				// 	setCourseProgress(courseProgressData.data || null);
+				// 	setIsBookmarked(courseProgressData.data?.is_bookmarked || false);
+				// }
 
 				setError(null);
 				setIsInitialized(true);
@@ -163,7 +210,48 @@ export default function CourseDetailPage() {
 		);
 	}
 
-	
+	const isChapterDone = (id: string) =>
+		Boolean(userProgress.chapters?.[String(id)]);
+
+		const isQuizDone = (module: Module) =>
+		module.questions.length > 0 &&
+		module.questions.every(q =>
+			userProgress.questions?.[String(q._id)]
+		);
+
+	// Find first chapter
+	const getFirstChapter = () => {
+		if (modules.length > 0 && modules[0].chapters.length > 0) {
+			return modules[0].chapters[0]._id;
+		}
+		return null;
+	};
+
+	const getFirstUncompletedStep = () => {
+		for (const module of modules) {
+			// 1. chapters
+			for (const chapter of module.chapters) {
+				if (!userProgress.chapters[chapter._id]) {
+					return { type: "chapter", id: chapter._id };
+				}
+			}
+
+			// 2. quiz (ВАЖНО)
+			if (module.questions.length > 0) {
+				const allDone = module.questions.every(
+					q => userProgress.questions?.[q._id]
+				);
+
+				if (!allDone) {
+					return { type: "quiz", moduleId: module._id };
+				}
+			}
+		}
+
+		// fallback
+		const firstChapter = modules?.[0]?.chapters?.[0]?._id;
+		return firstChapter ? { type: "chapter", id: firstChapter } : null;
+	};
 
 	const handleStartCourse = async () => {
 		try {
@@ -207,9 +295,12 @@ export default function CourseDetailPage() {
 			const data = await response.json();
 			console.log('Course started:', data);
 
-			// Update course progress state and redirect
+			// Update course progress state and redirect to first chapter
 			setCourseProgress(data.data);
-			router.push(`/courses/${courseId}/learn`);
+			const firstChapterId = getFirstChapter();
+			if (firstChapterId) {
+				router.push(`/courses/${courseId}/${firstChapterId}`);
+			}
 		} catch (err) {
 			console.error('Error starting course:', err);
 			alert(err instanceof Error ? err.message : 'Failed to start course');
@@ -266,11 +357,23 @@ export default function CourseDetailPage() {
 		}
 	};
 
+	// Extract learning goals from course
+	const displayGoals = course?.goals || [];
+
 	// Calculate statistics
 	const totalChapters = modules.reduce((sum, mod) => sum + mod.chapters.length, 0);
 	const completedChapters = Object.values(userProgress.chapters).filter(Boolean).length;
-	const totalQuestions = modules.reduce((sum, mod) => sum + mod.questions.length, 0);
-	const completedQuestions = Object.values(userProgress.questions).filter(Boolean).length;
+	const totalQuizzes = modules.filter(mod => mod.questions.length > 0).length;
+	const completedQuizzes = modules.filter(mod => {
+		// Check if all questions in this module are completed
+		return mod.questions.length > 0 && 
+		       mod.questions.every(q => userProgress.questions[q._id] === true);
+	}).length;
+	const isFinishCompleted = courseProgress?.status === 'completed';
+
+	// Total items: chapters + quizzes + finish
+	const totalItems = totalChapters + totalQuizzes + 1;
+	const completedItems = completedChapters + completedQuizzes + (isFinishCompleted ? 1 : 0);
 
 	return (
 		<>	
@@ -320,7 +423,7 @@ export default function CourseDetailPage() {
                                                 <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Learning Goals</h2>
                                                 <div className="hidden h-px flex-1 bg-slate-200 sm:block" aria-hidden="true" />
                                             </div>
-                                            {/* <div className="max-w-2xl">
+                                            <div className="max-w-2xl">
                                                 {displayGoals.length > 0 ? (
                                                     <div className="space-y-3">
                                                         <div className="space-y-3 text-sm leading-6 text-slate-700">
@@ -335,7 +438,7 @@ export default function CourseDetailPage() {
                                                 ) : (
                                                     <p className="text-sm text-slate-500">Data not found</p>
                                                 )}
-                                            </div> */}
+                                            </div>
                                         </section>
 
                                         <section>
@@ -360,13 +463,13 @@ export default function CourseDetailPage() {
                                                                     <div className="space-y-2.5 pl-0.5">
                                                                         {module.chapters.map((chapter) => (
                                                                             <div key={chapter._id} className="flex items-start gap-3 text-sm text-slate-700">
-                                                                                <LessonIcon status={userProgress.chapters[chapter._id] ? "done" : "todo"} />
+                                                                                <LessonIcon status={isChapterDone(chapter._id) ? "done" : "todo"} />
                                                                                 <span>{chapter.title}</span>
                                                                             </div>
                                                                         ))}
                                                                         {module.questions.length > 0 && (
                                                                             <div className="flex items-start gap-3 text-sm text-slate-700">
-                                                                                <LessonIcon status={userProgress.questions[module.questions[0]?._id] ? "done" : "todo"} />
+																				<LessonIcon status={isQuizDone(module) ? "done" : "todo"} />
                                                                                 <span>Quiz: {module.title}</span>
                                                                             </div>
                                                                         )}
@@ -376,6 +479,13 @@ export default function CourseDetailPage() {
                                                         ) : (
                                                             <p className="text-sm text-slate-500">Data not found</p>
                                                         )}
+                                                        {/* Finish Item */}
+                                                        <article className="space-y-3">
+                                                            <div className="flex items-center gap-3">
+                                                                <LessonIcon status={isFinishCompleted ? "done" : "todo"} />
+                                                                <h3 className="text-[15px] font-semibold text-slate-900">Finish</h3>
+                                                            </div>
+                                                        </article>
                                                     </div>
                                                 </div>
                                             </div>
@@ -383,9 +493,33 @@ export default function CourseDetailPage() {
                                     </div>
 
                                     <div className="space-y-4">
-										{courseProgress?.status === 'in_progress' ? (
+										{courseProgress?.status === 'completed' ? (
 											<button
-												onClick={() => router.push(`/courses/${courseId}/learn`)}
+												onClick={() => {
+													const firstChapterId = getFirstChapter();
+													if (firstChapterId) {
+														router.push(`/courses/${courseId}/${firstChapterId}`);
+													}
+												}}
+												className="block rounded-xl bg-indigo-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_12px_24px_rgba(79,70,229,0.28)] transition hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+											>
+												Visit Again
+											</button>
+										) : courseProgress?.status === 'in_progress' ? (
+											<button
+												onClick={() => {
+													const next = getFirstUncompletedStep();
+
+													if (!next) return;
+
+													if (next.type === "chapter") {
+														router.push(`/courses/${courseId}/${next.id}`);
+													}
+
+													if (next.type === "quiz") {
+														router.push(`/courses/${courseId}/quiz-${next.moduleId}`);
+													}
+												}}
 												className="block rounded-xl bg-indigo-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_12px_24px_rgba(79,70,229,0.28)] transition hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
 											>
 												Continue Learning
@@ -402,30 +536,30 @@ export default function CourseDetailPage() {
 
                                         <div className="flex flex-wrap gap-2">
                                             <StatPill icon="folder" label={`${totalChapters} Lessons`} />
-                                            <StatPill icon="quiz" label={`${totalQuestions} Quizzes`} />
+                                            <StatPill icon="quiz" label={`${totalQuizzes} Quizzes`} />
                                         </div>
 
                                         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                                            <p className="text-sm font-semibold text-slate-500">Course status</p>
+                                            <p className="text-sm font-semibold text-slate-500">Progress</p>
                                             <div className="mt-3 space-y-3 text-sm text-slate-700">
                                                 <div className="flex items-center justify-between gap-3">
                                                     <span>Completed</span>
-                                                    <span className="font-semibold text-slate-900">{completedChapters + completedQuestions} of {totalChapters + totalQuestions}</span>
+                                                    <span className="font-semibold text-slate-900">{completedItems} of {totalItems}</span>
                                                 </div>
-                                                <div className="h-2 rounded-full bg-slate-100">
+                                                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                                                     <div 
-                                                        className="h-2 rounded-full bg-emerald-500 transition-all"
+                                                        className="h-2 bg-emerald-500 transition-all"
                                                         style={{ 
-                                                            width: totalChapters + totalQuestions > 0 
-                                                                ? `${((completedChapters + completedQuestions) / (totalChapters + totalQuestions)) * 100}%` 
+                                                            width: totalItems > 0 
+                                                                ? `${(completedItems / totalItems) * 100}%` 
                                                                 : '0%' 
                                                         }} 
                                                     />
                                                 </div>
                                                 <p className="text-xs leading-5 text-slate-500">
-                                                    {completedChapters + completedQuestions === 0 
+                                                    {completedItems === 0 
                                                         ? "Start the course to track your progress." 
-                                                        : `You've completed ${Math.round(((completedChapters + completedQuestions) / (totalChapters + totalQuestions)) * 100)}% of the course!`}
+                                                        : `You've completed ${Math.round((completedItems / totalItems) * 100)}% of the course!`}
                                                 </p>
                                             </div>
                                         </div>
