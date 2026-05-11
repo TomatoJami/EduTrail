@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
-import { Course, Module, UserProgress } from "@/types";
+import { Course, Module, UserProgress, Question } from "@/types";
 
 type NavItem = {
   id: string;
@@ -78,6 +78,37 @@ export default function ChapterPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [openModules, setOpenModules] = useState<Record<string, boolean>>({});
+
+  const [shouldComplete, setShouldComplete] = useState(true);
+
+  // Quiz states
+  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
+  const [submittedAnswers, setSubmittedAnswers] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setShouldComplete(true);
+  }, [chapterId]);
+
+  // Load quiz questions when quiz item is selected
+  useEffect(() => {
+    if (!chapterId?.startsWith("quiz-")) {
+      setQuizQuestions([]);
+      setSelectedAnswers({});
+      setSubmittedAnswers({});
+      return;
+    }
+
+    // Extract moduleId from quiz-{moduleId}
+    const moduleId = chapterId.substring(5);
+    const module = modules.find((m) => m._id === moduleId);
+
+    if (module?.questions) {
+      setQuizQuestions(module.questions);
+      setSelectedAnswers({});
+      setSubmittedAnswers({});
+    }
+  }, [chapterId, modules]);
 
   useEffect(() => {
     if (!courseId) return;
@@ -217,7 +248,11 @@ export default function ChapterPage() {
       if (!currentItem) return;
 
       // save only if not saved yet
-      if (currentItem?.type === "chapter" && !isCompleted) {
+      if (
+        currentItem?.type === "chapter" &&
+        shouldComplete &&
+        !isCompleted
+      ) {
         try {
           const storedUser = localStorage.getItem("user");
           const user = storedUser ? JSON.parse(storedUser) : null;
@@ -258,6 +293,95 @@ export default function ChapterPage() {
         router.push(`/courses/${courseId}/${nextItem.id}`);
       }
     };
+
+  // Handle quiz answer selection
+  const handleAnswerSelect = (questionId: string, answerIndex: number) => {
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [questionId]: answerIndex,
+    }));
+  };
+
+  // Submit quiz and save results
+  const handleSubmitQuiz = async () => {
+    const storedUser = localStorage.getItem("user");
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    const userId = user?._id || user?.id || "";
+
+    // Check answers and save progress
+    const results: Record<string, boolean> = {};
+    const newSubmittedAnswers: Record<string, boolean> = {};
+
+    for (const question of quizQuestions) {
+      const selectedIndex = selectedAnswers[question._id];
+      const isCorrect = selectedIndex === question.correctAnswer;
+      results[question._id] = isCorrect;
+      newSubmittedAnswers[question._id] = isCorrect;
+
+      // Save to backend
+      try {
+        await fetch(`/api/progress/questions/${question._id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": userId,
+          },
+          body: JSON.stringify({
+            status: isCorrect ? "correct" : "incorrect",
+          }),
+        });
+      } catch (e) {
+        console.error("[Quiz] Error saving question progress:", e);
+      }
+    }
+
+    setSubmittedAnswers(newSubmittedAnswers);
+
+    // Update userProgress questions map
+    setUserProgress((prev) => ({
+      ...prev,
+      questions: {
+        ...prev.questions,
+        ...newSubmittedAnswers,
+      },
+    }));
+  };
+
+  // Complete quiz and mark as done
+  const handleCompleteQuiz = async () => {
+    const storedUser = localStorage.getItem("user");
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    const userId = user?._id || user?.id || "";
+
+    // Extract moduleId from quiz-{moduleId}
+    const moduleId = chapterId.substring(5);
+    const quizId = chapterId;
+
+    try {
+      // Save quiz completion to backend
+      await fetch(`/api/progress/chapters/${quizId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": userId,
+        },
+        body: JSON.stringify({
+          is_completed: true,
+        }),
+      });
+
+      // Update local progress
+      setUserProgress((prev) => ({
+        ...prev,
+        chapters: {
+          ...prev.chapters,
+          [quizId]: true,
+        },
+      }));
+    } catch (e) {
+      console.error("[Quiz] Error completing quiz:", e);
+    }
+  };
 
   // Flat navigation list
   const navItems = useMemo<NavItem[]>(() => {
@@ -439,26 +563,44 @@ export default function ChapterPage() {
                           })}
 
                           {/* Quiz */}
-                          {module.questions?.length > 0 && (
-                            <Link
-                              href={`/courses/${courseId}/quiz-${module._id}`}
-                              className={`flex items-start gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                                chapterId === `quiz-${module._id}`
-                                  ? "bg-indigo-50 text-indigo-700"
-                                  : "text-slate-700 hover:bg-slate-50"
-                              }`}
-                            >
-                              <CheckIcon
-                                done={module.questions.every(
-                                  (q) => userProgress.questions[q._id]
-                                )}
-                              />
-                              <span className="flex items-center gap-2">
-                                
-                                Quiz: {module.title}
-                              </span>
-                            </Link>
-                          )}
+                          {module.questions?.length > 0 && (() => {
+                            const quizId = `quiz-${module._id}`;
+                            const quizCompleted = userProgress.chapters[quizId];
+                            const allAnswered = module.questions.every(
+                              (q) => userProgress.questions[q._id] !== undefined
+                            );
+                            const allCorrect = module.questions.every(
+                              (q) => userProgress.questions[q._id] === true
+                            );
+                            
+                            let indicatorColor = "slate";
+                            if (allAnswered) {
+                              indicatorColor = allCorrect ? "emerald" : "red";
+                            }
+                            
+                            return (
+                              <Link
+                                href={`/courses/${courseId}/${quizId}`}
+                                className={`flex items-start gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                                  chapterId === quizId
+                                    ? "bg-indigo-50 text-indigo-700"
+                                    : "text-slate-700 hover:bg-slate-50"
+                                }`}
+                              >
+                                <span className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded-full ${
+                                  indicatorColor === "emerald" ? "bg-emerald-500 text-white" :
+                                  indicatorColor === "red" ? "bg-red-500 text-white" :
+                                  "border border-slate-300 bg-white"
+                                } text-[10px]`}>
+                                  {indicatorColor === "emerald" && "✓"}
+                                  {indicatorColor === "red" && "✗"}
+                                </span>
+                                <span className="flex items-center gap-2">
+                                  Quiz: {module.title}
+                                </span>
+                              </Link>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
@@ -504,9 +646,153 @@ export default function ChapterPage() {
                   <h1 className="text-3xl font-bold tracking-tight text-slate-900">
                     {currentItem.title}
                   </h1>
-                  <p className="mt-4 text-slate-600">
-                    Quiz page can be implemented here.
-                  </p>
+
+                  {/* Quiz Questions */}
+                  <div className="mt-8 space-y-8">
+                    {quizQuestions.length === 0 ? (
+                      <p className="text-slate-600">No questions available for this quiz.</p>
+                    ) : (
+                      quizQuestions.map((question, idx) => {
+                        const isSubmitted = submittedAnswers[question._id] !== undefined;
+                        const isCorrect = submittedAnswers[question._id];
+                        const selectedIdx = selectedAnswers[question._id];
+
+                        return (
+                          <div
+                            key={question._id}
+                            className="rounded-lg border border-slate-200 p-6"
+                          >
+                            <div className="flex items-start gap-3">
+                              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">
+                                {idx + 1}
+                              </span>
+                              <div className="flex-1">
+                                <h3 className="text-lg font-medium text-slate-900">
+                                  {question.question}
+                                </h3>
+
+                                {/* Answer Options */}
+                                <div className="mt-4 space-y-3">
+                                  {question.options.map((option, optIdx) => {
+                                    const isSelected = selectedIdx === optIdx;
+                                    const isCorrectAnswer =
+                                      optIdx === question.correctAnswer;
+
+                                    let buttonClass =
+                                      "w-full text-left rounded-lg border-2 p-3 transition ";
+
+                                    if (isSubmitted) {
+                                      if (isCorrectAnswer) {
+                                        buttonClass +=
+                                          "border-emerald-500 bg-emerald-100 text-emerald-900";
+                                      } else if (isSelected && !isCorrect) {
+                                        buttonClass +=
+                                          "border-red-500 bg-red-100 text-red-900";
+                                      } else {
+                                        buttonClass +=
+                                          "border-slate-300 bg-slate-100 text-slate-600";
+                                      }
+                                    } else {
+                                      if (isSelected) {
+                                        buttonClass +=
+                                          "border-indigo-500 bg-indigo-100 text-indigo-900";
+                                      } else {
+                                        buttonClass +=
+                                          "border-slate-300 bg-white text-slate-700 hover:border-indigo-300 hover:bg-slate-50";
+                                      }
+                                    }
+
+                                    return (
+                                      <button
+                                        key={optIdx}
+                                        type="button"
+                                        onClick={() =>
+                                          !isSubmitted &&
+                                          handleAnswerSelect(question._id, optIdx)
+                                        }
+                                        disabled={isSubmitted}
+                                        className={buttonClass}
+                                      >
+                                        <span className="font-medium">
+                                          {String.fromCharCode(65 + optIdx)}.
+                                        </span>{" "}
+                                        {option}
+                                        {isSubmitted && isCorrectAnswer && (
+                                          <span className="ml-2 text-emerald-600">
+                                            ✓
+                                          </span>
+                                        )}
+                                        {isSubmitted && isSelected && !isCorrect && (
+                                          <span className="ml-2 text-red-600">
+                                            ✗
+                                          </span>
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Explanation */}
+                                {isSubmitted && question.explanation && (
+                                  <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
+                                    <strong>Explanation:</strong> {question.explanation}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Submit Button */}
+                  {quizQuestions.length > 0 && Object.keys(submittedAnswers).length === 0 && (
+                    <button
+                      type="button"
+                      onClick={handleSubmitQuiz}
+                      className="mt-8 rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white hover:bg-indigo-700"
+                    >
+                      Submit Quiz
+                    </button>
+                  )}
+
+                  {/* Results Summary */}
+                  {Object.keys(submittedAnswers).length > 0 && (() => {
+                    const correctCount = Object.values(submittedAnswers).filter(Boolean).length;
+                    const totalCount = Object.keys(submittedAnswers).length;
+                    const allCorrect = correctCount === totalCount;
+                    const quizId = chapterId;
+                    const isQuizCompleted = userProgress.chapters[quizId];
+
+                    return (
+                      <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-6">
+                        <h3 className="text-xl font-semibold text-gray-900">
+                          Quiz Results
+                        </h3>
+
+                        <p className="mt-2 text-gray-700">
+                          You scored {correctCount} out of {totalCount}.
+                        </p>
+
+                        {allCorrect && !isQuizCompleted && (
+                          <button
+                            type="button"
+                            onClick={handleCompleteQuiz}
+                            className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                          >
+                            ✓ Mark as Complete
+                          </button>
+                        )}
+
+                        {isQuizCompleted && (
+                          <p className="mt-4 text-sm font-medium text-emerald-600">
+                            ✓ Quiz Completed
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </>
               ) : (
                 <div className="text-slate-500">Content not found.</div>
@@ -528,17 +814,17 @@ export default function ChapterPage() {
 
                   <div className="flex items-center gap-3">
                     {currentItem?.type === "chapter" && (
-                      <button
-                        type="button"
-                        onClick={handleNextClick}
-                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                          !!userProgress.chapters[String(chapterId)]
-                            ? "bg-emerald-600 text-white"
-                            : "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                        }`}
-                      >
-                        {!!userProgress.chapters[String(chapterId)] ? "✓ Completed" : "Complete"}
-                      </button>
+                    <button
+                      type="button"
+                      onClick={() => setShouldComplete((prev) => !prev)}
+                      className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                        shouldComplete
+                          ? "bg-emerald-600 text-white"
+                          : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {shouldComplete ? "✓ Will Complete" : "Mark as Complete"}
+                    </button>
                     )}
 
                     {nextItem && (

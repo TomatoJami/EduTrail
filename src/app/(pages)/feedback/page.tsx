@@ -168,7 +168,7 @@ export default function FeedbackPage() {
                         <button
                           type="submit"
                           disabled={loading}
-                          className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="px-6 py-2 bg-white border border-gray-300 text-gray-800 font-semibold rounded hover:bg-gray-50 disabled:bg-gray-100 transition"
                         >
                           {loading ? "Sending..." : "Send Feedback"}
                         </button>

@@ -437,9 +437,16 @@ export class ProgressController {
         return;
       }
 
+      const userObjectId = new mongoose.Types.ObjectId(userId);
+      const questionObjectId = new mongoose.Types.ObjectId(questionId);
+
       const questionProgress = await QuestionProgress.findOneAndUpdate(
-        { user_id: userId, question_id: questionId },
-        { status },
+        { user_id: userObjectId, question_id: questionObjectId },
+        { 
+          user_id: userObjectId, 
+          question_id: questionObjectId, 
+          status 
+        },
         { new: true, upsert: true }
       ).populate('question_id');
 
@@ -470,9 +477,12 @@ export class ProgressController {
         return;
       }
 
+      const userObjectId = new mongoose.Types.ObjectId(userId);
+      const questionObjectId = new mongoose.Types.ObjectId(questionId);
+
       const questionProgress = await QuestionProgress.findOne({
-        user_id: userId,
-        question_id: questionId,
+        user_id: userObjectId,
+        question_id: questionObjectId,
       }).populate('question_id');
 
       if (!questionProgress) {
