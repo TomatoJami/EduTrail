@@ -102,7 +102,17 @@ export default function CourseDetailPage() {
 				// COURSE
 				const courseResponse = await fetch(`/api/courses/${courseId}`);
 				const courseData = await courseResponse.json();
-				setCourse(courseData.data || courseData);
+
+				if (!courseResponse.ok || courseData?.success === false) {
+					throw new Error(courseData?.message || "Course not found");
+				}
+
+				const fetchedCourse = courseData?.data || courseData;
+				if (!fetchedCourse || typeof fetchedCourse !== "object" || !(fetchedCourse._id || fetchedCourse.id)) {
+					throw new Error("Course not found");
+				}
+
+				setCourse(fetchedCourse as Course);
 
 				// CONTENT
 				const contentResponse = await fetch(`/api/courses/${courseId}/content`);
@@ -200,11 +210,29 @@ export default function CourseDetailPage() {
 	if (error || !course) {
 		return (
 			<main className="flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
-				<div className="text-center">
-					<p className="text-red-600">{error || "Course not found"}</p>
-					<Link href="/courses" className="text-indigo-600 hover:text-indigo-700 mt-4 inline-block">
-						Back to courses
-					</Link>
+				<div className="text-center px-4">
+					<div className="mb-8">
+						<h1 className="text-6xl font-bold text-indigo-600 mb-2">404</h1>
+						<h2 className="text-3xl font-bold text-slate-800 mb-4">Course Not Found</h2>
+						<p className="text-lg text-slate-600 mb-8">
+							{error || "Sorry, the course you're looking for doesn't exist or has been moved."}
+						</p>
+					</div>
+
+					<div className="flex flex-col sm:flex-row gap-4 justify-center">
+						<Link
+							href="/courses"
+							className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+						>
+							Browse All Courses
+						</Link>
+						<Link
+							href="/"
+							className="px-6 py-3 bg-slate-200 text-slate-800 font-semibold rounded-lg hover:bg-slate-300 transition-colors"
+						>
+							Go Home
+						</Link>
+					</div>
 				</div>
 			</main>
 		);

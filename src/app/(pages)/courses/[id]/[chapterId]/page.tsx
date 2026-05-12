@@ -456,15 +456,30 @@ export default function ChapterPage() {
 
   if (error || !course) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <p className="text-red-600">{error || "Course not found"}</p>
-          <Link
-            href={`/courses/${courseId}`}
-            className="mt-4 inline-block text-indigo-600 hover:text-indigo-700"
-          >
-            Back to course
-          </Link>
+      <main className="flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center px-4">
+          <div className="mb-8">
+            <h1 className="text-6xl font-bold text-indigo-600 mb-2">404</h1>
+            <h2 className="text-3xl font-bold text-slate-800 mb-4">Content Not Found</h2>
+            <p className="text-lg text-slate-600 mb-8">
+              {error || "Sorry, the content you're looking for doesn't exist or has been moved."}
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href={`/courses/${courseId}`}
+              className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Back to Course
+            </Link>
+            <Link
+              href="/courses"
+              className="px-6 py-3 bg-slate-200 text-slate-800 font-semibold rounded-lg hover:bg-slate-300 transition-colors"
+            >
+              Browse All Courses
+            </Link>
+          </div>
         </div>
       </main>
     );

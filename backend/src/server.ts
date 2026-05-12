@@ -3,9 +3,13 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import dns from 'dns';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+
+// Use public resolvers so MongoDB SRV lookups work even if the local DNS resolver fails.
+dns.setServers(['1.1.1.1', '1.0.0.1', '8.8.8.8', '8.8.4.4']);
 
 // Import routes
 import userRoutes from './routes/userRoutes';
