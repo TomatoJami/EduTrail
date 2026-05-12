@@ -34,7 +34,63 @@ export async function GET(
     return NextResponse.json(
       {
         success: false,
-        message: 'Failed to fetch subject',
+        message: 'Failed to fetch course',
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const headers = getAuthHeaders(request);
+    const body = await request.json();
+
+    const response = await fetch(`${API_URL}/courses/${id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Failed to update course',
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const headers = getAuthHeaders(request);
+
+    const response = await fetch(`${API_URL}/courses/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Failed to delete course',
         error: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
