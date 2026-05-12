@@ -86,7 +86,7 @@ export default function ChapterPage() {
 
   // Quiz states
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, any>>({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
 
   useEffect(() => {
@@ -108,6 +108,7 @@ export default function ChapterPage() {
     const module = modules.find((m) => m._id === moduleId);
 
     if (module?.questions) {
+      console.log('Loading quiz questions:', module.questions);
       setQuizQuestions(module.questions);
       setSelectedAnswers({});
       setIsQuizSubmitted(false);
@@ -146,6 +147,7 @@ export default function ChapterPage() {
         if (!contentRes.ok) throw new Error("Failed to fetch content");
         const contentData = await contentRes.json();
         const fetchedModules: Module[] = contentData.data || [];
+        console.log('Loaded modules with content:', fetchedModules);
         if (!abortController.signal.aborted) setModules(fetchedModules);
 
         // Open all modules by default
@@ -334,10 +336,10 @@ export default function ChapterPage() {
     };
 
   // Handle quiz answer selection
-  const handleAnswerSelect = (questionId: string, answerIndex: number) => {
+  const handleAnswerSelect = (questionId: string, answer: any) => {
     setSelectedAnswers((prev) => ({
       ...prev,
-      [questionId]: answerIndex,
+      [questionId]: answer,
     }));
   };
 
@@ -376,7 +378,7 @@ export default function ChapterPage() {
           type: "quiz",
           moduleId: module._id,
           moduleTitle: module.title,
-          questionIds: module.questions.map((q) => q._id),
+          questionIds: module.questions.filter(q => q).map((q) => q._id),
         });
       }
     });
@@ -571,7 +573,7 @@ export default function ChapterPage() {
                           {module.questions?.length > 0 && (() => {
                             const quizId = `quiz-${module._id}`;
                             // Check if all questions in this module are completed
-                            const isQuizDone = module.questions.every(
+                            const isQuizDone = module.questions.filter(q => q).every(
                               (q) => userProgress.questions?.[q._id] === true
                             );
                             
@@ -654,14 +656,13 @@ export default function ChapterPage() {
                     {currentItem.title}
                   </h1>
 
-                  {/* Quiz Questions */}
+              {/* Quiz Questions */}
                   <div className="mt-8 space-y-8">
                     {quizQuestions.length === 0 ? (
                       <p className="text-slate-600">No questions available for this quiz.</p>
                     ) : (
                       quizQuestions.map((question, idx) => {
-                        const selectedIdx = selectedAnswers[question._id];
-                        const isCorrect = selectedIdx === question.correctAnswer;
+                        const questionType = (question as any).type || 'test';
 
                         return (
                           <div
@@ -673,76 +674,190 @@ export default function ChapterPage() {
                                 {idx + 1}
                               </span>
                               <div className="flex-1">
-                                <h3 className="text-lg font-medium text-slate-900">
-                                  {question.question}
-                                </h3>
+                                {/* Test Question */}
+                                {questionType === 'test' && (
+                                  <>
+                                    <h3 className="text-lg font-medium text-slate-900">
+                                      {(question as any).question}
+                                    </h3>
 
-                                {/* Answer Options */}
-                                <div className="mt-4 space-y-3">
-                                  {question.options.map((option, optIdx) => {
-                                    const isSelected = selectedIdx === optIdx;
-                                    const isCorrectAnswer =
-                                      optIdx === question.correctAnswer;
+                                    <div className="mt-4 space-y-3">
+                                      {(question as any).options?.map((option: string, optIdx: number) => {
+                                        const selectedIdx = selectedAnswers[question._id];
+                                        const isSelected = selectedIdx === optIdx;
+                                        const isCorrectAnswer = optIdx === (question as any).correctAnswer;
+                                        const isCorrect = selectedIdx === (question as any).correctAnswer;
 
-                                    let buttonClass =
-                                      "w-full text-left rounded-lg border-2 p-3 transition ";
+                                        let buttonClass = "w-full text-left rounded-lg border-2 p-3 transition ";
 
-                                    if (isQuizSubmitted) {
-                                      if (isCorrectAnswer) {
-                                        buttonClass +=
-                                          "border-emerald-500 bg-emerald-100 text-emerald-900";
-                                      } else if (isSelected && !isCorrect) {
-                                        buttonClass +=
-                                          "border-red-500 bg-red-100 text-red-900";
-                                      } else {
-                                        buttonClass +=
-                                          "border-slate-300 bg-slate-100 text-slate-600";
-                                      }
-                                    } else {
-                                      if (isSelected) {
-                                        buttonClass +=
-                                          "border-indigo-500 bg-indigo-100 text-indigo-900";
-                                      } else {
-                                        buttonClass +=
-                                          "border-slate-300 bg-white text-slate-700 hover:border-indigo-300 hover:bg-slate-50";
-                                      }
-                                    }
-
-                                    return (
-                                      <button
-                                        key={optIdx}
-                                        type="button"
-                                        onClick={() =>
-                                          !isQuizSubmitted &&
-                                          handleAnswerSelect(question._id, optIdx)
+                                        if (isQuizSubmitted) {
+                                          if (isCorrectAnswer) {
+                                            buttonClass += "border-emerald-500 bg-emerald-100 text-emerald-900";
+                                          } else if (isSelected && !isCorrect) {
+                                            buttonClass += "border-red-500 bg-red-100 text-red-900";
+                                          } else {
+                                            buttonClass += "border-slate-300 bg-slate-100 text-slate-600";
+                                          }
+                                        } else {
+                                          if (isSelected) {
+                                            buttonClass += "border-indigo-500 bg-indigo-100 text-indigo-900";
+                                          } else {
+                                            buttonClass += "border-slate-300 bg-white text-slate-700 hover:border-indigo-300 hover:bg-slate-50";
+                                          }
                                         }
-                                        disabled={isQuizSubmitted}
-                                        className={buttonClass}
-                                      >
-                                        <span className="font-medium">
-                                          {String.fromCharCode(65 + optIdx)}.
-                                        </span>{" "}
-                                        {option}
-                                        {isQuizSubmitted && isCorrectAnswer && (
-                                          <span className="ml-2 text-emerald-600">
-                                            ✓
-                                          </span>
-                                        )}
-                                        {isQuizSubmitted && isSelected && !isCorrect && (
-                                          <span className="ml-2 text-red-600">
-                                            ✗
-                                          </span>
-                                        )}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
 
-                                {/* Explanation */}
-                                {isQuizSubmitted && question.explanation && (
-                                  <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
-                                    <strong>Explanation:</strong> {question.explanation}
-                                  </div>
+                                        return (
+                                          <button
+                                            key={optIdx}
+                                            type="button"
+                                            onClick={() =>
+                                              !isQuizSubmitted &&
+                                              handleAnswerSelect(question._id, optIdx)
+                                            }
+                                            disabled={isQuizSubmitted}
+                                            className={buttonClass}
+                                          >
+                                            <span className="font-medium">
+                                              {String.fromCharCode(65 + optIdx)}.
+                                            </span>{" "}
+                                            {option}
+                                            {isQuizSubmitted && isCorrectAnswer && (
+                                              <span className="ml-2 text-emerald-600">
+                                                ✓
+                                              </span>
+                                            )}
+                                            {isQuizSubmitted && isSelected && !isCorrect && (
+                                              <span className="ml-2 text-red-600">
+                                                ✗
+                                              </span>
+                                            )}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+
+                                    {isQuizSubmitted && (question as any).explanation && (
+                                      <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
+                                        <strong>Explanation:</strong> {(question as any).explanation}
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+
+                                {/* Short Answer Question */}
+                                {questionType === 'short-answer' && (
+                                  <>
+                                    <h3 className="text-lg font-medium text-slate-900">
+                                      {(question as any).question}
+                                    </h3>
+
+                                    <div className="mt-4">
+                                      <input
+                                        type="text"
+                                        value={selectedAnswers[question._id] || ''}
+                                        onChange={(e) =>
+                                          !isQuizSubmitted &&
+                                          handleAnswerSelect(question._id, e.target.value)
+                                        }
+                                        placeholder="Enter your answer..."
+                                        disabled={isQuizSubmitted}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-indigo-500 disabled:bg-slate-100"
+                                      />
+                                    </div>
+
+                                    {isQuizSubmitted && (
+                                      <div className={`mt-4 rounded-lg p-3 text-sm ${
+                                        (question as any).correctAnswers.some((ans: string) =>
+                                          (question as any).caseSensitive
+                                            ? ans === selectedAnswers[question._id]
+                                            : ans.toLowerCase() === (selectedAnswers[question._id] || '').toLowerCase()
+                                        )
+                                          ? 'bg-emerald-50 text-emerald-900'
+                                          : 'bg-red-50 text-red-900'
+                                      }`}>
+                                        {(question as any).correctAnswers.some((ans: string) =>
+                                          (question as any).caseSensitive
+                                            ? ans === selectedAnswers[question._id]
+                                            : ans.toLowerCase() === (selectedAnswers[question._id] || '').toLowerCase()
+                                        ) ? (
+                                          <div>
+                                            <strong className="text-emerald-600">✓ Correct!</strong>
+                                            {(question as any).explanation && (
+                                              <p className="mt-2">{(question as any).explanation}</p>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <div>
+                                            <strong className="text-red-600">✗ Incorrect</strong>
+                                            <p className="mt-2">Correct answer(s): {(question as any).correctAnswers.join(', ')}</p>
+                                            {(question as any).explanation && (
+                                              <p className="mt-2">{(question as any).explanation}</p>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+
+                                {/* Fill in the Blank Question */}
+                                {questionType === 'fill-blank' && (
+                                  <>
+                                    <h3 className="text-lg font-medium text-slate-900">
+                                      {(question as any).questionText}
+                                    </h3>
+
+                                    <div className="mt-4 space-y-3">
+                                      {(question as any).blanks?.map((blank: any, blankIdx: number) => (
+                                        <div key={blankIdx}>
+                                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                                            Blank {blankIdx + 1}:
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={selectedAnswers[question._id]?.[blankIdx] || ''}
+                                            onChange={(e) => {
+                                              if (!isQuizSubmitted) {
+                                                const current = selectedAnswers[question._id] || [];
+                                                const newAnswers = [...current];
+                                                newAnswers[blankIdx] = e.target.value;
+                                                handleAnswerSelect(question._id, newAnswers);
+                                              }
+                                            }}
+                                            placeholder={`Answer for blank ${blankIdx + 1}...`}
+                                            disabled={isQuizSubmitted}
+                                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-indigo-500 disabled:bg-slate-100"
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    {isQuizSubmitted && (
+                                      <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
+                                        {(question as any).blanks?.map((blank: any, blankIdx: number) => {
+                                          const userAnswer = selectedAnswers[question._id]?.[blankIdx] || '';
+                                          const isCorrect = blank.correctAnswers.some((ans: string) =>
+                                            blank.caseSensitive
+                                              ? ans === userAnswer
+                                              : ans.toLowerCase() === userAnswer.toLowerCase()
+                                          );
+                                          return (
+                                            <div key={blankIdx} className="mb-2">
+                                              <strong>Blank {blankIdx + 1}:</strong> {userAnswer || '(not answered)'}{' '}
+                                              {isCorrect ? (
+                                                <span className="text-emerald-600">✓</span>
+                                              ) : (
+                                                <span className="text-red-600">✗ (correct: {blank.correctAnswers.join(', ')})</span>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                        {(question as any).explanation && (
+                                          <p className="mt-3 border-t border-blue-200 pt-2">{(question as any).explanation}</p>
+                                        )}
+                                      </div>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -765,10 +880,39 @@ export default function ChapterPage() {
 
                   {/* Results Summary */}
                   {isQuizSubmitted && (() => {
-                    const correctCount = quizQuestions.filter((q) => {
-                      const selectedIdx = selectedAnswers[q._id];
-                      return selectedIdx === q.correctAnswer;
-                    }).length;
+                    let correctCount = 0;
+
+                    quizQuestions.forEach((q) => {
+                      const questionType = (q as any).type || 'test';
+                      const userAnswer = selectedAnswers[q._id];
+
+                      if (questionType === 'test') {
+                        if (userAnswer === (q as any).correctAnswer) {
+                          correctCount++;
+                        }
+                      } else if (questionType === 'short-answer') {
+                        if ((q as any).correctAnswers.some((ans: string) =>
+                          (q as any).caseSensitive
+                            ? ans === userAnswer
+                            : ans.toLowerCase() === (userAnswer || '').toLowerCase()
+                        )) {
+                          correctCount++;
+                        }
+                      } else if (questionType === 'fill-blank') {
+                        const allCorrect = (q as any).blanks?.every((blank: any, idx: number) => {
+                          const blankAnswer = userAnswer?.[idx] || '';
+                          return blank.correctAnswers.some((ans: string) =>
+                            blank.caseSensitive
+                              ? ans === blankAnswer
+                              : ans.toLowerCase() === blankAnswer.toLowerCase()
+                          );
+                        });
+                        if (allCorrect) {
+                          correctCount++;
+                        }
+                      }
+                    });
+
                     const totalCount = quizQuestions.length;
 
                     return (

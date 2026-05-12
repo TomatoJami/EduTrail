@@ -1,11 +1,11 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export type QuestionType = 'test' | 'short-answer' | 'fill-blank';
+
 export interface IQuestion extends Document {
   module_id: mongoose.Types.ObjectId;
-  question: string;
-  options: string[];
-  correctAnswer: number;
-  explanation?: string;
+  type: QuestionType;
+  typeId: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,22 +18,15 @@ const QuestionSchema = new Schema<IQuestion>(
       required: true,
       index: true,
     },
-    question: {
+    type: {
       type: String,
-      required: true,
-      trim: true,
-    },
-    options: {
-      type: [String],
-      required: true,
-      validate: [(val: string[]) => val.length >= 2, 'Minimum 2 options required'],
-    },
-    correctAnswer: {
-      type: Number,
+      enum: ['test', 'short-answer', 'fill-blank'],
       required: true,
     },
-    explanation: {
-      type: String,
+    typeId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      refPath: 'type',
     },
   },
   {

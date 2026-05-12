@@ -34,12 +34,18 @@ type Chapter = {
 
 type Question = {
   _id: string;
-  question: string;
-  options: string[];
-  correctAnswer: number;
+  question?: string;
+  questionText?: string;
+  options?: string[];
+  correctAnswer?: number;
+  correctAnswers?: string[];
+  blanks?: any[];
   explanation?: string;
   module_id: string;
+  type?: string;
 };
+
+type QuestionType = "test" | "short-answer" | "fill-blank";
 
 type StoredUser = {
   id?: string;
@@ -88,12 +94,25 @@ export default function AdminCoursesPage() {
 
   const [moduleForm, setModuleForm] = useState({ title: "", order: 0, course_id: "" });
   const [chapterForm, setChapterForm] = useState({ title: "", content: "", order: 0, module_id: "" });
-  const [questionForm, setQuestionForm] = useState({
+
+  // Question form with type
+  const [questionType, setQuestionType] = useState<QuestionType>("test");
+  const [testQuestionForm, setTestQuestionForm] = useState({
     question: "",
     options: ["", "", "", ""],
     correctAnswer: 0,
     explanation: "",
-    module_id: "",
+  });
+  const [shortAnswerForm, setShortAnswerForm] = useState({
+    question: "",
+    correctAnswers: [""],
+    explanation: "",
+    caseSensitive: false,
+  });
+  const [fillBlankForm, setFillBlankForm] = useState({
+    questionText: "",
+    blanks: [{ blankId: "blank1", correctAnswers: [""], caseSensitive: false }],
+    explanation: "",
   });
 
   useEffect(() => {
@@ -534,9 +553,46 @@ export default function AdminCoursesPage() {
 
   // Question handlers
   const handleQuestionCreate = async (moduleId: string) => {
-    if (!questionForm.question || questionForm.options.some((o) => !o)) {
-      setError("Question and all options are required");
-      return;
+    let payload: any;
+
+    if (questionType === "test") {
+      if (!testQuestionForm.question || testQuestionForm.options.some((o) => !o)) {
+        setError("Question and all options are required");
+        return;
+      }
+      payload = {
+        type: "test",
+        question: testQuestionForm.question,
+        options: testQuestionForm.options,
+        correctAnswer: testQuestionForm.correctAnswer,
+        explanation: testQuestionForm.explanation,
+        module_id: moduleId,
+      };
+    } else if (questionType === "short-answer") {
+      if (!shortAnswerForm.question || shortAnswerForm.correctAnswers.some((a) => !a)) {
+        setError("Question and at least one correct answer are required");
+        return;
+      }
+      payload = {
+        type: "short-answer",
+        question: shortAnswerForm.question,
+        correctAnswers: shortAnswerForm.correctAnswers,
+        explanation: shortAnswerForm.explanation,
+        caseSensitive: shortAnswerForm.caseSensitive,
+        module_id: moduleId,
+      };
+    } else if (questionType === "fill-blank") {
+      if (!fillBlankForm.questionText || fillBlankForm.blanks.some((b) => !b.correctAnswers.some((a) => a))) {
+        setError("Question text and at least one correct answer for each blank are required");
+        return;
+      }
+      payload = {
+        type: "fill-blank",
+        questionText: fillBlankForm.questionText,
+        blanks: fillBlankForm.blanks,
+        explanation: fillBlankForm.explanation,
+        module_id: moduleId,
+      };
     }
 
     setSaving(true);
@@ -550,13 +606,7 @@ export default function AdminCoursesPage() {
           "Content-Type": "application/json",
           "x-user-id": userId,
         },
-        body: JSON.stringify({
-          question: questionForm.question,
-          options: questionForm.options,
-          correctAnswer: questionForm.correctAnswer,
-          explanation: questionForm.explanation,
-          module_id: moduleId,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -566,56 +616,29 @@ export default function AdminCoursesPage() {
         ...prev,
         [moduleId]: [...(prev[moduleId] || []), data.data],
       }));
-      setQuestionForm({
+
+      // Reset forms
+      setQuestionType("test");
+      setTestQuestionForm({
         question: "",
         options: ["", "", "", ""],
         correctAnswer: 0,
         explanation: "",
-        module_id: "",
+      });
+      setShortAnswerForm({
+        question: "",
+        correctAnswers: [""],
+        explanation: "",
+        caseSensitive: false,
+      });
+      setFillBlankForm({
+        questionText: "",
+        blanks: [{ blankId: "blank1", correctAnswers: [""], caseSensitive: false }],
+        explanation: "",
       });
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create question");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleQuestionUpdate = async () => {
-    if (!editingQuestion) return;
-
-    setSaving(true);
-    try {
-      const userId = getUserId();
-      if (!userId) throw new Error("Unauthorized");
-
-      const res = await fetch(`/api/questions/${editingQuestion._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": userId,
-        },
-        body: JSON.stringify({
-          question: editingQuestion.question,
-          options: editingQuestion.options,
-          correctAnswer: editingQuestion.correctAnswer,
-          explanation: editingQuestion.explanation,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message);
-
-      setQuestions((prev) => ({
-        ...prev,
-        [editingQuestion.module_id]: prev[editingQuestion.module_id].map((q) =>
-          q._id === editingQuestion._id ? editingQuestion : q
-        ),
-      }));
-      setEditingQuestion(null);
-      setError("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update question");
     } finally {
       setSaving(false);
     }
@@ -647,6 +670,12 @@ export default function AdminCoursesPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const getQuestionDisplay = (q: Question) => {
+    if (q.question) return q.question;
+    if (q.questionText) return q.questionText;
+    return "Question";
   };
 
   if (loading) {
@@ -1077,66 +1106,18 @@ export default function AdminCoursesPage() {
                             <p className="text-xs font-medium text-amber-700">📝 Quiz Questions:</p>
                             {questions[module._id].map((question) => (
                               <div key={question._id} className="bg-amber-50 p-2 rounded border border-amber-200">
-                                {editingQuestion?._id === question._id ? (
-                                  <div className="space-y-1">
-                                    <input
-                                      type="text"
-                                      value={editingQuestion.question}
-                                      onChange={(e) => setEditingQuestion({ ...editingQuestion, question: e.target.value })}
-                                      className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
-                                    />
-                                    {editingQuestion.options.map((opt, i) => (
-                                      <input
-                                        key={i}
-                                        type="text"
-                                        value={opt}
-                                        onChange={(e) => {
-                                          const newOpts = [...editingQuestion.options];
-                                          newOpts[i] = e.target.value;
-                                          setEditingQuestion({ ...editingQuestion, options: newOpts });
-                                        }}
-                                        placeholder={`Option ${i + 1}`}
-                                        className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
-                                      />
-                                    ))}
-                                    <div className="flex gap-1">
-                                      <button
-                                        onClick={handleQuestionUpdate}
-                                        disabled={saving}
-                                        className="rounded bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
-                                      >
-                                        Save
-                                      </button>
-                                      <button
-                                        onClick={() => setEditingQuestion(null)}
-                                        className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                                      >
-                                        Cancel
-                                      </button>
-                                    </div>
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <p className="text-xs font-medium text-slate-900">{getQuestionDisplay(question)}</p>
+                                    <p className="text-xs text-amber-700">Type: {question.type || "test"}</p>
                                   </div>
-                                ) : (
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                      <p className="text-xs font-medium text-slate-900">{question.question}</p>
-                                      <p className="text-xs text-slate-500">Answer: {question.options[question.correctAnswer]}</p>
-                                    </div>
-                                    <div className="flex gap-1 ml-2">
-                                      <button
-                                        onClick={() => setEditingQuestion(question)}
-                                        className="rounded bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700"
-                                      >
-                                        E
-                                      </button>
-                                      <button
-                                        onClick={() => handleQuestionDelete(question._id, module._id)}
-                                        className="rounded bg-rose-600 px-2 py-1 text-xs font-medium text-white hover:bg-rose-700"
-                                      >
-                                        D
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
+                                  <button
+                                    onClick={() => handleQuestionDelete(question._id, module._id)}
+                                    className="rounded bg-rose-600 px-2 py-1 text-xs font-medium text-white hover:bg-rose-700 ml-2"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1144,56 +1125,190 @@ export default function AdminCoursesPage() {
 
                         {/* Add question form */}
                         {!editingQuestion && (
-                          <div className="mt-2 pl-3 bg-amber-50 p-2 rounded border border-amber-200 space-y-1">
-                            <p className="text-xs font-medium text-amber-700">+ Add Quiz Question</p>
-                            <input
-                              type="text"
-                              placeholder="Question..."
-                              value={questionForm.question}
-                              onChange={(e) => setQuestionForm({ ...questionForm, question: e.target.value })}
-                              className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
-                            />
-                            {questionForm.options.map((opt, i) => (
-                              <input
-                                key={i}
-                                type="text"
-                                value={opt}
-                                onChange={(e) => {
-                                  const newOpts = [...questionForm.options];
-                                  newOpts[i] = e.target.value;
-                                  setQuestionForm({ ...questionForm, options: newOpts });
-                                }}
-                                placeholder={`Option ${i + 1}`}
-                                className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
-                              />
-                            ))}
-                            <div className="flex items-center gap-2">
-                              <label className="text-xs font-medium text-slate-700">Correct:</label>
+                          <div className="mt-3 pl-3 bg-amber-50 p-3 rounded border border-amber-200 space-y-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs font-medium text-amber-700">+ Add Quiz Question</p>
                               <select
-                                value={questionForm.correctAnswer}
-                                onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: Number(e.target.value) })}
-                                className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                value={questionType}
+                                onChange={(e) => setQuestionType(e.target.value as QuestionType)}
+                                className="rounded border border-amber-300 px-2 py-1 text-xs text-slate-900 bg-white outline-none focus:border-amber-500"
                               >
-                                {questionForm.options.map((_, i) => (
-                                  <option key={i} value={i}>
-                                    Option {i + 1}
-                                  </option>
-                                ))}
+                                <option value="test">Multiple Choice Test</option>
+                                <option value="short-answer">Short Answer</option>
+                                <option value="fill-blank">Fill in the Blank</option>
                               </select>
                             </div>
-                            <textarea
-                              placeholder="Explanation..."
-                              value={questionForm.explanation}
-                              onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
-                              className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500 h-8"
-                            />
-                            <button
-                              onClick={() => handleQuestionCreate(module._id)}
-                              disabled={saving}
-                              className="rounded bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-60"
-                            >
-                              + Add question
-                            </button>
+
+                            {/* Test Question Form */}
+                            {questionType === "test" && (
+                              <div className="space-y-1">
+                                <input
+                                  type="text"
+                                  placeholder="Question..."
+                                  value={testQuestionForm.question}
+                                  onChange={(e) => setTestQuestionForm({ ...testQuestionForm, question: e.target.value })}
+                                  className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                />
+                                {testQuestionForm.options.map((opt, i) => (
+                                  <input
+                                    key={i}
+                                    type="text"
+                                    value={opt}
+                                    onChange={(e) => {
+                                      const newOpts = [...testQuestionForm.options];
+                                      newOpts[i] = e.target.value;
+                                      setTestQuestionForm({ ...testQuestionForm, options: newOpts });
+                                    }}
+                                    placeholder={`Option ${i + 1}`}
+                                    className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                  />
+                                ))}
+                                <div className="flex items-center gap-2">
+                                  <label className="text-xs font-medium text-slate-700">Correct:</label>
+                                  <select
+                                    value={testQuestionForm.correctAnswer}
+                                    onChange={(e) => setTestQuestionForm({ ...testQuestionForm, correctAnswer: Number(e.target.value) })}
+                                    className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                  >
+                                    {testQuestionForm.options.map((_, i) => (
+                                      <option key={i} value={i}>
+                                        Option {i + 1}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <textarea
+                                  placeholder="Explanation..."
+                                  value={testQuestionForm.explanation}
+                                  onChange={(e) => setTestQuestionForm({ ...testQuestionForm, explanation: e.target.value })}
+                                  className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500 h-8"
+                                />
+                                <button
+                                  onClick={() => handleQuestionCreate(module._id)}
+                                  disabled={saving}
+                                  className="w-full rounded bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+                                >
+                                  + Add test question
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Short Answer Form */}
+                            {questionType === "short-answer" && (
+                              <div className="space-y-1">
+                                <input
+                                  type="text"
+                                  placeholder="Question..."
+                                  value={shortAnswerForm.question}
+                                  onChange={(e) => setShortAnswerForm({ ...shortAnswerForm, question: e.target.value })}
+                                  className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                />
+                                <p className="text-xs font-medium text-slate-700">Correct Answers:</p>
+                                {shortAnswerForm.correctAnswers.map((ans, i) => (
+                                  <div key={i} className="flex gap-1">
+                                    <input
+                                      type="text"
+                                      value={ans}
+                                      onChange={(e) => {
+                                        const newAnswers = [...shortAnswerForm.correctAnswers];
+                                        newAnswers[i] = e.target.value;
+                                        setShortAnswerForm({ ...shortAnswerForm, correctAnswers: newAnswers });
+                                      }}
+                                      placeholder={`Answer ${i + 1}`}
+                                      className="flex-1 rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                    />
+                                    {i === shortAnswerForm.correctAnswers.length - 1 && (
+                                      <button
+                                        onClick={() => setShortAnswerForm({ ...shortAnswerForm, correctAnswers: [...shortAnswerForm.correctAnswers, ""] })}
+                                        className="rounded bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700"
+                                      >
+                                        +
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                                <label className="flex items-center gap-2 text-xs">
+                                  <input
+                                    type="checkbox"
+                                    checked={shortAnswerForm.caseSensitive}
+                                    onChange={(e) => setShortAnswerForm({ ...shortAnswerForm, caseSensitive: e.target.checked })}
+                                  />
+                                  <span>Case sensitive</span>
+                                </label>
+                                <textarea
+                                  placeholder="Explanation..."
+                                  value={shortAnswerForm.explanation}
+                                  onChange={(e) => setShortAnswerForm({ ...shortAnswerForm, explanation: e.target.value })}
+                                  className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500 h-8"
+                                />
+                                <button
+                                  onClick={() => handleQuestionCreate(module._id)}
+                                  disabled={saving}
+                                  className="w-full rounded bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+                                >
+                                  + Add short answer
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Fill in the Blank Form */}
+                            {questionType === "fill-blank" && (
+                              <div className="space-y-1">
+                                <input
+                                  type="text"
+                                  placeholder="Question text (use [blank] for blanks)..."
+                                  value={fillBlankForm.questionText}
+                                  onChange={(e) => setFillBlankForm({ ...fillBlankForm, questionText: e.target.value })}
+                                  className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                />
+                                <p className="text-xs font-medium text-slate-700">Blanks:</p>
+                                {fillBlankForm.blanks.map((blank, i) => (
+                                  <div key={i} className="bg-white p-2 rounded border border-slate-200 space-y-1">
+                                    <p className="text-xs font-medium text-slate-600">Blank {i + 1}</p>
+                                    {blank.correctAnswers.map((ans, j) => (
+                                      <div key={j} className="flex gap-1">
+                                        <input
+                                          type="text"
+                                          value={ans}
+                                          onChange={(e) => {
+                                            const newBlanks = JSON.parse(JSON.stringify(fillBlankForm.blanks));
+                                            newBlanks[i].correctAnswers[j] = e.target.value;
+                                            setFillBlankForm({ ...fillBlankForm, blanks: newBlanks });
+                                          }}
+                                          placeholder={`Answer ${j + 1}`}
+                                          className="flex-1 rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                        />
+                                        {j === blank.correctAnswers.length - 1 && (
+                                          <button
+                                            onClick={() => {
+                                              const newBlanks = JSON.parse(JSON.stringify(fillBlankForm.blanks));
+                                              newBlanks[i].correctAnswers.push("");
+                                              setFillBlankForm({ ...fillBlankForm, blanks: newBlanks });
+                                            }}
+                                            className="rounded bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700"
+                                          >
+                                            +
+                                          </button>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ))}
+                                <textarea
+                                  placeholder="Explanation..."
+                                  value={fillBlankForm.explanation}
+                                  onChange={(e) => setFillBlankForm({ ...fillBlankForm, explanation: e.target.value })}
+                                  className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500 h-8"
+                                />
+                                <button
+                                  onClick={() => handleQuestionCreate(module._id)}
+                                  disabled={saving}
+                                  className="w-full rounded bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+                                >
+                                  + Add fill-blank question
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

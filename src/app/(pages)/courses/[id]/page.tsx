@@ -243,7 +243,7 @@ export default function CourseDetailPage() {
 
 		const isQuizDone = (module: Module) =>
 		module.questions.length > 0 &&
-		module.questions.every(q =>
+		module.questions.filter(q => q).every(q =>
 			userProgress.questions?.[String(q._id)]
 		);
 
@@ -395,7 +395,7 @@ export default function CourseDetailPage() {
 	const completedQuizzes = modules.filter(mod => {
 		// Check if all questions in this module are completed
 		return mod.questions.length > 0 && 
-		       mod.questions.every(q => userProgress.questions[q._id] === true);
+		       mod.questions.filter(q => q).every(q => userProgress.questions[q._id] === true);
 	}).length;
 	const isFinishCompleted = courseProgress?.status === 'completed';
 

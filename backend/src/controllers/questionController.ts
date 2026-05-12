@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { questionService, QuestionPayload } from '../services/questionService';
+import { questionService, CreateTestQuestionPayload, CreateShortAnswerPayload, CreateFillBlankPayload } from '../services/questionService';
+import { ApiResponse } from '../types';
 import { Question } from '../models/Question';
 import { QuestionProgress } from '../models/QuestionProgress';
-import { ApiResponse } from '../types';
 
 export class QuestionController {
     async getAllQuestions(req: Request, res: Response): Promise<void> {
@@ -60,43 +60,104 @@ export class QuestionController {
     async createQuestion(req: Request, res: Response): Promise<void> {
         try {
             const body = req.body as {
-                question: string;
-                options: string[];
-                correctAnswer: number;
+                type: string;
+                module_id: string;
+                question?: string;
+                options?: string[];
+                correctAnswer?: number;
+                correctAnswers?: string[];
+                questionText?: string;
+                blanks?: any[];
                 explanation?: string;
-                module_id?: string;
+                caseSensitive?: boolean;
             };
-    
-            if (!body.question || !body.options ||  body.correctAnswer === undefined! || !body.module_id) {
+
+            const { type, module_id } = body;
+
+            if (!type || !module_id) {
                 res.status(400).json({
                     success: false,
-                    message: 'question, options, correctAnswer, and module_id are required',
+                    message: 'type and module_id are required',
                 } as ApiResponse);
                 return;
             }
-    
-            if (!mongoose.isValidObjectId(body.module_id)) {
+
+            if (!mongoose.isValidObjectId(module_id)) {
                 res.status(400).json({
                     success: false,
                     message: 'Invalid module_id',
                 } as ApiResponse);
-            return;
+                return;
             }
-    
-            const payload: QuestionPayload = {
-                question: body.question.trim(),
-                options: body.options,
-                correctAnswer: body.correctAnswer,
-                explanation: body.explanation?.trim(),
-                module_id: body.module_id?.trim()
-            };
-    
-            const question = await questionService.createQuestion(payload);
-                res.status(201).json({
-                    success: true,
-                    message: 'Question created successfully',
-                    data: question,
+
+            let question;
+
+            if (type === 'test') {
+                if (!body.question || !body.options || body.correctAnswer === undefined) {
+                    res.status(400).json({
+                        success: false,
+                        message: 'For test questions: question, options, and correctAnswer are required',
+                    } as ApiResponse);
+                    return;
+                }
+
+                const payload: CreateTestQuestionPayload = {
+                    question: body.question.trim(),
+                    options: body.options,
+                    correctAnswer: body.correctAnswer,
+                    explanation: body.explanation?.trim(),
+                    module_id: module_id.trim(),
+                };
+
+                question = await questionService.createTestQuestion(payload);
+            } else if (type === 'short-answer') {
+                if (!body.question || !body.correctAnswers || body.correctAnswers.length === 0) {
+                    res.status(400).json({
+                        success: false,
+                        message: 'For short-answer questions: question and correctAnswers are required',
+                    } as ApiResponse);
+                    return;
+                }
+
+                const payload: CreateShortAnswerPayload = {
+                    question: body.question.trim(),
+                    correctAnswers: body.correctAnswers,
+                    explanation: body.explanation?.trim(),
+                    caseSensitive: body.caseSensitive || false,
+                    module_id: module_id.trim(),
+                };
+
+                question = await questionService.createShortAnswerQuestion(payload);
+            } else if (type === 'fill-blank') {
+                if (!body.questionText || !body.blanks || body.blanks.length === 0) {
+                    res.status(400).json({
+                        success: false,
+                        message: 'For fill-blank questions: questionText and blanks are required',
+                    } as ApiResponse);
+                    return;
+                }
+
+                const payload: CreateFillBlankPayload = {
+                    questionText: body.questionText.trim(),
+                    blanks: body.blanks,
+                    explanation: body.explanation?.trim(),
+                    module_id: module_id.trim(),
+                };
+
+                question = await questionService.createFillBlankQuestion(payload);
+            } else {
+                res.status(400).json({
+                    success: false,
+                    message: 'Invalid question type. Must be: test, short-answer, or fill-blank',
                 } as ApiResponse);
+                return;
+            }
+
+            res.status(201).json({
+                success: true,
+                message: 'Question created successfully',
+                data: question,
+            } as ApiResponse);
         } catch (error) {
             res.status(500).json({
                 success: false,
@@ -106,81 +167,23 @@ export class QuestionController {
         }
     }
 
-    async updateQuestion(req: Request, res: Response): Promise<void> {
-        try {
-            const { id } = req.params;
-            const body = req.body as {
-                question?: string;
-                options?: string[];
-                correctAnswer?: number;
-                explanation?: string;
-                module_id?: string;
-            };
-    
-            if (!id) {
-                res.status(400).json({
-                success: false,
-                message: 'question id is required',
-                } as ApiResponse);
-                return;
-            }
-        
-            const payload: Partial<QuestionPayload> = {
-                question: body.question?.trim(),
-                options: body.options,
-                correctAnswer: body.correctAnswer,
-                explanation: body.explanation?.trim(),
-                module_id: body.module_id?.trim(),
-            };
-        
-            const question = await questionService.updateQuestion(id, payload);
-            if (!question) {
-                res.status(404).json({
-                    success: false,
-                    message: 'Question not found',
-                } as ApiResponse);
-                return;
-            }
-        
-            res.status(200).json({
-                success: true,
-                message: 'Question updated successfully',
-                data: question,
-            } as ApiResponse);
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: 'Failed to update question',
-                error: error instanceof Error ? error.message : String(error),
-            } as ApiResponse);
-        }
-    }
-
     async deleteQuestion(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
-        
+
             if (!id) {
                 res.status(400).json({
-                success: false,
-                message: 'Question id is required',
+                    success: false,
+                    message: 'Question id is required',
                 } as ApiResponse);
                 return;
             }
-    
-            const question = await questionService.deleteQuestion(id);
-            if (!question) {
-                res.status(404).json({
-                success: false,
-                message: 'Question not found',
-                } as ApiResponse);
-                return;
-            }
-    
+
+            await questionService.deleteQuestion(id);
+
             res.status(200).json({
                 success: true,
                 message: 'Question deleted successfully',
-                data: question,
             } as ApiResponse);
         } catch (error) {
             res.status(500).json({

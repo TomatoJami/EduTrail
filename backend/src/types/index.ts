@@ -57,15 +57,53 @@ export interface Module {
   updatedAt?: Date;
 }
 
-export interface Question {
+export type QuestionType = 'test' | 'short-answer' | 'fill-blank';
+
+export interface TestQuestion {
   _id?: string;
   module_id: string;
   question: string;
   options: string[];
   correctAnswer: number;
   explanation?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface ShortAnswerQuestion {
+  _id?: string;
+  module_id: string;
+  question: string;
+  correctAnswers: string[];
+  explanation?: string;
+  caseSensitive?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface BlanksData {
+  blankId: string;
+  correctAnswers: string[];
+  caseSensitive?: boolean;
+}
+
+export interface FillInTheBlankQuestion {
+  _id?: string;
+  module_id: string;
+  questionText: string;
+  blanks: BlanksData[];
+  explanation?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Question {
+  _id?: string;
+  module_id: string;
+  type: QuestionType;
+  typeId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 
