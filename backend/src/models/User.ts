@@ -9,6 +9,8 @@ export interface IUser extends Document {
   role: 'student' | 'admin';
   preferredSubjects: mongoose.Types.ObjectId[];
   hasCompletedOnboarding: boolean;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
@@ -54,6 +56,16 @@ const UserSchema = new Schema<IUser>(
     hasCompletedOnboarding: {
       type: Boolean,
       default: false,
+    },
+    resetPasswordToken: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
+      select: false,
     },
   },
   {

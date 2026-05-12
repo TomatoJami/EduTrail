@@ -193,6 +193,7 @@ class ApiClient {
         const response = await this.client.post(`/upload?folder=${folder}`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
+            'x-user-id': this.client.defaults.headers.common['x-user-id'] || '',
           },
         });
 

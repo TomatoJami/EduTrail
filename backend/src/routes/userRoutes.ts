@@ -89,6 +89,36 @@ router.post('/signup', (req, res) => userController.signup(req, res));
  */
 router.post('/login', (req, res) => userController.login(req, res));
 
+/**
+ * @swagger
+ * /forgot-password:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: Send password reset email
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: If the email exists, a reset email was sent
+ */
+router.post('/forgot-password', (req, res) => userController.forgotPassword(req, res));
+
+/**
+ * @swagger
+ * /reset-password:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: Reset password using token
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ */
+router.post('/reset-password', (req, res) => userController.resetPassword(req, res));
+
 // Public routes
 /**
  * @swagger
@@ -167,6 +197,27 @@ router.get('/', (req, res) => userController.getAllUsers(req, res));
  *         description: Пользователь не найден
  */
 router.put('/:id', (req, res) => userController.updateUser(req, res));
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     tags:
+ *       - User
+ *     summary: Delete a user
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       404:
+ *         description: Пользователь не найден
+ */
+router.delete('/:id', (req, res) => userController.deleteUser(req, res));
 
 // Wishlist routes
 /**

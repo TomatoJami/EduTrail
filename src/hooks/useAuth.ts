@@ -18,7 +18,7 @@ interface UseAuthReturn {
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   updateProfile: (name?: string, email?: string, newPassword?: string) => Promise<void>;
-  loadUser: () => void;
+  loadUser: () => Promise<void>;
 }
 
 export const useAuth = (): UseAuthReturn => {
@@ -28,6 +28,24 @@ export const useAuth = (): UseAuthReturn => {
 
   // 👇 НОВОЕ СОСТОЯНИЕ
   const [initialized, setInitialized] = useState(false);
+
+  const normalizeUser = useCallback((input: any): User | null => {
+    if (!input) {
+      return null;
+    }
+
+    const id = input.id || input._id;
+    if (!id || !input.email || !input.name) {
+      return null;
+    }
+
+    return {
+      id: String(id),
+      email: String(input.email),
+      name: String(input.name),
+      role: input.role === 'admin' ? 'admin' : 'student',
+    };
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
@@ -98,13 +116,16 @@ export const useAuth = (): UseAuthReturn => {
 
       const response = await fetch(`/api/users/${user.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+        },
         body: JSON.stringify(updateData),
       });
 
       const data = await response.json();
       if (data.success) {
-        const updatedUser = {
+        const updatedUser = normalizeUser(data.data) || {
           ...user,
           ...(name && { name }),
           ...(email && { email }),
@@ -119,25 +140,68 @@ export const useAuth = (): UseAuthReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, normalizeUser]);
 
   // 👇 ИЗМЕНЁННЫЙ loadUser
-  const loadUser = useCallback(() => {
+  const loadUser = useCallback(async () => {
     try {
       const storedUser = localStorage.getItem('user');
 
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        const normalizedStoredUser = normalizeUser(parsedUser);
+
+        if (!normalizedStoredUser) {
+          setUser(null);
+          localStorage.removeItem('user');
+          return;
+        }
+
+        const response = await fetch(`/api/users/${normalizedStoredUser.id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': normalizedStoredUser.id,
+          },
+        });
+
+        if (!response.ok) {
+          setUser(normalizedStoredUser);
+          return;
+        }
+
+        const data = await response.json();
+        const freshUser = normalizeUser(data?.data);
+
+        if (!freshUser) {
+          setUser(normalizedStoredUser);
+          return;
+        }
+
+        setUser(freshUser);
+        localStorage.setItem('user', JSON.stringify(freshUser));
       } else {
         setUser(null);
       }
     } catch (err) {
       console.error('Failed to parse stored user:', err);
-      setUser(null);
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        setUser(null);
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(storedUser);
+        const normalized = normalizeUser(parsed);
+        setUser(normalized);
+      } catch {
+        setUser(null);
+      }
     } finally {
       setInitialized(true);
     }
-  }, []);
+  }, [normalizeUser]);
 
   return {
     user,

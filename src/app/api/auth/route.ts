@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-type AuthAction = 'signup' | 'login' | 'update';
+type AuthAction = 'signup' | 'login' | 'update' | 'forgot-password' | 'reset-password';
 
 interface AuthRequestBody {
   action?: AuthAction;
@@ -11,12 +11,13 @@ interface AuthRequestBody {
   name?: string;
   userId?: string;
   newPassword?: string;
+  token?: string;
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as AuthRequestBody;
-    const { action, email, password, name } = body;
+    const { action, email, password, name, token, newPassword } = body;
     console.log('Auth POST received, action:', action);
 
     switch (action) {
@@ -81,6 +82,47 @@ export async function POST(request: Request) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(updateData),
+        });
+
+        const data = await response.json();
+        return NextResponse.json(data, { status: response.status });
+      }
+
+      case 'forgot-password': {
+        if (!email) {
+          return NextResponse.json(
+            { success: false, message: 'Email is required' },
+            { status: 400 }
+          );
+        }
+
+        const response = await fetch(`${API_URL}/auth/forgot-password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await response.json();
+
+        return NextResponse.json(data, { status: response.status });
+      }
+
+      case 'reset-password': {
+        if (!token || !newPassword) {
+          return NextResponse.json(
+            { success: false, message: 'Token and newPassword are required' },
+            { status: 400 }
+          );
+        }
+
+        const response = await fetch(`${API_URL}/auth/reset-password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token, newPassword }),
         });
 
         const data = await response.json();

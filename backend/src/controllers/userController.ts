@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { userService } from '../services/userService';
+import { sendPasswordResetEmail } from '../services/emailService';
 import { SignupPayload, AuthPayload, ApiResponse, AuthResponse } from '../types';
 
 export class UserController {
@@ -165,6 +166,89 @@ export class UserController {
     }
   }
 
+  async forgotPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const body = req.body as { email?: string };
+
+      if (!body.email) {
+        res.status(400).json({
+          success: false,
+          message: 'Email is required',
+        } as ApiResponse);
+        return;
+      }
+
+      const resetResult = await userService.createPasswordResetToken(body.email);
+
+      if (!resetResult) {
+        res.status(200).json({
+          success: true,
+          message: 'If the email exists, a reset email was sent',
+        } as ApiResponse);
+        return;
+      }
+
+      await sendPasswordResetEmail(body.email, resetResult.resetToken);
+
+      res.status(200).json({
+        success: true,
+        message: 'If the email exists, a reset email was sent',
+      } as ApiResponse);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send password reset email',
+        error: error instanceof Error ? error.message : String(error),
+      } as ApiResponse);
+    }
+  }
+
+  async resetPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const body = req.body as {
+        token?: string;
+        newPassword?: string;
+      };
+
+      if (!body.token || !body.newPassword) {
+        res.status(400).json({
+          success: false,
+          message: 'Token and newPassword are required',
+        } as ApiResponse);
+        return;
+      }
+
+      if (body.newPassword.length < 8) {
+        res.status(400).json({
+          success: false,
+          message: 'Password must be at least 8 characters long',
+        } as ApiResponse);
+        return;
+      }
+
+      const user = await userService.resetPassword(body.token, body.newPassword);
+
+      if (!user) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid or expired reset token',
+        } as ApiResponse);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Password reset successfully',
+      } as ApiResponse);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to reset password',
+        error: error instanceof Error ? error.message : String(error),
+      } as ApiResponse);
+    }
+  }
+
   async getUser(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
@@ -217,6 +301,7 @@ export class UserController {
         name?: string;
         email?: string;
         password?: string;
+        role?: string;
       };
 
       // Validate input
@@ -232,6 +317,7 @@ export class UserController {
       if (body.name) updates.name = body.name;
       if (body.email) updates.email = body.email;
       if (body.password) updates.password = body.password;
+      if (body.role) updates.role = body.role;
 
       if (Object.keys(updates).length === 0) {
         res.status(400).json({
@@ -276,6 +362,48 @@ export class UserController {
         return;
       }
 
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: errorMessage,
+      } as ApiResponse);
+    }
+  }
+
+  async deleteUser(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          message: 'User ID is required',
+        } as ApiResponse);
+        return;
+      }
+
+      const user = await userService.deleteUser(id);
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found',
+        } as ApiResponse);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'User deleted successfully',
+        data: {
+          id: user._id?.toString() || '',
+          email: user.email,
+          name: user.name,
+        },
+      } as ApiResponse);
+    } catch (error) {
+      console.error('Delete user error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({
         success: false,

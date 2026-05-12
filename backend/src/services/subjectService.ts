@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { ISubject, Subject } from '../models/Subject';
+import { Course } from '../models/Course';
 
 export interface SubjectPayload {
   subject_name: string;
@@ -32,6 +33,8 @@ export class SubjectService {
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid subject id');
     }
+
+    await Course.deleteMany({ subject_id: new mongoose.Types.ObjectId(id) });
 
     return Subject.findByIdAndDelete(id);
   }

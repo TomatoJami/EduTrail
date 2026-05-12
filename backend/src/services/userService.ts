@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { User, IUser } from '../models/User';
 import { SignupPayload, AuthPayload, User as UserType } from '../types';
 
@@ -29,6 +30,51 @@ export class UserService {
       console.error('Error in getUserByEmail:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to fetch user: ${errorMessage}`);
+    }
+  }
+
+  async createPasswordResetToken(email: string): Promise<{ resetToken: string } | null> {
+    try {
+      const user = await User.findOne({ email });
+      if (!user) {
+        return null;
+      }
+
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetPasswordExpires = new Date(Date.now() + 1000 * 60 * 30);
+      const resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+      user.resetPasswordToken = resetPasswordToken;
+      user.resetPasswordExpires = resetPasswordExpires;
+      await user.save();
+
+      return { resetToken };
+    } catch (error) {
+      throw new Error(`Failed to create password reset token: ${error}`);
+    }
+  }
+
+  async resetPassword(resetToken: string, newPassword: string): Promise<IUser | null> {
+    try {
+      const resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+      const user = await User.findOne({
+        resetPasswordToken,
+        resetPasswordExpires: { $gt: new Date() },
+      });
+
+      if (!user) {
+        return null;
+      }
+
+      user.password = newPassword;
+      user.resetPasswordToken = null;
+      user.resetPasswordExpires = null;
+
+      await user.save();
+      return user;
+    } catch (error) {
+      throw new Error(`Failed to reset password: ${error}`);
     }
   }
 

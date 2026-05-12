@@ -128,6 +128,12 @@ export default function LoginPage() {
             Sign up
           </Link>
         </div>
+
+        <div className="text-center mt-3 text-gray-600">
+          <Link href="/forgot-password" className="text-indigo-600 hover:text-indigo-700 font-medium">
+            Forgot password?
+          </Link>
+        </div>
       </div>
     </div>
   );

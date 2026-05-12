@@ -7,9 +7,10 @@ interface ImageUploaderProps {
   onImageUpload: (imageUrl: string) => void;
   folder?: 'subjects' | 'courses';
   className?: string;
+  userId?: string;
 }
 
-export function ImageUploader({ onImageUpload, folder = 'subjects', className = '' }: ImageUploaderProps) {
+export function ImageUploader({ onImageUpload, folder = 'subjects', className = '', userId }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -51,6 +52,11 @@ export function ImageUploader({ onImageUpload, folder = 'subjects', className = 
     setError('');
 
     try {
+      // Ensure userId is set for authentication
+      if (userId) {
+        apiClient.setUserId(userId);
+      }
+
       const response = await apiClient.upload.image(file, folder);
 
       if (!response.success) {
