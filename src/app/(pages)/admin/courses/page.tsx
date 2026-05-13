@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImageUploader } from "@/components/ImageUploader";
 
 type Subject = {
@@ -43,6 +43,7 @@ type Question = {
   _id: string;
   question?: string;
   questionText?: string;
+  question_img?: string;
   options?: string[];
   correctAnswer?: number;
   correctAnswers?: string[];
@@ -59,6 +60,7 @@ type QuestionCreatePayload =
   | {
       type: "test";
       question: string;
+      question_img?: string;
       options: string[];
       correctAnswer: number;
       explanation: string;
@@ -67,6 +69,7 @@ type QuestionCreatePayload =
   | {
       type: "short-answer";
       question: string;
+      question_img?: string;
       correctAnswers: string[];
       explanation: string;
       caseSensitive: boolean;
@@ -75,6 +78,7 @@ type QuestionCreatePayload =
   | {
       type: "fill-blank";
       questionText: string;
+      question_img?: string;
       blanks: FillBlank[];
       explanation: string;
       module_id: string;
@@ -153,6 +157,8 @@ export default function AdminCoursesPage() {
   const [saving, setSaving] = useState(false);
   const [showCreateCourseUploader, setShowCreateCourseUploader] = useState(false);
   const [showEditCourseUploader, setShowEditCourseUploader] = useState(false);
+  const chapterFormContentRef = useRef<HTMLTextAreaElement | null>(null);
+  const editingChapterContentRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Form states
   const [courseForm, setCourseForm] = useState({
@@ -171,18 +177,21 @@ export default function AdminCoursesPage() {
   const [questionType, setQuestionType] = useState<QuestionType>("test");
   const [testQuestionForm, setTestQuestionForm] = useState({
     question: "",
+    question_img: "",
     options: ["", "", "", ""],
     correctAnswer: 0,
     explanation: "",
   });
   const [shortAnswerForm, setShortAnswerForm] = useState({
     question: "",
+    question_img: "",
     correctAnswers: [""],
     explanation: "",
     caseSensitive: false,
   });
   const [fillBlankForm, setFillBlankForm] = useState({
     questionText: "",
+    question_img: "",
     blanks: [{ blankId: "blank1", correctAnswers: [""], caseSensitive: false }],
     explanation: "",
   });
@@ -673,6 +682,7 @@ export default function AdminCoursesPage() {
       payload = {
         type: "test",
         question: testQuestionForm.question,
+        question_img: testQuestionForm.question_img,
         options: testQuestionForm.options,
         correctAnswer: testQuestionForm.correctAnswer,
         explanation: testQuestionForm.explanation,
@@ -686,6 +696,7 @@ export default function AdminCoursesPage() {
       payload = {
         type: "short-answer",
         question: shortAnswerForm.question,
+        question_img: shortAnswerForm.question_img,
         correctAnswers: shortAnswerForm.correctAnswers,
         explanation: shortAnswerForm.explanation,
         caseSensitive: shortAnswerForm.caseSensitive,
@@ -699,6 +710,7 @@ export default function AdminCoursesPage() {
       payload = {
         type: "fill-blank",
         questionText: fillBlankForm.questionText,
+        question_img: fillBlankForm.question_img,
         blanks: fillBlankForm.blanks,
         explanation: fillBlankForm.explanation,
         module_id: moduleId,
@@ -731,18 +743,21 @@ export default function AdminCoursesPage() {
       setQuestionType("test");
       setTestQuestionForm({
         question: "",
+        question_img: "",
         options: ["", "", "", ""],
         correctAnswer: 0,
         explanation: "",
       });
       setShortAnswerForm({
         question: "",
+        question_img: "",
         correctAnswers: [""],
         explanation: "",
         caseSensitive: false,
       });
       setFillBlankForm({
         questionText: "",
+        question_img: "",
         blanks: [{ blankId: "blank1", correctAnswers: [""], caseSensitive: false }],
         explanation: "",
       });
@@ -758,6 +773,7 @@ export default function AdminCoursesPage() {
     if (question.type === "short-answer") {
       return {
         question: question.question?.trim(),
+        question_img: question.question_img?.trim() || "",
         correctAnswers: (question.correctAnswers || []).filter((answer) => answer.trim()),
         explanation: question.explanation?.trim(),
         caseSensitive: question.caseSensitive || false,
@@ -767,6 +783,7 @@ export default function AdminCoursesPage() {
     if (question.type === "fill-blank") {
       return {
         questionText: question.questionText?.trim(),
+        question_img: question.question_img?.trim() || "",
         blanks: (question.blanks || []).map((blank, index) => ({
           blankId: blank.blankId || `blank${index + 1}`,
           correctAnswers: blank.correctAnswers.filter((answer) => answer.trim()),
@@ -778,6 +795,7 @@ export default function AdminCoursesPage() {
 
     return {
       question: question.question?.trim(),
+      question_img: question.question_img?.trim() || "",
       options: question.options || [],
       correctAnswer: question.correctAnswer || 0,
       explanation: question.explanation?.trim(),
@@ -880,6 +898,7 @@ export default function AdminCoursesPage() {
     setEditingQuestion({
       ...question,
       type: question.type || "test",
+      question_img: question.question_img || "",
       options: question.options && question.options.length > 0 ? question.options : ["", "", "", ""],
       correctAnswers: question.correctAnswers && question.correctAnswers.length > 0 ? question.correctAnswers : [""],
       blanks:
@@ -887,6 +906,89 @@ export default function AdminCoursesPage() {
           ? question.blanks
           : [{ blankId: "blank1", correctAnswers: [""], caseSensitive: false }],
     });
+  };
+
+  const insertMarkdownImage = (content: string, imageUrl: string, position?: number, alt = "Chapter image") => {
+    const trimmedUrl = imageUrl.trim();
+    if (!trimmedUrl) return content;
+    const imageMarkdown = `![${alt}](${trimmedUrl})`;
+    if (position === undefined || position < 0 || position > content.length) {
+      return content ? `${content.trimEnd()}\n\n${imageMarkdown}\n\n` : `${imageMarkdown}\n\n`;
+    }
+
+    const before = content.slice(0, position).trimEnd();
+    const after = content.slice(position).trimStart();
+
+    if (!before && !after) return `${imageMarkdown}\n\n`;
+    if (!before) return `${imageMarkdown}\n\n${after}`;
+    if (!after) return `${before}\n\n${imageMarkdown}\n\n`;
+    return `${before}\n\n${imageMarkdown}\n\n${after}`;
+  };
+
+  const renderChapterImageInserter = (onInsert: (imageUrl: string) => void) => {
+    const userId = getUserId() || undefined;
+
+    return (
+      <div className="space-y-2 rounded border border-slate-200 bg-white p-2">
+        <p className="text-xs font-medium text-slate-700">Insert image into content</p>
+        <input
+          type="url"
+          placeholder="Paste image URL and press Enter"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onInsert(e.currentTarget.value);
+              e.currentTarget.value = "";
+            }
+          }}
+          className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+        />
+        <ImageUploader
+          folder="chapters"
+          userId={userId}
+          onImageUpload={onInsert}
+          className="text-xs"
+        />
+      </div>
+    );
+  };
+
+  const renderQuestionImageControls = (value: string | undefined, onChange: (imageUrl: string) => void) => {
+    const userId = getUserId() || undefined;
+
+    return (
+      <div className="space-y-2 rounded border border-slate-200 bg-white p-2">
+        <input
+          type="url"
+          placeholder="Question image URL (optional)"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+        />
+        {value && (
+          <div className="space-y-2">
+            <img
+              src={value}
+              alt="Question preview"
+              className="max-h-40 w-full rounded border border-slate-200 object-contain"
+            />
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="rounded border border-rose-200 px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50"
+            >
+              Remove image
+            </button>
+          </div>
+        )}
+        <ImageUploader
+          folder="questions"
+          userId={userId}
+          onImageUpload={onChange}
+          className="text-xs"
+        />
+      </div>
+    );
   };
 
   if (loading) {
@@ -1403,11 +1505,22 @@ export default function AdminCoursesPage() {
                                       className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
                                     />
                                     <textarea
+                                      ref={editingChapterContentRef}
                                       value={editingChapter.content}
                                       onChange={(e) => setEditingChapter({ ...editingChapter, content: e.target.value })}
                                       placeholder={"# Heading\n\nWrite **Markdown** content here.\n\n- List item\n- Another item"}
                                       className="h-40 w-full rounded border border-slate-300 px-2 py-2 font-mono text-xs leading-5 text-slate-900 outline-none focus:border-indigo-500"
                                     />
+                                    {renderChapterImageInserter((imageUrl) =>
+                                      setEditingChapter({
+                                        ...editingChapter,
+                                        content: insertMarkdownImage(
+                                          editingChapter.content,
+                                          imageUrl,
+                                          editingChapterContentRef.current?.selectionStart
+                                        ),
+                                      })
+                                    )}
                                     <div className="flex gap-1">
                                       <button
                                         onClick={handleChapterUpdate}
@@ -1468,11 +1581,22 @@ export default function AdminCoursesPage() {
                               className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
                             />
                             <textarea
+                              ref={chapterFormContentRef}
                               placeholder={"# Heading\n\nWrite **Markdown** content here.\n\n- List item\n- Another item"}
                               value={chapterForm.content}
                               onChange={(e) => setChapterForm({ ...chapterForm, content: e.target.value })}
                               className="h-40 w-full rounded border border-slate-300 px-2 py-2 font-mono text-xs leading-5 text-slate-900 outline-none focus:border-indigo-500"
                             />
+                            {renderChapterImageInserter((imageUrl) =>
+                              setChapterForm({
+                                ...chapterForm,
+                                content: insertMarkdownImage(
+                                  chapterForm.content,
+                                  imageUrl,
+                                  chapterFormContentRef.current?.selectionStart
+                                ),
+                              })
+                            )}
                             <button
                               onClick={() => handleChapterCreate(module._id)}
                               disabled={saving}
@@ -1504,6 +1628,9 @@ export default function AdminCoursesPage() {
                                             onChange={(e) => setEditingQuestion({ ...editingQuestion, question: e.target.value })}
                                             className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
                                           />
+                                          {renderQuestionImageControls(editingQuestion.question_img, (imageUrl) =>
+                                            setEditingQuestion({ ...editingQuestion, question_img: imageUrl })
+                                          )}
                                           <div className="flex items-center justify-between">
                                             <p className="text-xs font-medium text-slate-700">
                                               Options: {(editingQuestion.options || []).length}
@@ -1576,6 +1703,9 @@ export default function AdminCoursesPage() {
                                             onChange={(e) => setEditingQuestion({ ...editingQuestion, question: e.target.value })}
                                             className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
                                           />
+                                          {renderQuestionImageControls(editingQuestion.question_img, (imageUrl) =>
+                                            setEditingQuestion({ ...editingQuestion, question_img: imageUrl })
+                                          )}
                                           {(editingQuestion.correctAnswers || [""]).map((answer, answerIndex) => (
                                             <div key={answerIndex} className="flex gap-1">
                                               <input
@@ -1623,6 +1753,9 @@ export default function AdminCoursesPage() {
                                             onChange={(e) => setEditingQuestion({ ...editingQuestion, questionText: e.target.value })}
                                             className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
                                           />
+                                          {renderQuestionImageControls(editingQuestion.question_img, (imageUrl) =>
+                                            setEditingQuestion({ ...editingQuestion, question_img: imageUrl })
+                                          )}
                                           <div className="flex items-center justify-between">
                                             <p className="text-xs font-medium text-slate-700">
                                               Blanks: {(editingQuestion.blanks || []).length}
@@ -1722,6 +1855,13 @@ export default function AdminCoursesPage() {
                                       <div className="min-w-0 flex-1">
                                         <p className="text-xs font-medium text-slate-900">{getQuestionDisplay(question)}</p>
                                         <p className="text-xs text-amber-700">{getQuestionTypeLabel(question.type)}</p>
+                                        {question.question_img && (
+                                          <img
+                                            src={question.question_img}
+                                            alt="Question"
+                                            className="mt-2 max-h-24 w-full rounded border border-amber-100 object-contain"
+                                          />
+                                        )}
                                       </div>
                                       <div className="flex gap-1">
                                         <button
@@ -1775,6 +1915,9 @@ export default function AdminCoursesPage() {
                                   onChange={(e) => setTestQuestionForm({ ...testQuestionForm, question: e.target.value })}
                                   className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
                                 />
+                                {renderQuestionImageControls(testQuestionForm.question_img, (imageUrl) =>
+                                  setTestQuestionForm({ ...testQuestionForm, question_img: imageUrl })
+                                )}
                                 <div className="flex items-center justify-between">
                                   <p className="text-xs font-medium text-slate-700">Options: {testQuestionForm.options.length}</p>
                                   <div className="flex gap-1">
@@ -1863,6 +2006,9 @@ export default function AdminCoursesPage() {
                                   onChange={(e) => setShortAnswerForm({ ...shortAnswerForm, question: e.target.value })}
                                   className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
                                 />
+                                {renderQuestionImageControls(shortAnswerForm.question_img, (imageUrl) =>
+                                  setShortAnswerForm({ ...shortAnswerForm, question_img: imageUrl })
+                                )}
                                 <p className="text-xs font-medium text-slate-700">Correct Answers:</p>
                                 {shortAnswerForm.correctAnswers.map((ans, i) => (
                                   <div key={i} className="flex gap-1">
@@ -1921,6 +2067,9 @@ export default function AdminCoursesPage() {
                                   onChange={(e) => setFillBlankForm({ ...fillBlankForm, questionText: e.target.value })}
                                   className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
                                 />
+                                {renderQuestionImageControls(fillBlankForm.question_img, (imageUrl) =>
+                                  setFillBlankForm({ ...fillBlankForm, question_img: imageUrl })
+                                )}
                                 <div className="flex items-center justify-between">
                                   <p className="text-xs font-medium text-slate-700">Blanks: {fillBlankForm.blanks.length}</p>
                                   <button

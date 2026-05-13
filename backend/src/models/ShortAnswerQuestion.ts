@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface IShortAnswerQuestion extends Document {
   module_id: mongoose.Types.ObjectId;
   question: string;
+  question_img?: string;
   correctAnswers: string[];
   explanation?: string;
   caseSensitive?: boolean;
@@ -22,6 +23,11 @@ const ShortAnswerQuestionSchema = new Schema<IShortAnswerQuestion>(
       type: String,
       required: true,
       trim: true,
+    },
+    question_img: {
+      type: String,
+      trim: true,
+      default: '',
     },
     correctAnswers: {
       type: [String],

@@ -9,6 +9,7 @@ export interface IBlanksData {
 export interface IFillInTheBlankQuestion extends Document {
   module_id: mongoose.Types.ObjectId;
   questionText: string;
+  question_img?: string;
   blanks: IBlanksData[];
   explanation?: string;
   createdAt: Date;
@@ -45,6 +46,11 @@ const FillInTheBlankQuestionSchema = new Schema<IFillInTheBlankQuestion>(
       type: String,
       required: true,
       trim: true,
+    },
+    question_img: {
+      type: String,
+      trim: true,
+      default: '',
     },
     blanks: {
       type: [BlanksDataSchema],

@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface ITestQuestion extends Document {
   module_id: mongoose.Types.ObjectId;
   question: string;
+  question_img?: string;
   options: string[];
   correctAnswer: number;
   explanation?: string;
@@ -22,6 +23,11 @@ const TestQuestionSchema = new Schema<ITestQuestion>(
       type: String,
       required: true,
       trim: true,
+    },
+    question_img: {
+      type: String,
+      trim: true,
+      default: '',
     },
     options: {
       type: [String],

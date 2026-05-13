@@ -44,23 +44,6 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
-function FolderIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    >
-      <path
-        d="M3.75 7.5A2.25 2.25 0 0 1 6 5.25h3.5c.6 0 1.17.24 1.59.66l1.06 1.09c.42.42.99.66 1.59.66H18A2.25 2.25 0 0 1 20.25 9.9v6.35A2.25 2.25 0 0 1 18 18.5H6a2.25 2.25 0 0 1-2.25-2.25V7.5Z"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export default function ChapterPage() {
   const params = useParams();
   const router = useRouter();
@@ -680,6 +663,13 @@ export default function ChapterPage() {
                                     <h3 className="text-lg font-medium text-slate-900 break-words">
                                       {(question as any).question}
                                     </h3>
+                                    {(question as any).question_img && (
+                                      <img
+                                        src={(question as any).question_img}
+                                        alt="Question illustration"
+                                        className="mt-4 max-h-96 w-full rounded-lg border border-slate-200 object-contain"
+                                      />
+                                    )}
 
                                     <div className="mt-4 space-y-3">
                                       {(question as any).options?.map((option: string, optIdx: number) => {
@@ -750,6 +740,13 @@ export default function ChapterPage() {
                                     <h3 className="text-lg font-medium text-slate-900 break-words">
                                       {(question as any).question}
                                     </h3>
+                                    {(question as any).question_img && (
+                                      <img
+                                        src={(question as any).question_img}
+                                        alt="Question illustration"
+                                        className="mt-4 max-h-96 w-full rounded-lg border border-slate-200 object-contain"
+                                      />
+                                    )}
 
                                     <div className="mt-4">
                                       <input
@@ -806,6 +803,13 @@ export default function ChapterPage() {
                                     <h3 className="text-lg font-medium text-slate-900 break-words">
                                       {(question as any).questionText}
                                     </h3>
+                                    {(question as any).question_img && (
+                                      <img
+                                        src={(question as any).question_img}
+                                        alt="Question illustration"
+                                        className="mt-4 max-h-96 w-full rounded-lg border border-slate-200 object-contain"
+                                      />
+                                    )}
 
                                     <div className="mt-4 space-y-3">
                                       {(question as any).blanks?.map((blank: any, blankIdx: number) => (

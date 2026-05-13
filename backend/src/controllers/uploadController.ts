@@ -36,10 +36,10 @@ export class UploadController {
 
       // Определить папку из query параметра
       const folder = (req.query.folder as string) || 'subjects';
-      if (!['subjects', 'courses'].includes(folder)) {
+      if (!['subjects', 'courses', 'questions', 'chapters'].includes(folder)) {
         res.status(400).json({
           success: false,
-          message: 'Invalid folder. Must be "subjects" or "courses"',
+          message: 'Invalid folder. Must be "subjects", "courses", "questions", or "chapters"',
         } as ApiResponse);
         return;
       }
@@ -48,7 +48,7 @@ export class UploadController {
       const imageUrl = await supabaseService.uploadImage(
         req.file.buffer,
         req.file.originalname,
-        folder as 'subjects' | 'courses'
+        folder as 'subjects' | 'courses' | 'questions' | 'chapters'
       );
 
       res.status(200).json({

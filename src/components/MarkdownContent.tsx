@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 type Block =
   | { type: "heading"; level: 1 | 2 | 3; text: string }
+  | { type: "image"; alt: string; src: string }
   | { type: "paragraph"; text: string }
   | { type: "quote"; text: string }
   | { type: "ul"; items: string[] }
@@ -115,6 +116,17 @@ function parseMarkdown(markdown: string): Block[] {
       continue;
     }
 
+    const imageMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    if (imageMatch) {
+      blocks.push({
+        type: "image",
+        alt: imageMatch[1] || "Chapter image",
+        src: imageMatch[2],
+      });
+      index += 1;
+      continue;
+    }
+
     if (trimmed.startsWith(">")) {
       const quoteLines: string[] = [];
       while (index < lines.length && lines[index].trim().startsWith(">")) {
@@ -150,6 +162,7 @@ function parseMarkdown(markdown: string): Block[] {
       index < lines.length &&
       lines[index].trim() &&
       !/^(#{1,3})\s+/.test(lines[index].trim()) &&
+      !/^!\[[^\]]*\]\([^)]+\)$/.test(lines[index].trim()) &&
       !/^```/.test(lines[index].trim()) &&
       !/^[-*]\s+/.test(lines[index].trim()) &&
       !/^\d+\.\s+/.test(lines[index].trim()) &&
@@ -185,6 +198,21 @@ export function MarkdownContent({ content }: { content: string }) {
             <p key={index} className="my-4 text-base leading-7 text-slate-700 break-words">
               {renderInline(block.text)}
             </p>
+          );
+        }
+
+        if (block.type === "image") {
+          return (
+            <figure key={index} className="my-6">
+              <img
+                src={safeHref(block.src)}
+                alt={block.alt}
+                className="max-h-[520px] w-full rounded-lg border border-slate-200 object-contain"
+              />
+              {block.alt && block.alt !== "Chapter image" && (
+                <figcaption className="mt-2 text-center text-sm text-slate-500">{block.alt}</figcaption>
+              )}
+            </figure>
           );
         }
 

@@ -78,6 +78,7 @@ export interface CourseProgress {
 export interface Question {
   _id: string;
   question: string;
+  question_img?: string;
   options: string[];
   correctAnswer: number;
   explanation?: string;

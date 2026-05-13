@@ -185,7 +185,7 @@ class ApiClient {
    * Upload endpoints
    */
   upload = {
-    image: async (file: File, folder: 'subjects' | 'courses' = 'subjects') => {
+    image: async (file: File, folder: 'subjects' | 'courses' | 'questions' | 'chapters' = 'subjects') => {
       try {
         const formData = new FormData();
         formData.append('image', file);

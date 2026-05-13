@@ -63,6 +63,7 @@ export class QuestionController {
                 type: string;
                 module_id: string;
                 question?: string;
+                question_img?: string;
                 options?: string[];
                 correctAnswer?: number;
                 correctAnswers?: string[];
@@ -103,6 +104,7 @@ export class QuestionController {
 
                 const payload: CreateTestQuestionPayload = {
                     question: body.question.trim(),
+                    question_img: body.question_img?.trim() || '',
                     options: body.options,
                     correctAnswer: body.correctAnswer,
                     explanation: body.explanation?.trim(),
@@ -121,6 +123,7 @@ export class QuestionController {
 
                 const payload: CreateShortAnswerPayload = {
                     question: body.question.trim(),
+                    question_img: body.question_img?.trim() || '',
                     correctAnswers: body.correctAnswers,
                     explanation: body.explanation?.trim(),
                     caseSensitive: body.caseSensitive || false,
@@ -139,6 +142,7 @@ export class QuestionController {
 
                 const payload: CreateFillBlankPayload = {
                     questionText: body.questionText.trim(),
+                    question_img: body.question_img?.trim() || '',
                     blanks: body.blanks,
                     explanation: body.explanation?.trim(),
                     module_id: module_id.trim(),

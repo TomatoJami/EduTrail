@@ -7,6 +7,7 @@ import { QuestionType, TestQuestion as TestQuestionType, ShortAnswerQuestion as 
 
 export interface CreateTestQuestionPayload {
   question: string;
+  question_img?: string;
   options: string[];
   correctAnswer: number;
   explanation?: string;
@@ -15,6 +16,7 @@ export interface CreateTestQuestionPayload {
 
 export interface CreateShortAnswerPayload {
   question: string;
+  question_img?: string;
   correctAnswers: string[];
   explanation?: string;
   caseSensitive?: boolean;
@@ -23,6 +25,7 @@ export interface CreateShortAnswerPayload {
 
 export interface CreateFillBlankPayload {
   questionText: string;
+  question_img?: string;
   blanks: Array<{ blankId: string; correctAnswers: string[]; caseSensitive?: boolean }>;
   explanation?: string;
   module_id: string;
@@ -165,7 +168,7 @@ export class QuestionService {
   }
 
   // Test Question methods
-  async createTestQuestion(payload: CreateTestQuestionPayload): Promise<ITestQuestion> {
+  async createTestQuestion(payload: CreateTestQuestionPayload): Promise<any> {
     if (!mongoose.isValidObjectId(payload.module_id)) {
       throw new Error('Invalid module id');
     }
@@ -173,6 +176,7 @@ export class QuestionService {
     const testQuestion = new TestQuestion({
       module_id: new mongoose.Types.ObjectId(payload.module_id),
       question: payload.question,
+      question_img: payload.question_img || '',
       options: payload.options,
       correctAnswer: payload.correctAnswer,
       explanation: payload.explanation,
@@ -187,11 +191,15 @@ export class QuestionService {
     });
 
     await question.save();
-    return testQuestion;
+    return {
+      ...(testQuestion.toObject ? testQuestion.toObject() : testQuestion),
+      _id: question._id.toString(),
+      type: 'test',
+    };
   }
 
   // Short Answer Question methods
-  async createShortAnswerQuestion(payload: CreateShortAnswerPayload): Promise<IShortAnswerQuestion> {
+  async createShortAnswerQuestion(payload: CreateShortAnswerPayload): Promise<any> {
     if (!mongoose.isValidObjectId(payload.module_id)) {
       throw new Error('Invalid module id');
     }
@@ -199,6 +207,7 @@ export class QuestionService {
     const shortAnswerQuestion = new ShortAnswerQuestion({
       module_id: new mongoose.Types.ObjectId(payload.module_id),
       question: payload.question,
+      question_img: payload.question_img || '',
       correctAnswers: payload.correctAnswers,
       explanation: payload.explanation,
       caseSensitive: payload.caseSensitive || false,
@@ -213,11 +222,15 @@ export class QuestionService {
     });
 
     await question.save();
-    return shortAnswerQuestion;
+    return {
+      ...(shortAnswerQuestion.toObject ? shortAnswerQuestion.toObject() : shortAnswerQuestion),
+      _id: question._id.toString(),
+      type: 'short-answer',
+    };
   }
 
   // Fill in the blank Question methods
-  async createFillBlankQuestion(payload: CreateFillBlankPayload): Promise<IFillInTheBlankQuestion> {
+  async createFillBlankQuestion(payload: CreateFillBlankPayload): Promise<any> {
     if (!mongoose.isValidObjectId(payload.module_id)) {
       throw new Error('Invalid module id');
     }
@@ -225,6 +238,7 @@ export class QuestionService {
     const fillBlankQuestion = new FillInTheBlankQuestion({
       module_id: new mongoose.Types.ObjectId(payload.module_id),
       questionText: payload.questionText,
+      question_img: payload.question_img || '',
       blanks: payload.blanks,
       explanation: payload.explanation,
     });
@@ -238,7 +252,11 @@ export class QuestionService {
     });
 
     await question.save();
-    return fillBlankQuestion;
+    return {
+      ...(fillBlankQuestion.toObject ? fillBlankQuestion.toObject() : fillBlankQuestion),
+      _id: question._id.toString(),
+      type: 'fill-blank',
+    };
   }
 
   async getQuestionById(id: string): Promise<any> {
@@ -322,6 +340,7 @@ export class QuestionService {
 
     const updateData: any = {};
     if (payload.question) updateData.question = payload.question;
+    if (payload.question_img !== undefined) updateData.question_img = payload.question_img;
     if (payload.options) updateData.options = payload.options;
     if (payload.correctAnswer !== undefined) updateData.correctAnswer = payload.correctAnswer;
     if (payload.explanation !== undefined) updateData.explanation = payload.explanation;
@@ -339,6 +358,7 @@ export class QuestionService {
 
     const updateData: any = {};
     if (payload.question) updateData.question = payload.question;
+    if (payload.question_img !== undefined) updateData.question_img = payload.question_img;
     if (payload.correctAnswers) updateData.correctAnswers = payload.correctAnswers;
     if (payload.explanation !== undefined) updateData.explanation = payload.explanation;
     if (payload.caseSensitive !== undefined) updateData.caseSensitive = payload.caseSensitive;
@@ -356,6 +376,7 @@ export class QuestionService {
 
     const updateData: any = {};
     if (payload.questionText) updateData.questionText = payload.questionText;
+    if (payload.question_img !== undefined) updateData.question_img = payload.question_img;
     if (payload.blanks) updateData.blanks = payload.blanks;
     if (payload.explanation !== undefined) updateData.explanation = payload.explanation;
 

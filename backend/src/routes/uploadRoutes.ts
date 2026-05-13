@@ -37,7 +37,7 @@ const router = Router();
  *         name: folder
  *         schema:
  *           type: string
- *           enum: [subjects, courses]
+ *           enum: [subjects, courses, questions, chapters]
  *         description: Folder for uploading image
  *     requestBody:
  *       required: true

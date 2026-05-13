@@ -18,7 +18,7 @@ export class SupabaseService {
    * @param folder - папка хранилища (subjects, courses)
    * @returns публичный URL картинки
    */
-  async uploadImage(file: Buffer, fileName: string, folder: 'subjects' | 'courses'): Promise<string> {
+  async uploadImage(file: Buffer, fileName: string, folder: 'subjects' | 'courses' | 'questions' | 'chapters'): Promise<string> {
     try {
       const resizedImage = await sharp(file)
         .resize(400, 400, {

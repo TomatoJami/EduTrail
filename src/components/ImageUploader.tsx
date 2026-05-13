@@ -5,7 +5,7 @@ import { apiClient } from '@/utils/apiClient';
 
 interface ImageUploaderProps {
   onImageUpload: (imageUrl: string) => void;
-  folder?: 'subjects' | 'courses';
+  folder?: 'subjects' | 'courses' | 'questions' | 'chapters';
   className?: string;
   userId?: string;
 }

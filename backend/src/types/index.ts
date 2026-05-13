@@ -63,6 +63,7 @@ export interface TestQuestion {
   _id?: string;
   module_id: string;
   question: string;
+  question_img?: string;
   options: string[];
   correctAnswer: number;
   explanation?: string;
@@ -74,6 +75,7 @@ export interface ShortAnswerQuestion {
   _id?: string;
   module_id: string;
   question: string;
+  question_img?: string;
   correctAnswers: string[];
   explanation?: string;
   caseSensitive?: boolean;
@@ -91,6 +93,7 @@ export interface FillInTheBlankQuestion {
   _id?: string;
   module_id: string;
   questionText: string;
+  question_img?: string;
   blanks: BlanksData[];
   explanation?: string;
   createdAt?: Date;
