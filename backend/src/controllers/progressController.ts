@@ -5,6 +5,7 @@ import { ChapterProgress } from '../models/ChapterProgress';
 import { QuestionProgress } from '../models/QuestionProgress';
 import { Module } from '../models/Module';
 import { Chapter } from '../models/Chapter';
+import { Question } from '../models/Question';
 import { ApiResponse } from '../types';
 
 export class ProgressController {
@@ -292,6 +293,39 @@ export class ProgressController {
           message: 'Course progress not found. Start course first.',
         } as ApiResponse);
         return;
+      }
+
+      if (status === 'completed') {
+        const courseModules = await Module.find({ course_id: courseId }).select('_id');
+        const moduleIds = courseModules.map((module) => module._id);
+        const courseChapters = await Chapter.find({ module_id: { $in: moduleIds } }).select('_id');
+        const courseQuestions = await Question.find({ module_id: { $in: moduleIds } }).select('_id');
+
+        const chapterIds = courseChapters.map((chapter) => chapter._id);
+        const questionIds = courseQuestions.map((question) => question._id);
+
+        const completedChapters = await ChapterProgress.countDocuments({
+          user_id: userId,
+          chapter_id: { $in: chapterIds },
+          is_completed: true,
+        });
+
+        const completedQuestions = await QuestionProgress.countDocuments({
+          user_id: userId,
+          question_id: { $in: questionIds },
+          is_completed: true,
+        });
+
+        if (
+          completedChapters !== chapterIds.length ||
+          completedQuestions !== questionIds.length
+        ) {
+          res.status(400).json({
+            success: false,
+            message: 'Complete all modules first.',
+          } as ApiResponse);
+          return;
+        }
       }
 
       courseProgress.status = status;

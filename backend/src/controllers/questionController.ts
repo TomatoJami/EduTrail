@@ -194,6 +194,64 @@ export class QuestionController {
         }
     }
 
+    async updateQuestion(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+
+            if (!id) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Question id is required',
+                } as ApiResponse);
+                return;
+            }
+
+            const question = await Question.findById(id);
+
+            if (!question) {
+                res.status(404).json({
+                    success: false,
+                    message: 'Question not found',
+                } as ApiResponse);
+                return;
+            }
+
+            let updatedQuestion;
+
+            if (question.type === 'test') {
+                updatedQuestion = await questionService.updateTestQuestion(String(question.typeId), req.body);
+            } else if (question.type === 'short-answer') {
+                updatedQuestion = await questionService.updateShortAnswerQuestion(String(question.typeId), req.body);
+            } else if (question.type === 'fill-blank') {
+                updatedQuestion = await questionService.updateFillBlankQuestion(String(question.typeId), req.body);
+            }
+
+            if (!updatedQuestion) {
+                res.status(404).json({
+                    success: false,
+                    message: 'Question not found',
+                } as ApiResponse);
+                return;
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Question updated successfully',
+                data: {
+                    ...(updatedQuestion.toObject ? updatedQuestion.toObject() : updatedQuestion),
+                    _id: question._id.toString(),
+                    type: question.type,
+                },
+            } as ApiResponse);
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: 'Failed to update question',
+                error: error instanceof Error ? error.message : String(error),
+            } as ApiResponse);
+        }
+    }
+
     async getUserQuestionsProgress(req: Request, res: Response): Promise<void> {
         try {
             const { userId, moduleId } = req.params;

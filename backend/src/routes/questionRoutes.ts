@@ -352,6 +352,8 @@ router.post('/fill-blank', adminMiddleware, (req, res) => {
   questionController.createQuestion({ ...req, body } as any, res);
 });
 
+router.put('/:id', adminMiddleware, (req, res) => questionController.updateQuestion(req, res));
+
 /**
  * @swagger
  * /questions/{id}:

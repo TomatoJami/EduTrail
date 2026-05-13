@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export type CourseAgeGroup = '1-3' | '4-9' | '10-12';
+export const COURSE_TEXT_LIMIT = 120;
 
 export interface ICourse extends Document {
   title: string;
@@ -19,17 +20,22 @@ const CourseSchema = new Schema<ICourse>(
       type: String,
       required: [true, 'Course title is required'],
       trim: true,
+      maxlength: [COURSE_TEXT_LIMIT, `Course title cannot exceed ${COURSE_TEXT_LIMIT} characters`],
       index: true,
     },
     description: {
       type: String,
       required: [true, 'Course description is required'],
       trim: true,
+      maxlength: [COURSE_TEXT_LIMIT, `Course description cannot exceed ${COURSE_TEXT_LIMIT} characters`],
     },
-    goals: {
-      type: [String],
-      trim: true,
-    },
+    goals: [
+      {
+        type: String,
+        trim: true,
+        maxlength: [COURSE_TEXT_LIMIT, `Course goal cannot exceed ${COURSE_TEXT_LIMIT} characters`],
+      },
+    ],
     ageGroup: {
       type: String,
       enum: ['1-3', '4-9', '10-12'],

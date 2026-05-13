@@ -2,8 +2,34 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { courseService, CoursePayload } from '../services/courseService';
 import { ApiResponse, CourseAgeGroup } from '../types';
+import { COURSE_TEXT_LIMIT } from '../models/Course';
 
 const allowedAgeGroups = ['1-3', '4-9', '10-12'] as const;
+
+function normalizeGoals(goals?: unknown): string[] {
+  if (!Array.isArray(goals)) {
+    return [];
+  }
+
+  return goals
+    .filter((goal): goal is string => typeof goal === 'string')
+    .map((goal) => goal.trim())
+    .filter(Boolean);
+}
+
+function findTextLimitError(fields: Record<string, string | undefined>, goals: string[]): string | null {
+  for (const [label, value] of Object.entries(fields)) {
+    if (value && value.length > COURSE_TEXT_LIMIT) {
+      return `${label} cannot exceed ${COURSE_TEXT_LIMIT} characters`;
+    }
+  }
+
+  if (goals.some((goal) => goal.length > COURSE_TEXT_LIMIT)) {
+    return `Each goal cannot exceed ${COURSE_TEXT_LIMIT} characters`;
+  }
+
+  return null;
+}
 
 export class CourseController {
   async getAllCourses(req: Request, res: Response): Promise<void> {
@@ -56,7 +82,7 @@ export class CourseController {
       const body = req.body as {
         title?: string;
         description?: string;
-        goals: string[];
+        goals?: string[];
         ageGroup?: CourseAgeGroup;
         course_img?: string;
         subject_id?: string;
@@ -86,10 +112,23 @@ export class CourseController {
         return;
       }
 
+      const title = body.title.trim();
+      const description = body.description.trim();
+      const goals = normalizeGoals(body.goals);
+      const textLimitError = findTextLimitError({ title, description }, goals);
+
+      if (textLimitError) {
+        res.status(400).json({
+          success: false,
+          message: textLimitError,
+        } as ApiResponse);
+        return;
+      }
+
       const payload: CoursePayload = {
-        title: body.title.trim(),
-        description: body.description.trim(),
-        goals: body.goals,
+        title,
+        description,
+        goals,
         ageGroup: body.ageGroup,
         course_img: body.course_img.trim(),
         subject_id: body.subject_id.trim(),
@@ -116,7 +155,7 @@ export class CourseController {
       const body = req.body as {
         title?: string;
         description?: string;
-        goals: string[];
+        goals?: string[];
         ageGroup?: CourseAgeGroup;
         course_img?: string;
         subject_id?: string;
@@ -138,10 +177,31 @@ export class CourseController {
         return;
       }
 
+      if (body.subject_id && !mongoose.isValidObjectId(body.subject_id)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid subject_id',
+        } as ApiResponse);
+        return;
+      }
+
+      const title = body.title?.trim();
+      const description = body.description?.trim();
+      const goals = body.goals === undefined ? undefined : normalizeGoals(body.goals);
+      const textLimitError = findTextLimitError({ title, description }, goals || []);
+
+      if (textLimitError) {
+        res.status(400).json({
+          success: false,
+          message: textLimitError,
+        } as ApiResponse);
+        return;
+      }
+
       const payload: Partial<CoursePayload> = {
-        title: body.title?.trim(),
-        description: body.description?.trim(),
-        goals: body.goals,
+        title,
+        description,
+        goals,
         ageGroup: body.ageGroup,
         course_img: body.course_img?.trim(),
         subject_id: body.subject_id?.trim(),

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ImageUploader } from "@/components/ImageUploader";
 
 type Subject = {
   _id: string;
@@ -32,6 +33,12 @@ type Chapter = {
   module_id: string;
 };
 
+type FillBlank = {
+  blankId: string;
+  correctAnswers: string[];
+  caseSensitive?: boolean;
+};
+
 type Question = {
   _id: string;
   question?: string;
@@ -39,18 +46,80 @@ type Question = {
   options?: string[];
   correctAnswer?: number;
   correctAnswers?: string[];
-  blanks?: any[];
+  blanks?: FillBlank[];
   explanation?: string;
   module_id: string;
   type?: string;
+  caseSensitive?: boolean;
 };
 
 type QuestionType = "test" | "short-answer" | "fill-blank";
+
+type QuestionCreatePayload =
+  | {
+      type: "test";
+      question: string;
+      options: string[];
+      correctAnswer: number;
+      explanation: string;
+      module_id: string;
+    }
+  | {
+      type: "short-answer";
+      question: string;
+      correctAnswers: string[];
+      explanation: string;
+      caseSensitive: boolean;
+      module_id: string;
+    }
+  | {
+      type: "fill-blank";
+      questionText: string;
+      blanks: FillBlank[];
+      explanation: string;
+      module_id: string;
+    };
 
 type StoredUser = {
   id?: string;
   _id?: string;
 };
+
+const COURSE_TEXT_LIMIT = 120;
+
+const truncateText = (value: string, limit = COURSE_TEXT_LIMIT) => {
+  if (!value || value.length <= limit) return value;
+  return `${value.slice(0, limit).trimEnd()}...`;
+};
+
+const normalizeGoals = (goals: string[]) =>
+  goals.map((goal) => goal.trim()).filter(Boolean);
+
+const findCourseTextLimitError = (title: string, description: string, goals: string[]) => {
+  if (title.trim().length > COURSE_TEXT_LIMIT) {
+    return `Course title cannot exceed ${COURSE_TEXT_LIMIT} characters`;
+  }
+
+  if (description.trim().length > COURSE_TEXT_LIMIT) {
+    return `Course description cannot exceed ${COURSE_TEXT_LIMIT} characters`;
+  }
+
+  if (goals.some((goal) => goal.trim().length > COURSE_TEXT_LIMIT)) {
+    return `Each goal cannot exceed ${COURSE_TEXT_LIMIT} characters`;
+  }
+
+  return null;
+};
+
+const getEntityId = (value: string | { _id?: string } | null | undefined): string => {
+  if (!value) return "";
+  return typeof value === "string" ? value : value._id || "";
+};
+
+const normalizeChapter = (chapter: Chapter): Chapter => ({
+  ...chapter,
+  module_id: getEntityId(chapter.module_id as unknown as string | { _id?: string }),
+});
 
 const getUserId = (): string | null => {
   if (typeof window === "undefined") {
@@ -74,6 +143,7 @@ export default function AdminCoursesPage() {
   const [editingCourse, setEditingCourse] = useState<CourseItem | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
+  const [loadingModuleContent, setLoadingModuleContent] = useState<Record<string, boolean>>({});
   const [modules, setModules] = useState<Record<string, Module[]>>({});
   const [chapters, setChapters] = useState<Record<string, Chapter[]>>({});
   const [questions, setQuestions] = useState<Record<string, Question[]>>({});
@@ -81,6 +151,8 @@ export default function AdminCoursesPage() {
   const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showCreateCourseUploader, setShowCreateCourseUploader] = useState(false);
+  const [showEditCourseUploader, setShowEditCourseUploader] = useState(false);
 
   // Form states
   const [courseForm, setCourseForm] = useState({
@@ -164,7 +236,9 @@ export default function AdminCoursesPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setModules((prev) => ({ ...prev, [courseId]: Array.isArray(data.data) ? data.data : [] }));
+        const courseModules: Module[] = Array.isArray(data.data) ? data.data : [];
+        setModules((prev) => ({ ...prev, [courseId]: courseModules }));
+        await Promise.all(courseModules.map((module) => loadModuleContent(module._id)));
       }
     } catch (err) {
       console.error("Load modules error:", err);
@@ -182,7 +256,10 @@ export default function AdminCoursesPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setChapters((prev) => ({ ...prev, [moduleId]: Array.isArray(data.data) ? data.data : [] }));
+        setChapters((prev) => ({
+          ...prev,
+          [moduleId]: Array.isArray(data.data) ? data.data.map(normalizeChapter) : [],
+        }));
       }
     } catch (err) {
       console.error("Load chapters error:", err);
@@ -207,9 +284,25 @@ export default function AdminCoursesPage() {
     }
   };
 
+  const loadModuleContent = async (moduleId: string) => {
+    setLoadingModuleContent((prev) => ({ ...prev, [moduleId]: true }));
+    try {
+      await Promise.all([loadChapters(moduleId), loadQuestions(moduleId)]);
+    } finally {
+      setLoadingModuleContent((prev) => ({ ...prev, [moduleId]: false }));
+    }
+  };
+
   const handleCourseCreate = async () => {
     if (!courseForm.title || !courseForm.description || !courseForm.subject_id) {
       setError("Please fill all required fields");
+      return;
+    }
+
+    const goals = normalizeGoals(courseForm.goals);
+    const textLimitError = findCourseTextLimitError(courseForm.title, courseForm.description, goals);
+    if (textLimitError) {
+      setError(textLimitError);
       return;
     }
 
@@ -228,7 +321,12 @@ export default function AdminCoursesPage() {
           "Content-Type": "application/json",
           "x-user-id": userId,
         },
-        body: JSON.stringify(courseForm),
+        body: JSON.stringify({
+          ...courseForm,
+          title: courseForm.title.trim(),
+          description: courseForm.description.trim(),
+          goals,
+        }),
       });
 
       const data = await res.json();
@@ -246,6 +344,7 @@ export default function AdminCoursesPage() {
         goals: [],
       });
       setIsCreatingNew(false);
+      setShowCreateCourseUploader(false);
       setError("");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to create course";
@@ -257,6 +356,13 @@ export default function AdminCoursesPage() {
 
   const handleCourseUpdate = async () => {
     if (!editingCourse) return;
+
+    const goals = normalizeGoals(editingCourse.goals || []);
+    const textLimitError = findCourseTextLimitError(editingCourse.title, editingCourse.description, goals);
+    if (textLimitError) {
+      setError(textLimitError);
+      return;
+    }
 
     setSaving(true);
     try {
@@ -274,12 +380,12 @@ export default function AdminCoursesPage() {
           "x-user-id": userId,
         },
         body: JSON.stringify({
-          title: editingCourse.title,
-          description: editingCourse.description,
+          title: editingCourse.title.trim(),
+          description: editingCourse.description.trim(),
           ageGroup: editingCourse.ageGroup,
           subject_id: typeof editingCourse.subject_id === "string" ? editingCourse.subject_id : editingCourse.subject_id._id,
           course_img: editingCourse.course_img,
-          goals: editingCourse.goals || [],
+          goals,
         }),
       });
 
@@ -288,10 +394,12 @@ export default function AdminCoursesPage() {
         throw new Error(data.message || "Failed to update course");
       }
 
+      const updatedCourse = data.data || editingCourse;
       setCourses((prev) =>
-        prev.map((c) => (c._id === editingCourse._id ? editingCourse : c))
+        prev.map((c) => (c._id === editingCourse._id ? updatedCourse : c))
       );
       setEditingCourse(null);
+      setShowEditCourseUploader(false);
       setError("");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to update course";
@@ -401,7 +509,7 @@ export default function AdminCoursesPage() {
 
       setModules((prev) => ({
         ...prev,
-        [editingModule.course_id]: prev[editingModule.course_id].map((m) =>
+        [editingModule.course_id]: (prev[editingModule.course_id] || []).map((m) =>
           m._id === editingModule._id ? editingModule : m
         ),
       }));
@@ -432,7 +540,7 @@ export default function AdminCoursesPage() {
 
       setModules((prev) => ({
         ...prev,
-        [courseId]: prev[courseId].filter((m) => m._id !== moduleId),
+        [courseId]: (prev[courseId] || []).filter((m) => m._id !== moduleId),
       }));
       setError("");
     } catch (err) {
@@ -473,7 +581,7 @@ export default function AdminCoursesPage() {
 
       setChapters((prev) => ({
         ...prev,
-        [moduleId]: [...(prev[moduleId] || []), data.data],
+        [moduleId]: [...(prev[moduleId] || []), normalizeChapter(data.data)],
       }));
       setChapterForm({ title: "", content: "", order: 0, module_id: "" });
       setError("");
@@ -508,10 +616,12 @@ export default function AdminCoursesPage() {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message);
 
+      const updatedChapter = normalizeChapter(data.data || editingChapter);
+
       setChapters((prev) => ({
         ...prev,
-        [editingChapter.module_id]: prev[editingChapter.module_id].map((c) =>
-          c._id === editingChapter._id ? editingChapter : c
+        [editingChapter.module_id]: (prev[editingChapter.module_id] || []).map((c) =>
+          c._id === editingChapter._id ? updatedChapter : c
         ),
       }));
       setEditingChapter(null);
@@ -541,7 +651,7 @@ export default function AdminCoursesPage() {
 
       setChapters((prev) => ({
         ...prev,
-        [moduleId]: prev[moduleId].filter((c) => c._id !== chapterId),
+        [moduleId]: (prev[moduleId] || []).filter((c) => c._id !== chapterId),
       }));
       setError("");
     } catch (err) {
@@ -553,7 +663,7 @@ export default function AdminCoursesPage() {
 
   // Question handlers
   const handleQuestionCreate = async (moduleId: string) => {
-    let payload: any;
+    let payload: QuestionCreatePayload;
 
     if (questionType === "test") {
       if (!testQuestionForm.question || testQuestionForm.options.some((o) => !o)) {
@@ -581,7 +691,7 @@ export default function AdminCoursesPage() {
         caseSensitive: shortAnswerForm.caseSensitive,
         module_id: moduleId,
       };
-    } else if (questionType === "fill-blank") {
+    } else {
       if (!fillBlankForm.questionText || fillBlankForm.blanks.some((b) => !b.correctAnswers.some((a) => a))) {
         setError("Question text and at least one correct answer for each blank are required");
         return;
@@ -644,6 +754,88 @@ export default function AdminCoursesPage() {
     }
   };
 
+  const buildQuestionPayload = (question: Question) => {
+    if (question.type === "short-answer") {
+      return {
+        question: question.question?.trim(),
+        correctAnswers: (question.correctAnswers || []).filter((answer) => answer.trim()),
+        explanation: question.explanation?.trim(),
+        caseSensitive: question.caseSensitive || false,
+      };
+    }
+
+    if (question.type === "fill-blank") {
+      return {
+        questionText: question.questionText?.trim(),
+        blanks: (question.blanks || []).map((blank, index) => ({
+          blankId: blank.blankId || `blank${index + 1}`,
+          correctAnswers: blank.correctAnswers.filter((answer) => answer.trim()),
+          caseSensitive: blank.caseSensitive || false,
+        })),
+        explanation: question.explanation?.trim(),
+      };
+    }
+
+    return {
+      question: question.question?.trim(),
+      options: question.options || [],
+      correctAnswer: question.correctAnswer || 0,
+      explanation: question.explanation?.trim(),
+    };
+  };
+
+  const handleQuestionUpdate = async () => {
+    if (!editingQuestion) return;
+
+    if (editingQuestion.type === "test" || !editingQuestion.type) {
+      if (!editingQuestion.question || !editingQuestion.options?.every((option) => option.trim())) {
+        setError("Question and all options are required");
+        return;
+      }
+    } else if (editingQuestion.type === "short-answer") {
+      if (!editingQuestion.question || !editingQuestion.correctAnswers?.some((answer) => answer.trim())) {
+        setError("Question and at least one answer are required");
+        return;
+      }
+    } else if (editingQuestion.type === "fill-blank") {
+      if (!editingQuestion.questionText || !editingQuestion.blanks?.every((blank) => blank.correctAnswers.some((answer) => answer.trim()))) {
+        setError("Question text and answers for every blank are required");
+        return;
+      }
+    }
+
+    setSaving(true);
+    try {
+      const userId = getUserId();
+      if (!userId) throw new Error("Unauthorized");
+
+      const res = await fetch(`/api/questions/${editingQuestion._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": userId,
+        },
+        body: JSON.stringify(buildQuestionPayload(editingQuestion)),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || "Failed to update question");
+
+      setQuestions((prev) => ({
+        ...prev,
+        [editingQuestion.module_id]: (prev[editingQuestion.module_id] || []).map((question) =>
+          question._id === editingQuestion._id ? data.data : question
+        ),
+      }));
+      setEditingQuestion(null);
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update question");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleQuestionDelete = async (questionId: string, moduleId: string) => {
     if (!confirm("Delete this question?")) return;
 
@@ -662,7 +854,7 @@ export default function AdminCoursesPage() {
 
       setQuestions((prev) => ({
         ...prev,
-        [moduleId]: prev[moduleId].filter((q) => q._id !== questionId),
+        [moduleId]: (prev[moduleId] || []).filter((q) => q._id !== questionId),
       }));
       setError("");
     } catch (err) {
@@ -676,6 +868,25 @@ export default function AdminCoursesPage() {
     if (q.question) return q.question;
     if (q.questionText) return q.questionText;
     return "Question";
+  };
+
+  const getQuestionTypeLabel = (type?: string) => {
+    if (type === "short-answer") return "Short answer";
+    if (type === "fill-blank") return "Fill in the blank";
+    return "Multiple choice";
+  };
+
+  const startQuestionEdit = (question: Question) => {
+    setEditingQuestion({
+      ...question,
+      type: question.type || "test",
+      options: question.options && question.options.length > 0 ? question.options : ["", "", "", ""],
+      correctAnswers: question.correctAnswers && question.correctAnswers.length > 0 ? question.correctAnswers : [""],
+      blanks:
+        question.blanks && question.blanks.length > 0
+          ? question.blanks
+          : [{ blankId: "blank1", correctAnswers: [""], caseSensitive: false }],
+    });
   };
 
   if (loading) {
@@ -694,6 +905,7 @@ export default function AdminCoursesPage() {
           <button
             onClick={() => {
               setIsCreatingNew(true);
+              setShowCreateCourseUploader(false);
               setCourseForm({
                 title: "",
                 description: "",
@@ -725,14 +937,21 @@ export default function AdminCoursesPage() {
             placeholder="Course title"
             value={courseForm.title}
             onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
+            maxLength={COURSE_TEXT_LIMIT}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500"
           />
-          <textarea
-            placeholder="Course description"
-            value={courseForm.description}
-            onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 h-20"
-          />
+          <div>
+            <textarea
+              placeholder="Course description"
+              value={courseForm.description}
+              onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
+              maxLength={COURSE_TEXT_LIMIT}
+              className="h-20 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500"
+            />
+            <p className="mt-1 text-right text-xs text-slate-500">
+              {courseForm.description.length}/{COURSE_TEXT_LIMIT}
+            </p>
+          </div>
           <select
             value={courseForm.ageGroup}
             onChange={(e) => setCourseForm({ ...courseForm, ageGroup: e.target.value })}
@@ -754,36 +973,96 @@ export default function AdminCoursesPage() {
               </option>
             ))}
           </select>
-          <input
-            type="text"
-            placeholder="Course image URL"
-            value={courseForm.course_img}
-            onChange={(e) => setCourseForm({ ...courseForm, course_img: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500"
-          />
-          {courseForm.course_img && (
-            <div className="flex flex-col items-center gap-2">
-              <img
-                src={courseForm.course_img}
-                alt="Course preview"
-                className="h-24 w-24 object-cover rounded-lg border border-slate-200"
-              />
-              <p className="text-xs text-slate-500">Image preview</p>
-            </div>
-          )}
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-2">Goals (one per line):</label>
-            <textarea
-              placeholder="Enter course goals, one per line"
-              value={courseForm.goals?.join("\n") || ""}
-              onChange={(e) =>
-                setCourseForm({
-                  ...courseForm,
-                  goals: e.target.value.split("\n").filter((g) => g.trim()),
-                })
-              }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 h-20"
-            />
+            <label className="block text-xs font-medium text-slate-700 mb-2">Course image</label>
+            {!showCreateCourseUploader ? (
+              <div className="space-y-2">
+                {courseForm.course_img ? (
+                  <div className="space-y-2">
+                    <img
+                      src={courseForm.course_img}
+                      alt="Course preview"
+                      className="h-24 w-24 object-cover rounded-lg border border-slate-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCourseForm({ ...courseForm, course_img: "" });
+                        setShowCreateCourseUploader(true);
+                      }}
+                      className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      Change image
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateCourseUploader(true)}
+                    className="rounded-lg border border-dashed border-slate-300 w-full p-4 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition"
+                  >
+                    Click to upload image
+                  </button>
+                )}
+              </div>
+            ) : (
+              <ImageUploader
+                folder="courses"
+                userId={getUserId() || undefined}
+                onImageUpload={(imageUrl) => {
+                  setCourseForm({ ...courseForm, course_img: imageUrl });
+                  setShowCreateCourseUploader(false);
+                }}
+              />
+            )}
+          </div>
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="block text-xs font-medium text-slate-700">Goals</label>
+              <button
+                type="button"
+                onClick={() => setCourseForm({ ...courseForm, goals: [...courseForm.goals, ""] })}
+                className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Add goal
+              </button>
+            </div>
+            <div className="space-y-2">
+              {courseForm.goals.length === 0 ? (
+                <p className="rounded border border-dashed border-slate-300 bg-white p-3 text-xs text-slate-500">
+                  No goals added yet.
+                </p>
+              ) : (
+                courseForm.goals.map((goal, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={goal}
+                      onChange={(e) => {
+                        const nextGoals = [...courseForm.goals];
+                        nextGoals[index] = e.target.value;
+                        setCourseForm({ ...courseForm, goals: nextGoals });
+                      }}
+                      maxLength={COURSE_TEXT_LIMIT}
+                      placeholder={`Goal ${index + 1}`}
+                      className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCourseForm({
+                          ...courseForm,
+                          goals: courseForm.goals.filter((_, goalIndex) => goalIndex !== index),
+                        })
+                      }
+                      className="shrink-0 rounded-lg border border-rose-200 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
           <div className="flex gap-2">
             <button
@@ -794,7 +1073,10 @@ export default function AdminCoursesPage() {
               {saving ? "Creating..." : "Create"}
             </button>
             <button
-              onClick={() => setIsCreatingNew(false)}
+              onClick={() => {
+                setIsCreatingNew(false);
+                setShowCreateCourseUploader(false);
+              }}
               className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
             >
               Cancel
@@ -811,13 +1093,20 @@ export default function AdminCoursesPage() {
             type="text"
             value={editingCourse.title}
             onChange={(e) => setEditingCourse({ ...editingCourse, title: e.target.value })}
+            maxLength={COURSE_TEXT_LIMIT}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500"
           />
-          <textarea
-            value={editingCourse.description}
-            onChange={(e) => setEditingCourse({ ...editingCourse, description: e.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 h-20"
-          />
+          <div>
+            <textarea
+              value={editingCourse.description}
+              onChange={(e) => setEditingCourse({ ...editingCourse, description: e.target.value })}
+              maxLength={COURSE_TEXT_LIMIT}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 h-20"
+            />
+            <p className="mt-1 text-right text-xs text-slate-500">
+              {editingCourse.description.length}/{COURSE_TEXT_LIMIT}
+            </p>
+          </div>
           <select
             value={editingCourse.ageGroup}
             onChange={(e) => setEditingCourse({ ...editingCourse, ageGroup: e.target.value })}
@@ -827,36 +1116,90 @@ export default function AdminCoursesPage() {
             <option value="4-9">Age 4-9</option>
             <option value="10-12">Age 10-12</option>
           </select>
-          <input
-            type="text"
-            value={editingCourse.course_img}
-            onChange={(e) => setEditingCourse({ ...editingCourse, course_img: e.target.value })}
-            placeholder="Course image URL"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500"
-          />
-          {editingCourse.course_img && (
-            <div className="flex flex-col items-center gap-2">
-              <img
-                src={editingCourse.course_img}
-                alt="Course preview"
-                className="h-24 w-24 object-cover rounded-lg border border-slate-200"
-              />
-              <p className="text-xs text-slate-500">Image preview</p>
-            </div>
-          )}
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-2">Goals (one per line):</label>
-            <textarea
-              placeholder="Enter course goals, one per line"
-              value={editingCourse.goals?.join("\n") || ""}
-              onChange={(e) =>
-                setEditingCourse({
-                  ...editingCourse,
-                  goals: e.target.value.split("\n").filter((g) => g.trim()),
-                })
-              }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 h-20"
-            />
+            <label className="block text-xs font-medium text-slate-700 mb-2">Course image</label>
+            {!showEditCourseUploader ? (
+              <div className="space-y-2">
+                {editingCourse.course_img ? (
+                  <img
+                    src={editingCourse.course_img}
+                    alt="Course preview"
+                    className="h-24 w-24 object-cover rounded-lg border border-slate-200"
+                  />
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setShowEditCourseUploader(true)}
+                  className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                >
+                  {editingCourse.course_img ? "Change image" : "Click to upload image"}
+                </button>
+              </div>
+            ) : (
+              <ImageUploader
+                folder="courses"
+                userId={getUserId() || undefined}
+                onImageUpload={(imageUrl) => {
+                  setEditingCourse((prev) =>
+                    prev ? { ...prev, course_img: imageUrl } : prev
+                  );
+                  setShowEditCourseUploader(false);
+                }}
+              />
+            )}
+          </div>
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="block text-xs font-medium text-slate-700">Goals</label>
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingCourse({
+                    ...editingCourse,
+                    goals: [...(editingCourse.goals || []), ""],
+                  })
+                }
+                className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Add goal
+              </button>
+            </div>
+            <div className="space-y-2">
+              {!editingCourse.goals || editingCourse.goals.length === 0 ? (
+                <p className="rounded border border-dashed border-slate-300 bg-white p-3 text-xs text-slate-500">
+                  No goals added yet.
+                </p>
+              ) : (
+                editingCourse.goals.map((goal, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={goal}
+                      onChange={(e) => {
+                        const nextGoals = [...(editingCourse.goals || [])];
+                        nextGoals[index] = e.target.value;
+                        setEditingCourse({ ...editingCourse, goals: nextGoals });
+                      }}
+                      maxLength={COURSE_TEXT_LIMIT}
+                      placeholder={`Goal ${index + 1}`}
+                      className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditingCourse({
+                          ...editingCourse,
+                          goals: (editingCourse.goals || []).filter((_, goalIndex) => goalIndex !== index),
+                        })
+                      }
+                      className="shrink-0 rounded-lg border border-rose-200 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
           <div className="flex gap-2">
             <button
@@ -867,7 +1210,10 @@ export default function AdminCoursesPage() {
               {saving ? "Saving..." : "Save"}
             </button>
             <button
-              onClick={() => setEditingCourse(null)}
+              onClick={() => {
+                setEditingCourse(null);
+                setShowEditCourseUploader(false);
+              }}
               className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
             >
               Cancel
@@ -884,7 +1230,7 @@ export default function AdminCoursesPage() {
           {courses.map((course) => (
             <div key={course._id} className="rounded-lg border border-slate-200 bg-white p-4">
               <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <div className="flex gap-3 items-start">
                     {course.course_img && (
                       <img
@@ -893,16 +1239,22 @@ export default function AdminCoursesPage() {
                         className="h-16 w-16 object-cover rounded-lg flex-shrink-0 border border-slate-200"
                       />
                     )}
-                    <div className="flex-1">
-                      <h3 className="font-medium text-slate-900">{course.title}</h3>
-                      <p className="text-sm text-slate-600">{course.description}</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 title={course.title} className="break-words font-medium text-slate-900">
+                        {truncateText(course.title)}
+                      </h3>
+                      <p title={course.description} className="break-words text-sm text-slate-600">
+                        {truncateText(course.description)}
+                      </p>
                       <p className="text-xs text-slate-500 mt-1">Age: {course.ageGroup}</p>
                       {course.goals && course.goals.length > 0 && (
                         <div className="mt-2">
                           <p className="text-xs font-medium text-slate-700">Goals:</p>
                           <ul className="text-xs text-slate-600 mt-1 list-disc list-inside">
                             {course.goals.map((goal, idx) => (
-                              <li key={idx}>{goal}</li>
+                              <li key={idx} title={goal} className="break-words">
+                                {truncateText(goal)}
+                              </li>
                             ))}
                           </ul>
                         </div>
@@ -914,6 +1266,7 @@ export default function AdminCoursesPage() {
                   <button
                     onClick={() => {
                       setEditingCourse(course);
+                      setShowEditCourseUploader(false);
                       setExpandedCourse(null);
                     }}
                     className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700 transition"
@@ -944,12 +1297,25 @@ export default function AdminCoursesPage() {
 
               {/* Modules section */}
               {expandedCourse === course._id && (
-                <div className="mt-4 pl-4 border-l-2 border-indigo-200 space-y-3">
+                <div className="mt-4 space-y-4 rounded-lg border border-indigo-100 bg-indigo-50/40 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900">Course structure</h4>
+                      <p className="text-xs text-slate-500">Modules, chapters and quiz questions are loaded here for editing.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => loadModules(course._id)}
+                      className="rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
+                    >
+                      Refresh
+                    </button>
+                  </div>
                   {modules[course._id]?.length === 0 || !modules[course._id] ? (
-                    <p className="text-sm text-slate-500 italic">No modules yet</p>
+                    <p className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">No modules yet</p>
                   ) : (
                     modules[course._id].map((module) => (
-                      <div key={module._id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <div key={module._id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                         {editingModule?._id === module._id ? (
                           <div className="space-y-2">
                             <input
@@ -981,10 +1347,12 @@ export default function AdminCoursesPage() {
                             </div>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div>
-                              <p className="font-medium text-slate-900">{module.title}</p>
-                              <p className="text-xs text-slate-500">Order: {module.order}</p>
+                              <p className="text-sm font-semibold text-slate-900">{module.title}</p>
+                              <p className="text-xs text-slate-500">
+                                Order {module.order} · {chapters[module._id]?.length || 0} chapters · {questions[module._id]?.length || 0} questions
+                              </p>
                             </div>
                             <div className="flex gap-2">
                               <button
@@ -1001,21 +1369,29 @@ export default function AdminCoursesPage() {
                               </button>
                               <button
                                 onClick={() => {
-                                  loadChapters(module._id);
-                                  loadQuestions(module._id);
+                                  loadModuleContent(module._id);
                                 }}
-                                className="rounded bg-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-400"
+                                className="rounded bg-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-300"
                               >
-                                ▶ Content
+                                Refresh content
                               </button>
                             </div>
                           </div>
                         )}
 
+                        {loadingModuleContent[module._id] && (
+                          <p className="mt-3 rounded bg-slate-50 px-3 py-2 text-xs text-slate-500">Loading module content...</p>
+                        )}
+
                         {/* Chapters */}
-                        {chapters[module._id] && chapters[module._id].length > 0 && (
-                          <div className="mt-2 pl-3 border-l border-slate-300 space-y-2">
-                            <p className="text-xs font-medium text-slate-600">Chapters:</p>
+                        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                            <div className="mb-3 flex items-center justify-between">
+                              <p className="text-sm font-semibold text-slate-800">Chapters</p>
+                              <span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">{chapters[module._id]?.length || 0}</span>
+                            </div>
+                            {chapters[module._id] && chapters[module._id].length > 0 ? (
+                              <div className="space-y-2">
                             {chapters[module._id].map((chapter) => (
                               <div key={chapter._id} className="bg-white p-2 rounded border border-slate-200">
                                 {editingChapter?._id === chapter._id ? (
@@ -1029,7 +1405,8 @@ export default function AdminCoursesPage() {
                                     <textarea
                                       value={editingChapter.content}
                                       onChange={(e) => setEditingChapter({ ...editingChapter, content: e.target.value })}
-                                      className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500 h-12"
+                                      placeholder={"# Heading\n\nWrite **Markdown** content here.\n\n- List item\n- Another item"}
+                                      className="h-40 w-full rounded border border-slate-300 px-2 py-2 font-mono text-xs leading-5 text-slate-900 outline-none focus:border-indigo-500"
                                     />
                                     <div className="flex gap-1">
                                       <button
@@ -1048,14 +1425,16 @@ export default function AdminCoursesPage() {
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex-1">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0 flex-1">
                                       <p className="text-xs font-medium text-slate-900">{chapter.title}</p>
-                                      <p className="text-xs text-slate-500 truncate">{chapter.content}</p>
+                                      <p className="mt-1 max-h-10 overflow-hidden break-words text-xs leading-5 text-slate-500">
+                                        {chapter.content}
+                                      </p>
                                     </div>
-                                    <div className="flex gap-1 ml-2">
+                                    <div className="ml-2 flex shrink-0 gap-1">
                                       <button
-                                        onClick={() => setEditingChapter(chapter)}
+                                        onClick={() => setEditingChapter(normalizeChapter(chapter))}
                                         className="rounded bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700"
                                       >
                                         E
@@ -1071,12 +1450,16 @@ export default function AdminCoursesPage() {
                                 )}
                               </div>
                             ))}
+                              </div>
+                            ) : (
+                              <p className="rounded border border-dashed border-slate-300 bg-white p-3 text-xs text-slate-500">No chapters yet</p>
+                            )}
                           </div>
-                        )}
 
                         {/* Add chapter form */}
                         {!editingChapter && (
-                          <div className="mt-2 pl-3 space-y-1">
+                          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+                            <p className="text-sm font-semibold text-slate-800">Add chapter</p>
                             <input
                               type="text"
                               placeholder="New chapter title..."
@@ -1085,10 +1468,10 @@ export default function AdminCoursesPage() {
                               className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
                             />
                             <textarea
-                              placeholder="Chapter content..."
+                              placeholder={"# Heading\n\nWrite **Markdown** content here.\n\n- List item\n- Another item"}
                               value={chapterForm.content}
                               onChange={(e) => setChapterForm({ ...chapterForm, content: e.target.value })}
-                              className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500 h-12"
+                              className="h-40 w-full rounded border border-slate-300 px-2 py-2 font-mono text-xs leading-5 text-slate-900 outline-none focus:border-indigo-500"
                             />
                             <button
                               onClick={() => handleChapterCreate(module._id)}
@@ -1101,27 +1484,270 @@ export default function AdminCoursesPage() {
                         )}
 
                         {/* Quiz Questions */}
-                        {questions[module._id] && questions[module._id].length > 0 && (
-                          <div className="mt-2 pl-3 border-l border-amber-300 space-y-2">
-                            <p className="text-xs font-medium text-amber-700">📝 Quiz Questions:</p>
-                            {questions[module._id].map((question) => (
-                              <div key={question._id} className="bg-amber-50 p-2 rounded border border-amber-200">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <p className="text-xs font-medium text-slate-900">{getQuestionDisplay(question)}</p>
-                                    <p className="text-xs text-amber-700">Type: {question.type || "test"}</p>
-                                  </div>
-                                  <button
-                                    onClick={() => handleQuestionDelete(question._id, module._id)}
-                                    className="rounded bg-rose-600 px-2 py-1 text-xs font-medium text-white hover:bg-rose-700 ml-2"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                          <div className="mb-3 flex items-center justify-between">
+                            <p className="text-sm font-semibold text-amber-900">Quiz questions</p>
+                            <span className="rounded-full bg-white px-2 py-0.5 text-xs text-amber-700">{questions[module._id]?.length || 0}</span>
                           </div>
-                        )}
+                          {questions[module._id] && questions[module._id].length > 0 ? (
+                            <div className="space-y-2">
+                              {questions[module._id].map((question) => (
+                                <div key={question._id} className="rounded border border-amber-200 bg-white p-3">
+                                  {editingQuestion?._id === question._id ? (
+                                    <div className="space-y-2">
+                                      <p className="text-xs font-semibold text-amber-900">Editing {getQuestionTypeLabel(editingQuestion.type)}</p>
+                                      {(editingQuestion.type === "test" || !editingQuestion.type) && (
+                                        <div className="space-y-2">
+                                          <input
+                                            type="text"
+                                            value={editingQuestion.question || ""}
+                                            onChange={(e) => setEditingQuestion({ ...editingQuestion, question: e.target.value })}
+                                            className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                          />
+                                          <div className="flex items-center justify-between">
+                                            <p className="text-xs font-medium text-slate-700">
+                                              Options: {(editingQuestion.options || []).length}
+                                            </p>
+                                            <div className="flex gap-1">
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  setEditingQuestion({
+                                                    ...editingQuestion,
+                                                    options: [...(editingQuestion.options || []), ""],
+                                                  })
+                                                }
+                                                className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                                              >
+                                                Add option
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const nextOptions = (editingQuestion.options || []).slice(0, -1);
+                                                  setEditingQuestion({
+                                                    ...editingQuestion,
+                                                    options: nextOptions,
+                                                    correctAnswer: Math.min(
+                                                      editingQuestion.correctAnswer || 0,
+                                                      Math.max(nextOptions.length - 1, 0)
+                                                    ),
+                                                  });
+                                                }}
+                                                disabled={(editingQuestion.options || []).length <= 2}
+                                                className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                              >
+                                                Remove option
+                                              </button>
+                                            </div>
+                                          </div>
+                                          {(editingQuestion.options || ["", "", "", ""]).map((option, optionIndex) => (
+                                            <input
+                                              key={optionIndex}
+                                              type="text"
+                                              value={option}
+                                              onChange={(e) => {
+                                                const nextOptions = [...(editingQuestion.options || ["", "", "", ""])];
+                                                nextOptions[optionIndex] = e.target.value;
+                                                setEditingQuestion({ ...editingQuestion, options: nextOptions });
+                                              }}
+                                              placeholder={`Option ${optionIndex + 1}`}
+                                              className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                            />
+                                          ))}
+                                          <select
+                                            value={editingQuestion.correctAnswer || 0}
+                                            onChange={(e) => setEditingQuestion({ ...editingQuestion, correctAnswer: Number(e.target.value) })}
+                                            className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                          >
+                                            {(editingQuestion.options || ["", "", "", ""]).map((_, optionIndex) => (
+                                              <option key={optionIndex} value={optionIndex}>
+                                                Correct option {optionIndex + 1}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                      )}
+                                      {editingQuestion.type === "short-answer" && (
+                                        <div className="space-y-2">
+                                          <input
+                                            type="text"
+                                            value={editingQuestion.question || ""}
+                                            onChange={(e) => setEditingQuestion({ ...editingQuestion, question: e.target.value })}
+                                            className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                          />
+                                          {(editingQuestion.correctAnswers || [""]).map((answer, answerIndex) => (
+                                            <div key={answerIndex} className="flex gap-1">
+                                              <input
+                                                type="text"
+                                                value={answer}
+                                                onChange={(e) => {
+                                                  const nextAnswers = [...(editingQuestion.correctAnswers || [""])];
+                                                  nextAnswers[answerIndex] = e.target.value;
+                                                  setEditingQuestion({ ...editingQuestion, correctAnswers: nextAnswers });
+                                                }}
+                                                placeholder={`Answer ${answerIndex + 1}`}
+                                                className="flex-1 rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                              />
+                                              {answerIndex === (editingQuestion.correctAnswers || [""]).length - 1 && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setEditingQuestion({
+                                                      ...editingQuestion,
+                                                      correctAnswers: [...(editingQuestion.correctAnswers || []), ""],
+                                                    })
+                                                  }
+                                                  className="rounded bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700"
+                                                >
+                                                  +
+                                                </button>
+                                              )}
+                                            </div>
+                                          ))}
+                                          <label className="flex items-center gap-2 text-xs text-slate-700">
+                                            <input
+                                              type="checkbox"
+                                              checked={editingQuestion.caseSensitive || false}
+                                              onChange={(e) => setEditingQuestion({ ...editingQuestion, caseSensitive: e.target.checked })}
+                                            />
+                                            Case sensitive
+                                          </label>
+                                        </div>
+                                      )}
+                                      {editingQuestion.type === "fill-blank" && (
+                                        <div className="space-y-2">
+                                          <input
+                                            type="text"
+                                            value={editingQuestion.questionText || ""}
+                                            onChange={(e) => setEditingQuestion({ ...editingQuestion, questionText: e.target.value })}
+                                            className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                          />
+                                          <div className="flex items-center justify-between">
+                                            <p className="text-xs font-medium text-slate-700">
+                                              Blanks: {(editingQuestion.blanks || []).length}
+                                            </p>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                setEditingQuestion({
+                                                  ...editingQuestion,
+                                                  blanks: [
+                                                    ...(editingQuestion.blanks || []),
+                                                    {
+                                                      blankId: `blank${(editingQuestion.blanks || []).length + 1}`,
+                                                      correctAnswers: [""],
+                                                      caseSensitive: false,
+                                                    },
+                                                  ],
+                                                })
+                                              }
+                                              className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                                            >
+                                              Add blank
+                                            </button>
+                                          </div>
+                                          {(editingQuestion.blanks || []).map((blank, blankIndex) => (
+                                            <div key={blankIndex} className="rounded border border-slate-200 bg-slate-50 p-2 space-y-1">
+                                              <div className="flex items-center justify-between">
+                                                <p className="text-xs font-medium text-slate-600">Blank {blankIndex + 1}</p>
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setEditingQuestion({
+                                                      ...editingQuestion,
+                                                      blanks: (editingQuestion.blanks || []).filter((_, index) => index !== blankIndex),
+                                                    })
+                                                  }
+                                                  disabled={(editingQuestion.blanks || []).length <= 1}
+                                                  className="text-xs font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
+                                                >
+                                                  Remove
+                                                </button>
+                                              </div>
+                                              <input
+                                                type="text"
+                                                value={blank.blankId}
+                                                onChange={(e) => {
+                                                  const nextBlanks = [...(editingQuestion.blanks || [])];
+                                                  nextBlanks[blankIndex] = { ...blank, blankId: e.target.value };
+                                                  setEditingQuestion({ ...editingQuestion, blanks: nextBlanks });
+                                                }}
+                                                className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                              />
+                                              <input
+                                                type="text"
+                                                value={blank.correctAnswers.join(", ")}
+                                                onChange={(e) => {
+                                                  const nextBlanks = [...(editingQuestion.blanks || [])];
+                                                  nextBlanks[blankIndex] = {
+                                                    ...blank,
+                                                    correctAnswers: e.target.value.split(",").map((answer) => answer.trim()),
+                                                  };
+                                                  setEditingQuestion({ ...editingQuestion, blanks: nextBlanks });
+                                                }}
+                                                placeholder="Correct answers, comma-separated"
+                                                className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
+                                              />
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                      <textarea
+                                        placeholder="Explanation..."
+                                        value={editingQuestion.explanation || ""}
+                                        onChange={(e) => setEditingQuestion({ ...editingQuestion, explanation: e.target.value })}
+                                        className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500 h-16"
+                                      />
+                                      <div className="flex gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={handleQuestionUpdate}
+                                          disabled={saving}
+                                          className="rounded bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+                                        >
+                                          Save question
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditingQuestion(null)}
+                                          className="rounded border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-medium text-slate-900">{getQuestionDisplay(question)}</p>
+                                        <p className="text-xs text-amber-700">{getQuestionTypeLabel(question.type)}</p>
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => startQuestionEdit(question)}
+                                          className="rounded bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700"
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleQuestionDelete(question._id, module._id)}
+                                          className="rounded bg-rose-600 px-2 py-1 text-xs font-medium text-white hover:bg-rose-700"
+                                        >
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="rounded border border-dashed border-amber-300 bg-white p-3 text-xs text-amber-700">No quiz questions yet</p>
+                          )}
+                        </div>
 
                         {/* Add question form */}
                         {!editingQuestion && (
@@ -1149,6 +1775,40 @@ export default function AdminCoursesPage() {
                                   onChange={(e) => setTestQuestionForm({ ...testQuestionForm, question: e.target.value })}
                                   className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
                                 />
+                                <div className="flex items-center justify-between">
+                                  <p className="text-xs font-medium text-slate-700">Options: {testQuestionForm.options.length}</p>
+                                  <div className="flex gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setTestQuestionForm({
+                                          ...testQuestionForm,
+                                          options: [...testQuestionForm.options, ""],
+                                        })
+                                      }
+                                      className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                                    >
+                                      Add option
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setTestQuestionForm({
+                                          ...testQuestionForm,
+                                          options: testQuestionForm.options.slice(0, -1),
+                                          correctAnswer: Math.min(
+                                            testQuestionForm.correctAnswer,
+                                            Math.max(testQuestionForm.options.length - 2, 0)
+                                          ),
+                                        })
+                                      }
+                                      disabled={testQuestionForm.options.length <= 2}
+                                      className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                    >
+                                      Remove option
+                                    </button>
+                                  </div>
+                                </div>
                                 {testQuestionForm.options.map((opt, i) => (
                                   <input
                                     key={i}
@@ -1261,10 +1921,46 @@ export default function AdminCoursesPage() {
                                   onChange={(e) => setFillBlankForm({ ...fillBlankForm, questionText: e.target.value })}
                                   className="w-full rounded border border-slate-300 px-2 py-1 text-xs text-slate-900 outline-none focus:border-indigo-500"
                                 />
-                                <p className="text-xs font-medium text-slate-700">Blanks:</p>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-xs font-medium text-slate-700">Blanks: {fillBlankForm.blanks.length}</p>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setFillBlankForm({
+                                        ...fillBlankForm,
+                                        blanks: [
+                                          ...fillBlankForm.blanks,
+                                          {
+                                            blankId: `blank${fillBlankForm.blanks.length + 1}`,
+                                            correctAnswers: [""],
+                                            caseSensitive: false,
+                                          },
+                                        ],
+                                      })
+                                    }
+                                    className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                                  >
+                                    Add blank
+                                  </button>
+                                </div>
                                 {fillBlankForm.blanks.map((blank, i) => (
                                   <div key={i} className="bg-white p-2 rounded border border-slate-200 space-y-1">
-                                    <p className="text-xs font-medium text-slate-600">Blank {i + 1}</p>
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-xs font-medium text-slate-600">Blank {i + 1}</p>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setFillBlankForm({
+                                            ...fillBlankForm,
+                                            blanks: fillBlankForm.blanks.filter((_, blankIndex) => blankIndex !== i),
+                                          })
+                                        }
+                                        disabled={fillBlankForm.blanks.length <= 1}
+                                        className="text-xs font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
                                     {blank.correctAnswers.map((ans, j) => (
                                       <div key={j} className="flex gap-1">
                                         <input
@@ -1311,6 +2007,7 @@ export default function AdminCoursesPage() {
                             )}
                           </div>
                         )}
+                      </div>
                       </div>
                     ))
                   )}

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
+import { MarkdownContent } from "@/components/MarkdownContent";
 import { Course, Module, UserProgress, Question } from "@/types";
 
 type NavItem = {
@@ -76,6 +77,7 @@ export default function ChapterPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [finishError, setFinishError] = useState<string | null>(null);
 
   const [openModules, setOpenModules] = useState<Record<string, boolean>>({});
 
@@ -445,6 +447,18 @@ export default function ChapterPage() {
       ? Math.round((completedItems / totalItems) * 100)
       : 0;
 
+  const requiredItems = navItems.filter((item) => item.type !== "finish");
+  const areAllModulesComplete =
+    requiredItems.length > 0 &&
+    requiredItems.every((item) => {
+      if (item.type === "chapter") {
+        return Boolean(userProgress.chapters[item.id]);
+      }
+
+      const questionIds = item.questionIds || [];
+      return questionIds.every((questionId) => Boolean(userProgress.questions[questionId]));
+    });
+
 
   if (loading) {
     return (
@@ -462,8 +476,8 @@ export default function ChapterPage() {
         <div className="text-center px-4">
           <div className="mb-8">
             <h1 className="text-6xl font-bold text-indigo-600 mb-2">404</h1>
-            <h2 className="text-3xl font-bold text-slate-800 mb-4">Content Not Found</h2>
-            <p className="text-lg text-slate-600 mb-8">
+            <h2 className="text-3xl font-bold text-slate-800 mb-4 break-words">Content Not Found</h2>
+            <p className="text-lg text-slate-600 mb-8 break-words">
               {error || "Sorry, the content you're looking for doesn't exist or has been moved."}
             </p>
           </div>
@@ -505,7 +519,7 @@ export default function ChapterPage() {
                   ← Back to Skill Path
                 </Link>
 
-                <h1 className="mt-4 text-lg font-semibold text-slate-900">
+                <h1 className="mt-4 text-lg font-semibold text-slate-900 break-words">
                   {course.title}
                 </h1>
 
@@ -539,7 +553,7 @@ export default function ChapterPage() {
                         }
                         className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left hover:bg-slate-50"
                       >
-                        <span className="text-sm font-semibold text-slate-900">
+                        <span className="text-sm font-semibold text-slate-900 break-words">
                           {module.title}
                         </span>
                         <ChevronIcon open={!!openModules[module._id]} />
@@ -564,7 +578,7 @@ export default function ChapterPage() {
                                 }`}
                             >
                                 <CheckIcon done={isDone} />
-                                <span className="leading-5">{chapter.title}</span>
+                                <span className="leading-5 break-words">{chapter.title}</span>
                             </Link>
                             );
                           })}
@@ -587,7 +601,7 @@ export default function ChapterPage() {
                                 }`}
                               >
                                 <CheckIcon done={isQuizDone} />
-                                <span>Quiz: {module.title}</span>
+                                <span className="break-words">Quiz: {module.title}</span>
                               </Link>
                             );
                           })()}
@@ -612,7 +626,7 @@ export default function ChapterPage() {
                       courseProgress?.status === "finished"
                     }
                   />
-                  <span className="leading-5 font-semibold">Finish</span>
+                  <span className="leading-5 font-semibold break-words">Finish</span>
                 </Link>
                 </div>
               </div>
@@ -623,43 +637,29 @@ export default function ChapterPage() {
           <section className="min-w-0 flex-1 bg-white">
             <div className="mx-auto max-w-4xl px-6 py-8 lg:px-12">
               {/* Breadcrumb */}
-              <div className="mb-6 text-sm text-slate-500">
+              <div className="mb-6 text-sm text-slate-500 break-words">
                 {currentItem?.moduleTitle}
               </div>
 
               {/* Chapter Content */}
               {currentItem?.type === "chapter" && currentChapter ? (
                 <>
-                  <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                  <h1 className="text-3xl font-bold tracking-tight text-slate-900 break-words">
                     {currentChapter.title}
                   </h1>
 
-                  {currentChapter.content && (
-                    <p className="mt-3 text-lg text-slate-600">
-                      {currentChapter.content}
-                    </p>
-                  )}
-
-                  <article className="prose prose-slate mt-8 max-w-none">
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html:
-                          currentChapter.content ||
-                          "<p>No content available.</p>",
-                      }}
-                    />
-                  </article>
+                  <MarkdownContent content={currentChapter.content || ""} />
                 </>
               ) : currentItem?.type === "quiz" ? (
                 <>
-                  <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                  <h1 className="text-3xl font-bold tracking-tight text-slate-900 break-words">
                     {currentItem.title}
                   </h1>
 
               {/* Quiz Questions */}
                   <div className="mt-8 space-y-8">
                     {quizQuestions.length === 0 ? (
-                      <p className="text-slate-600">No questions available for this quiz.</p>
+                      <p className="text-slate-600 break-words">No questions available for this quiz.</p>
                     ) : (
                       quizQuestions.map((question, idx) => {
                         const questionType = (question as any).type || 'test';
@@ -677,7 +677,7 @@ export default function ChapterPage() {
                                 {/* Test Question */}
                                 {questionType === 'test' && (
                                   <>
-                                    <h3 className="text-lg font-medium text-slate-900">
+                                    <h3 className="text-lg font-medium text-slate-900 break-words">
                                       {(question as any).question}
                                     </h3>
 
@@ -688,7 +688,7 @@ export default function ChapterPage() {
                                         const isCorrectAnswer = optIdx === (question as any).correctAnswer;
                                         const isCorrect = selectedIdx === (question as any).correctAnswer;
 
-                                        let buttonClass = "w-full text-left rounded-lg border-2 p-3 transition ";
+                                        let buttonClass = "w-full text-left rounded-lg border-2 p-3 transition break-words";
 
                                         if (isQuizSubmitted) {
                                           if (isCorrectAnswer) {
@@ -737,7 +737,7 @@ export default function ChapterPage() {
                                     </div>
 
                                     {isQuizSubmitted && (question as any).explanation && (
-                                      <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
+                                      <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900 break-words">
                                         <strong>Explanation:</strong> {(question as any).explanation}
                                       </div>
                                     )}
@@ -747,7 +747,7 @@ export default function ChapterPage() {
                                 {/* Short Answer Question */}
                                 {questionType === 'short-answer' && (
                                   <>
-                                    <h3 className="text-lg font-medium text-slate-900">
+                                    <h3 className="text-lg font-medium text-slate-900 break-words">
                                       {(question as any).question}
                                     </h3>
 
@@ -766,7 +766,7 @@ export default function ChapterPage() {
                                     </div>
 
                                     {isQuizSubmitted && (
-                                      <div className={`mt-4 rounded-lg p-3 text-sm ${
+                                      <div className={`mt-4 rounded-lg p-3 text-sm break-words ${
                                         (question as any).correctAnswers.some((ans: string) =>
                                           (question as any).caseSensitive
                                             ? ans === selectedAnswers[question._id]
@@ -783,15 +783,15 @@ export default function ChapterPage() {
                                           <div>
                                             <strong className="text-emerald-600">✓ Correct!</strong>
                                             {(question as any).explanation && (
-                                              <p className="mt-2">{(question as any).explanation}</p>
+                                              <p className="mt-2 break-words">{(question as any).explanation}</p>
                                             )}
                                           </div>
                                         ) : (
                                           <div>
                                             <strong className="text-red-600">✗ Incorrect</strong>
-                                            <p className="mt-2">Correct answer(s): {(question as any).correctAnswers.join(', ')}</p>
+                                            <p className="mt-2 break-words">Correct answer(s): {(question as any).correctAnswers.join(', ')}</p>
                                             {(question as any).explanation && (
-                                              <p className="mt-2">{(question as any).explanation}</p>
+                                              <p className="mt-2 break-words">{(question as any).explanation}</p>
                                             )}
                                           </div>
                                         )}
@@ -803,7 +803,7 @@ export default function ChapterPage() {
                                 {/* Fill in the Blank Question */}
                                 {questionType === 'fill-blank' && (
                                   <>
-                                    <h3 className="text-lg font-medium text-slate-900">
+                                    <h3 className="text-lg font-medium text-slate-900 break-words">
                                       {(question as any).questionText}
                                     </h3>
 
@@ -833,7 +833,7 @@ export default function ChapterPage() {
                                     </div>
 
                                     {isQuizSubmitted && (
-                                      <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
+                                      <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900 break-words">
                                         {(question as any).blanks?.map((blank: any, blankIdx: number) => {
                                           const userAnswer = selectedAnswers[question._id]?.[blankIdx] || '';
                                           const isCorrect = blank.correctAnswers.some((ans: string) =>
@@ -842,7 +842,7 @@ export default function ChapterPage() {
                                               : ans.toLowerCase() === userAnswer.toLowerCase()
                                           );
                                           return (
-                                            <div key={blankIdx} className="mb-2">
+                                            <div key={blankIdx} className="mb-2 break-words">
                                               <strong>Blank {blankIdx + 1}:</strong> {userAnswer || '(not answered)'}{' '}
                                               {isCorrect ? (
                                                 <span className="text-emerald-600">✓</span>
@@ -853,7 +853,7 @@ export default function ChapterPage() {
                                           );
                                         })}
                                         {(question as any).explanation && (
-                                          <p className="mt-3 border-t border-blue-200 pt-2">{(question as any).explanation}</p>
+                                          <p className="mt-3 border-t border-blue-200 pt-2 break-words">{(question as any).explanation}</p>
                                         )}
                                       </div>
                                     )}
@@ -917,11 +917,11 @@ export default function ChapterPage() {
 
                     return (
                       <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-6">
-                        <h3 className="text-xl font-semibold text-gray-900">
+                        <h3 className="text-xl font-semibold text-gray-900 break-words">
                           Quiz Results
                         </h3>
 
-                        <p className="mt-2 text-gray-700">
+                        <p className="mt-2 text-gray-700 break-words">
                           You scored {correctCount} out of {totalCount}.
                         </p>
 
@@ -945,20 +945,20 @@ export default function ChapterPage() {
                     </svg>
                   </div>
 
-                  <h1 className="text-4xl font-bold tracking-tight text-slate-900 text-center mb-3">
+                  <h1 className="text-4xl font-bold tracking-tight text-slate-900 text-center mb-3 break-words">
                     Congratulations!
                   </h1>
 
-                  <p className="text-xl text-slate-600 text-center mb-4 max-w-2xl">
+                  <p className="text-xl text-slate-600 text-center mb-4 max-w-2xl break-words">
                     You have successfully completed the entire course. Great work!
                   </p>
 
-                  <p className="text-lg text-slate-500 text-center mb-8 max-w-2xl">
+                  <p className="text-lg text-slate-500 text-center mb-8 max-w-2xl break-words">
                     Now click the button below to finish the course and return to the main page.
                   </p>
                 </div>
               ) : (
-                <div className="text-slate-500">Content not found.</div>
+                <div className="text-slate-500 break-words">Content not found.</div>
               )}
 
               {/* Bottom Navigation */}
@@ -1059,13 +1059,19 @@ export default function ChapterPage() {
                       <button
                         type="button"
                         onClick={async () => {
+                          if (!areAllModulesComplete) {
+                            setFinishError("Complete all modules first.");
+                            return;
+                          }
+
                           try {
+                            setFinishError(null);
                             const storedUser = localStorage.getItem("user");
                             const user = storedUser ? JSON.parse(storedUser) : null;
                             const userId = user?._id || user?.id || "";
 
                             // Mark course as completed
-                            await fetch(`/api/progress/courses/${courseId}/status`, {
+                            const response = await fetch(`/api/progress/courses/${courseId}/status`, {
                               method: "PUT",
                               headers: {
                                 "Content-Type": "application/json",
@@ -1075,6 +1081,11 @@ export default function ChapterPage() {
                                 status: "completed",
                               }),
                             });
+
+                            if (!response.ok) {
+                              const data = await response.json().catch(() => null);
+                              throw new Error(data?.message || "Complete all modules first.");
+                            }
 
                             // Mark finish page as completed
                             setUserProgress((prev) => ({
@@ -1089,6 +1100,7 @@ export default function ChapterPage() {
                             router.push(`/courses/${courseId}`);
                           } catch (e) {
                             console.error("[Finish Course] Error:", e);
+                            setFinishError(e instanceof Error ? e.message : "Complete all modules first.");
                           }
                         }}
                         className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
@@ -1098,6 +1110,11 @@ export default function ChapterPage() {
                     )}
                   </div>
                 </div>
+                {currentItem?.type === "finish" && finishError && (
+                  <p className="mt-4 text-right text-sm font-medium text-rose-600 break-words">
+                    {finishError}
+                  </p>
+                )}
               </div>
             </div>
           </section>

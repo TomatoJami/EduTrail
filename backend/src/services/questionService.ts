@@ -283,6 +283,38 @@ export class QuestionService {
     await Question.findByIdAndDelete(id);
   }
 
+  async updateQuestion(id: string, payload: Partial<CreateTestQuestionPayload & CreateShortAnswerPayload & CreateFillBlankPayload & { type: string }>): Promise<any | null> {
+    if (!mongoose.isValidObjectId(id)) {
+      throw new Error('Invalid question id');
+    }
+
+    const question = await Question.findById(id);
+    if (!question) {
+      return null;
+    }
+
+    let typeData = null;
+
+    if (question.type === 'test') {
+      typeData = await this.updateTestQuestion(String(question.typeId), payload);
+    } else if (question.type === 'short-answer') {
+      typeData = await this.updateShortAnswerQuestion(String(question.typeId), payload);
+    } else if (question.type === 'fill-blank') {
+      typeData = await this.updateFillBlankQuestion(String(question.typeId), payload);
+    }
+
+    if (!typeData) {
+      return null;
+    }
+
+    const typeDataObj = typeData.toObject ? typeData.toObject() : typeData;
+    return {
+      ...typeDataObj,
+      _id: question._id.toString(),
+      type: question.type,
+    };
+  }
+
   async updateTestQuestion(id: string, payload: Partial<CreateTestQuestionPayload>): Promise<ITestQuestion | null> {
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid question id');

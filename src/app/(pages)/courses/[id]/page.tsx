@@ -435,7 +435,7 @@ export default function CourseDetailPage() {
 													<BookmarkIcon />
 												</button>
 										</div>
-										<p className="mt-4 max-w-3xl text-sm leading-7 text-white/70 sm:text-[15px]">
+										<p className="mt-4 max-w-3xl text-sm leading-7 text-white/70 sm:text-[15px] break-words">
 											{course.description}
 										</p>
 									</div>

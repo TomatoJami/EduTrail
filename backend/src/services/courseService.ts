@@ -1,5 +1,14 @@
 import mongoose from 'mongoose';
 import { Course, ICourse, CourseAgeGroup } from '../models/Course';
+import { Module } from '../models/Module';
+import { Chapter } from '../models/Chapter';
+import { Question } from '../models/Question';
+import { TestQuestion } from '../models/TestQuestion';
+import { ShortAnswerQuestion } from '../models/ShortAnswerQuestion';
+import { FillInTheBlankQuestion } from '../models/FillInTheBlankQuestion';
+import { ChapterProgress } from '../models/ChapterProgress';
+import { QuestionProgress } from '../models/QuestionProgress';
+import { CourseProgress } from '../models/CourseProgress';
 
 export interface CoursePayload {
   title: string;
@@ -30,7 +39,9 @@ export class CourseService {
       throw new Error('Invalid course id');
     }
 
-    const nextPayload: Record<string, unknown> = { ...payload };
+    const nextPayload: Record<string, unknown> = Object.fromEntries(
+      Object.entries(payload).filter(([, value]) => value !== undefined)
+    );
 
     if (payload.subject_id) {
       if (!mongoose.isValidObjectId(payload.subject_id)) {
@@ -40,7 +51,7 @@ export class CourseService {
     }
 
     return Course.findByIdAndUpdate(id, nextPayload, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).populate('subject_id');
   }
@@ -50,7 +61,47 @@ export class CourseService {
       throw new Error('Invalid course id');
     }
 
-    return Course.findByIdAndDelete(id).populate('subject_id');
+    const courseObjectId = new mongoose.Types.ObjectId(id);
+    const course = await Course.findById(courseObjectId).populate('subject_id');
+
+    if (!course) {
+      return null;
+    }
+
+    const courseModules = await Module.find({ course_id: courseObjectId }).select('_id');
+    const moduleIds = courseModules.map((moduleItem) => moduleItem._id);
+
+    if (moduleIds.length > 0) {
+      const [courseChapters, courseQuestions] = await Promise.all([
+        Chapter.find({ module_id: { $in: moduleIds } }).select('_id'),
+        Question.find({ module_id: { $in: moduleIds } }).select('_id'),
+      ]);
+
+      const chapterIds = courseChapters.map((chapter) => chapter._id);
+      const questionIds = courseQuestions.map((question) => question._id);
+
+      await Promise.all([
+        chapterIds.length > 0
+          ? ChapterProgress.deleteMany({ chapter_id: { $in: chapterIds } })
+          : Promise.resolve(),
+        questionIds.length > 0
+          ? QuestionProgress.deleteMany({ question_id: { $in: questionIds } })
+          : Promise.resolve(),
+        TestQuestion.deleteMany({ module_id: { $in: moduleIds } }),
+        ShortAnswerQuestion.deleteMany({ module_id: { $in: moduleIds } }),
+        FillInTheBlankQuestion.deleteMany({ module_id: { $in: moduleIds } }),
+        Question.deleteMany({ module_id: { $in: moduleIds } }),
+        Chapter.deleteMany({ module_id: { $in: moduleIds } }),
+        Module.deleteMany({ course_id: courseObjectId }),
+      ]);
+    }
+
+    await Promise.all([
+      CourseProgress.deleteMany({ course_id: courseObjectId }),
+      Course.findByIdAndDelete(courseObjectId),
+    ]);
+
+    return course;
   }
 
   async getCourseById(id: string): Promise<ICourse | null> {
