@@ -132,7 +132,7 @@ router.get('/:id', (req, res) => questionController.getQuestionById(req, res));
  *       - Questions
  *     summary: Create new question (Admin only) - Universal endpoint
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -224,7 +224,7 @@ router.post('/', adminMiddleware, (req, res) => questionController.createQuestio
  *       - Questions
  *     summary: Create test (multiple choice) question (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -267,7 +267,7 @@ router.post('/test', adminMiddleware, (req, res) => {
  *       - Questions
  *     summary: Create short answer question (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -310,7 +310,7 @@ router.post('/short-answer', adminMiddleware, (req, res) => {
  *       - Questions
  *     summary: Create fill in the blank question (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -363,7 +363,7 @@ router.put('/:id', adminMiddleware, (req, res) => questionController.updateQuest
  *     summary: Delete question (Admin only)
  *     description: Deletes both the wrapper Question and the type-specific question document
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

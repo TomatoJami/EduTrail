@@ -38,7 +38,12 @@ export default function LoginPage() {
       }
 
       if (data?.data) {
-        localStorage.setItem('user', JSON.stringify(data.data));
+        const { token, expiresAt, ...user } = data.data;
+        localStorage.setItem('user', JSON.stringify(user));
+        if (expiresAt) {
+          localStorage.setItem('authExpiresAt', expiresAt);
+        }
+        localStorage.setItem('authLastActivity', String(Date.now()));
         window.dispatchEvent(new Event('auth-state-changed'));
       }
 

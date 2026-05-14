@@ -143,4 +143,6 @@ export interface AuthResponse {
   email: string;
   name: string;
   role: 'student' | 'admin';
+  token?: string;
+  expiresAt?: string;
 }

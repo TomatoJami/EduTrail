@@ -5,12 +5,18 @@ const API_URL =
 
 function getAuthHeaders(request: NextRequest) {
   const userId = request.headers.get("x-user-id");
+  const authorization = request.headers.get("authorization");
+  const token = request.cookies.get("authToken")?.value;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
   if (userId) {
     headers["x-user-id"] = userId;
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
   return headers;

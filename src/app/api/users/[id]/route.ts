@@ -10,6 +10,7 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
     const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
 
     if (!id) {
       return NextResponse.json(
@@ -32,6 +33,7 @@ export async function PUT(
       headers: {
         'Content-Type': 'application/json',
         'x-user-id': userId,
+        ...(authorization ? { Authorization: authorization } : {}),
       },
       body: JSON.stringify(body),
     });
@@ -55,6 +57,7 @@ export async function GET(
   try {
     const { id } = await params;
     const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
 
     if (!id) {
       return NextResponse.json(
@@ -77,6 +80,7 @@ export async function GET(
       headers: {
         'Content-Type': 'application/json',
         'x-user-id': userId,
+        ...(authorization ? { Authorization: authorization } : {}),
       },
     });
 
@@ -99,6 +103,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
 
     if (!id) {
       return NextResponse.json(
@@ -121,6 +126,7 @@ export async function DELETE(
       headers: {
         'Content-Type': 'application/json',
         'x-user-id': userId,
+        ...(authorization ? { Authorization: authorization } : {}),
       },
     });
 

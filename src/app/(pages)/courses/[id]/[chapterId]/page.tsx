@@ -667,7 +667,7 @@ export default function ChapterPage() {
                                       <img
                                         src={(question as any).question_img}
                                         alt="Question illustration"
-                                        className="mt-4 max-h-96 w-full rounded-lg border border-slate-200 object-contain"
+                                        className="mx-auto mt-4 block max-h-64 w-auto max-w-full sm:max-w-md object-contain"
                                       />
                                     )}
 
@@ -744,7 +744,7 @@ export default function ChapterPage() {
                                       <img
                                         src={(question as any).question_img}
                                         alt="Question illustration"
-                                        className="mt-4 max-h-96 w-full rounded-lg border border-slate-200 object-contain"
+                                        className="mx-auto mt-4 block max-h-64 w-auto max-w-full sm:max-w-md object-contain"
                                       />
                                     )}
 
@@ -807,7 +807,7 @@ export default function ChapterPage() {
                                       <img
                                         src={(question as any).question_img}
                                         alt="Question illustration"
-                                        className="mt-4 max-h-96 w-full rounded-lg border border-slate-200 object-contain"
+                                        className="mx-auto mt-4 block max-h-64 w-auto max-w-full sm:max-w-md object-contain"
                                       />
                                     )}
 

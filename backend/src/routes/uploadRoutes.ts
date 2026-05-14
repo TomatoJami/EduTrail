@@ -31,7 +31,7 @@ const router = Router();
  *       - Upload
  *     summary: Upload image to Supabase Storage (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: folder

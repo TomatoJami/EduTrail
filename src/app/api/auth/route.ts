@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-type AuthAction = 'signup' | 'login' | 'update' | 'forgot-password' | 'reset-password';
+type AuthAction = 'signup' | 'login' | 'update' | 'forgot-password' | 'reset-password' | 'logout';
 
 interface AuthRequestBody {
   action?: AuthAction;
@@ -21,6 +21,13 @@ export async function POST(request: Request) {
     console.log('Auth POST received, action:', action);
 
     switch (action) {
+      case 'logout': {
+        const response = NextResponse.json({ success: true, message: 'Logged out' });
+        response.cookies.delete('authToken');
+        response.cookies.delete('authExpiresAt');
+        return response;
+      }
+
       case 'signup': {
         if (!email || !password || !name) {
           return NextResponse.json(
@@ -38,7 +45,28 @@ export async function POST(request: Request) {
         });
 
         const data = await response.json();
-        return NextResponse.json(data, { status: response.status });
+        const nextResponse = NextResponse.json(
+          data?.data?.token ? { ...data, data: { ...data.data, token: undefined } } : data,
+          { status: response.status }
+        );
+        if (data?.data?.token && data?.data?.expiresAt) {
+          const maxAge = Math.max(0, Math.floor((Date.parse(data.data.expiresAt) - Date.now()) / 1000));
+          nextResponse.cookies.set('authToken', data.data.token, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            maxAge,
+          });
+          nextResponse.cookies.set('authExpiresAt', data.data.expiresAt, {
+            httpOnly: false,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            maxAge,
+          });
+        }
+        return nextResponse;
       }
 
       case 'login': {
@@ -58,7 +86,28 @@ export async function POST(request: Request) {
         });
 
         const data = await response.json();
-        return NextResponse.json(data, { status: response.status });
+        const nextResponse = NextResponse.json(
+          data?.data?.token ? { ...data, data: { ...data.data, token: undefined } } : data,
+          { status: response.status }
+        );
+        if (data?.data?.token && data?.data?.expiresAt) {
+          const maxAge = Math.max(0, Math.floor((Date.parse(data.data.expiresAt) - Date.now()) / 1000));
+          nextResponse.cookies.set('authToken', data.data.token, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            maxAge,
+          });
+          nextResponse.cookies.set('authExpiresAt', data.data.expiresAt, {
+            httpOnly: false,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            maxAge,
+          });
+        }
+        return nextResponse;
       }
 
       case 'update': {
@@ -138,6 +187,18 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Auth route error:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
+
+    if (error instanceof TypeError && error.message === 'fetch failed') {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Backend API is unavailable. Make sure the backend server is running on http://localhost:5000.',
+          error: errorMessage,
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { success: false, message: 'Internal server error', error: errorMessage },
       { status: 500 }

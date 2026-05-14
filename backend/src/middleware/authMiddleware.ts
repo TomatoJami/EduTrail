@@ -1,22 +1,39 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { User } from '../models/User';
+import { verifyAuthToken } from '../services/jwtService';
 
 export interface AuthRequest extends Request {
   userId?: string;
+  userRole?: 'student' | 'admin';
 }
 
-/**
- * Middleware для проверки аутентификации
- * Проверяет наличие user_id в заголовках
- */
+function getBearerToken(req: Request) {
+  const authorization = req.headers.authorization;
+  if (!authorization?.startsWith('Bearer ')) {
+    return null;
+  }
+
+  return authorization.slice('Bearer '.length).trim();
+}
+
 export async function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
-  const userId = req.headers['x-user-id'] as string;
+  const token = getBearerToken(req);
+  const payload = token ? verifyAuthToken(token) : null;
+  const userId = payload?.sub;
+  const headerUserId = req.headers['x-user-id'] as string | undefined;
 
   if (!userId || !mongoose.isValidObjectId(userId)) {
     return res.status(401).json({
       success: false,
-      message: 'Unauthorized: invalid user id',
+      message: 'Unauthorized: invalid or expired token',
+    });
+  }
+
+  if (headerUserId && headerUserId !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden: token does not match requested user',
     });
   }
 
@@ -30,19 +47,27 @@ export async function authMiddleware(req: AuthRequest, res: Response, next: Next
   }
 
   req.userId = userId;
+  req.userRole = user.role;
   next();
 }
 
-/**
- * Middleware для проверки прав администратора
- */
 export async function adminMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
-  const userId = req.headers['x-user-id'] as string;
+  const token = getBearerToken(req);
+  const payload = token ? verifyAuthToken(token) : null;
+  const userId = payload?.sub;
+  const headerUserId = req.headers['x-user-id'] as string | undefined;
 
   if (!userId || !mongoose.isValidObjectId(userId)) {
     return res.status(401).json({
       success: false,
-      message: 'Unauthorized: invalid user id',
+      message: 'Unauthorized: invalid or expired token',
+    });
+  }
+
+  if (headerUserId && headerUserId !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden: token does not match requested user',
     });
   }
 
@@ -63,21 +88,16 @@ export async function adminMiddleware(req: AuthRequest, res: Response, next: Nex
   }
 
   req.userId = userId;
+  req.userRole = user.role;
   next();
 }
 
-/**
- * Middleware для логирования запросов
- */
 export function loggingMiddleware(req: Request, res: Response, next: NextFunction) {
   const { method, url } = req;
   console.log(`[${new Date().toISOString()}] ${method} ${url}`);
   next();
 }
 
-/**
- * Middleware для обработки ошибок
- */
 export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
   console.error('Error:', err);
 

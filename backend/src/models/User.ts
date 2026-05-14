@@ -11,6 +11,8 @@ export interface IUser extends Document {
   hasCompletedOnboarding: boolean;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  loginAttempts: number;
+  lockUntil?: Date | null;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
@@ -63,6 +65,16 @@ const UserSchema = new Schema<IUser>(
       select: false,
     },
     resetPasswordExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+    loginAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+    lockUntil: {
       type: Date,
       default: null,
       select: false,

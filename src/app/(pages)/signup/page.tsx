@@ -4,11 +4,22 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { validatePassword } from "@/utils/helpers";
+
+const getPasswordRequirements = (password: string) => [
+  { label: '8+ characters', met: password.length >= 8 },
+  { label: '1 letter', met: /[A-Za-z]/.test(password) },
+  { label: '1 uppercase letter', met: /[A-Z]/.test(password) },
+  { label: '1 digit', met: /\d/.test(password) },
+  { label: '1 special character', met: /[^A-Za-z0-9]/.test(password) },
+];
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [acceptedPersonalData, setAcceptedPersonalData] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -16,6 +27,17 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const validation = validatePassword(password);
+    if (!validation.valid) {
+      setError(validation.message || 'Invalid password');
+      return;
+    }
+
+    if (!acceptedPersonalData) {
+      setError('You must agree to personal data processing to register');
+      return;
+    }
 
     setLoading(true);
 
@@ -47,7 +69,10 @@ export default function RegisterPage() {
           email: data.data.email,
           name: data.data.name,
         }));
-        router.push('/login');
+        setShowSuccessModal(true);
+        window.setTimeout(() => {
+          router.push('/login');
+        }, 1800);
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
@@ -130,17 +155,28 @@ export default function RegisterPage() {
               // required
               disabled={loading}
             />
-            <div className="mt-2 flex items-center gap-2">
-              <div
-                className={`h-1 flex-1 rounded ${
-                  password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'
-                }`}
-              />
-              <span className={`text-xs ${password.length >= 8 ? 'text-green-600' : 'text-gray-600'}`}>
-                {password.length >= 8 ? '✓ 8+ characters' : '8+ characters required'}
-              </span>
+            <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
+              {getPasswordRequirements(password).map((requirement) => (
+                <span
+                  key={requirement.label}
+                  className={`text-xs ${requirement.met ? 'text-green-600' : 'text-gray-600'}`}
+                >
+                  {requirement.met ? '✓' : '•'} {requirement.label}
+                </span>
+              ))}
             </div>
           </div>
+
+          <label className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={acceptedPersonalData}
+              onChange={(e) => setAcceptedPersonalData(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+              disabled={loading}
+            />
+            <span>I agree to the processing of my personal data</span>
+          </label>
 
           {/* Submit Button */}
           <button
@@ -161,6 +197,20 @@ export default function RegisterPage() {
           </Link>
         </div>
       </div>
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 text-center shadow-xl">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl font-bold text-green-600">
+              OK
+            </div>
+            <h2 className="text-xl font-bold text-gray-900">Registration successful</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Your account has been created. Redirecting to login...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

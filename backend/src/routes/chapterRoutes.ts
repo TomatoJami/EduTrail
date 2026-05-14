@@ -46,7 +46,7 @@ router.get('/:id', (req, res) => chapterController.getChapterById(req, res));
  *       - Chapters
  *     summary: Create new chapter (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -74,7 +74,7 @@ router.post('/', adminMiddleware, (req, res) => chapterController.createChapter(
  *       - Chapters
  *     summary: Update chapter (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -95,7 +95,7 @@ router.put('/:id', adminMiddleware, (req, res) => chapterController.updateChapte
  *       - Chapters
  *     summary: Delete chapter (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

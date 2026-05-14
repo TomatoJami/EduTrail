@@ -56,7 +56,7 @@ router.get('/:id', (req, res) => courseController.getCourseById(req, res));
  *       - Courses
  *     summary: Create new course (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -92,7 +92,7 @@ router.post('/', adminMiddleware, (req, res) => courseController.createCourse(re
  *       - Courses
  *     summary: Update course (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -128,7 +128,7 @@ router.put('/:id', adminMiddleware, (req, res) => courseController.updateCourse(
  *       - Courses
  *     summary: Delete course (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

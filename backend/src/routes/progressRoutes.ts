@@ -13,7 +13,7 @@ const router = Router();
  *       - Progress
  *     summary: Get all courses by user
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of user courses with progress
@@ -43,7 +43,7 @@ router.get('/courses', (req, res) => progressController.getCoursesByUser(req, re
  *       - Progress
  *     summary: Get course progress by course ID and user
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: courseId
@@ -80,7 +80,7 @@ router.get('/courses/:courseId', (req, res) =>
  *       - Progress
  *     summary: Add/remove course from bookmarks
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: courseId
@@ -115,7 +115,7 @@ router.post('/courses/:courseId/bookmark', (req, res) =>
  *       - Progress
  *     summary: Start course learning
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: courseId
@@ -150,7 +150,7 @@ router.post('/courses/:courseId/start', (req, res) =>
  *       - Progress
  *     summary: Update course status
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: courseId
@@ -204,7 +204,7 @@ router.put('/courses/:courseId/status', (req, res) =>
  *       - Progress
  *     summary: Get chapter progress
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: chapterId
@@ -241,7 +241,7 @@ router.get('/chapters/:chapterId', (req, res) =>
  *       - Progress
  *     summary: Update chapter completion status
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: chapterId
@@ -290,7 +290,7 @@ router.put('/chapters/:chapterId', (req, res) =>
  *       - Progress
  *     summary: Get question progress
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: questionId
@@ -327,7 +327,7 @@ router.get('/questions/:questionId', (req, res) =>
  *       - Progress
  *     summary: Update question progress (mark as completed)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: questionId
@@ -381,7 +381,7 @@ router.put('/questions/:questionId', (req, res) =>
  *       - Progress
  *     summary: Get all question statuses for a module
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: moduleId

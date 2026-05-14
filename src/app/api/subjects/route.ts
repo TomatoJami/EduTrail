@@ -5,12 +5,18 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 function getAuthHeaders(request: NextRequest) {
   const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
+  const token = request.cookies.get('authToken')?.value;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
   if (userId) {
     headers['x-user-id'] = userId;
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
   return headers;
@@ -42,6 +48,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
+  const token = request.cookies.get('authToken')?.value;
 
     if (!userId || !mongoose.isValidObjectId(userId)) {
       return NextResponse.json(
@@ -72,6 +80,8 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
+  const token = request.cookies.get('authToken')?.value;
 
     if (!userId || !mongoose.isValidObjectId(userId)) {
       return NextResponse.json(
@@ -110,6 +120,8 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
+  const token = request.cookies.get('authToken')?.value;
 
     if (!userId || !mongoose.isValidObjectId(userId)) {
       return NextResponse.json(

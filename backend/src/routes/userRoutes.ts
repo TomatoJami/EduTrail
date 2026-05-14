@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { userController } from '../controllers/userController';
+import { adminMiddleware, authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
@@ -143,7 +144,7 @@ router.post('/reset-password', (req, res) => userController.resetPassword(req, r
  *       404:
  *         description: Пользователь не найден
  */
-router.get('/:id', (req, res) => userController.getUser(req, res));
+router.get('/:id', authMiddleware, (req, res) => userController.getUser(req, res));
 
 /**
  * @swagger
@@ -162,7 +163,7 @@ router.get('/:id', (req, res) => userController.getUser(req, res));
  *               items:
  *                 $ref: '#/components/schemas/User'
  */
-router.get('/', (req, res) => userController.getAllUsers(req, res));
+router.get('/', adminMiddleware, (req, res) => userController.getAllUsers(req, res));
 
 /**
  * @swagger
@@ -196,7 +197,7 @@ router.get('/', (req, res) => userController.getAllUsers(req, res));
  *       404:
  *         description: Пользователь не найден
  */
-router.put('/:id', (req, res) => userController.updateUser(req, res));
+router.put('/:id', authMiddleware, (req, res) => userController.updateUser(req, res));
 
 /**
  * @swagger
@@ -217,7 +218,7 @@ router.put('/:id', (req, res) => userController.updateUser(req, res));
  *       404:
  *         description: Пользователь не найден
  */
-router.delete('/:id', (req, res) => userController.deleteUser(req, res));
+router.delete('/:id', adminMiddleware, (req, res) => userController.deleteUser(req, res));
 
 // Wishlist routes
 /**
@@ -246,7 +247,7 @@ router.delete('/:id', (req, res) => userController.deleteUser(req, res));
  *       200:
  *         description: Course added to wishlist
  */
-router.post('/:id/wishlist/add', (req, res) => userController.addToWishlist(req, res));
+router.post('/:id/wishlist/add', authMiddleware, (req, res) => userController.addToWishlist(req, res));
 
 /**
  * @swagger
@@ -274,7 +275,7 @@ router.post('/:id/wishlist/add', (req, res) => userController.addToWishlist(req,
  *       200:
  *         description: Course removed from wishlist
  */
-router.post('/:id/wishlist/remove', (req, res) => userController.removeFromWishlist(req, res));
+router.post('/:id/wishlist/remove', authMiddleware, (req, res) => userController.removeFromWishlist(req, res));
 
 /**
  * @swagger
@@ -293,7 +294,7 @@ router.post('/:id/wishlist/remove', (req, res) => userController.removeFromWishl
  *       200:
  *         description: Список избранных курсов
  */
-router.get('/:id/wishlist', (req, res) => userController.getWishlist(req, res));
+router.get('/:id/wishlist', authMiddleware, (req, res) => userController.getWishlist(req, res));
 
 // Preferences routes
 /**
@@ -322,7 +323,7 @@ router.get('/:id/wishlist', (req, res) => userController.getWishlist(req, res));
  *       200:
  *         description: Preferences saved
  */
-router.post('/:id/preferences', (req, res) => userController.savePreferences(req, res));
+router.post('/:id/preferences', authMiddleware, (req, res) => userController.savePreferences(req, res));
 
 /**
  * @swagger
@@ -341,6 +342,6 @@ router.post('/:id/preferences', (req, res) => userController.savePreferences(req
  *       200:
  *         description: Setup skipped
  */
-router.post('/:id/preferences/skip', (req, res) => userController.skipPreferences(req, res));
+router.post('/:id/preferences/skip', authMiddleware, (req, res) => userController.skipPreferences(req, res));
 
 export default router;

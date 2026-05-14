@@ -2,16 +2,25 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
 import { Course, Subject } from "@/types";
 import { CourseSearch } from "@/components/common/CourseSearch";
-import { set } from "mongoose";
 
-export default function FilterSearch() {
+function FilterSearchLoading() {
+  return (
+    <main className="flex-1">
+      <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </section>
+    </main>
+  );
+}
+
+function FilterSearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [courses, setCourses] = useState<Course[]>([]);
@@ -161,13 +170,7 @@ export default function FilterSearch() {
   );
 
   if (!isInitialized) {
-    return (
-        <main className="flex-1">
-          <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          </section>
-        </main>
-      );
+    return <FilterSearchLoading />;
     }
 
   return (
@@ -292,5 +295,13 @@ export default function FilterSearch() {
 
         <Footer />
     </>
+  );
+}
+
+export default function FilterSearch() {
+  return (
+    <Suspense fallback={<FilterSearchLoading />}>
+      <FilterSearchContent />
+    </Suspense>
   );
 }

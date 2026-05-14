@@ -1,7 +1,41 @@
 import { Request, Response } from 'express';
 import { userService } from '../services/userService';
 import { sendPasswordResetEmail } from '../services/emailService';
+import { createAuthToken } from '../services/jwtService';
 import { SignupPayload, AuthPayload, ApiResponse, AuthResponse } from '../types';
+
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCK_MINUTES = 15;
+
+function validatePasswordStrength(password: string): string | null {
+  if (password.length < 8) {
+    return 'Password must be at least 8 characters long';
+  }
+  if (!/[A-Za-z]/.test(password)) {
+    return 'Password must contain at least one letter';
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter';
+  }
+  if (!/\d/.test(password)) {
+    return 'Password must contain at least one digit';
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return 'Password must contain at least one special character';
+  }
+  return null;
+}
+
+function getLockMessage(lockUntil: Date): string {
+  const remainingMs = lockUntil.getTime() - Date.now();
+  const remainingMinutes = Math.max(1, Math.ceil(remainingMs / 60000));
+  return `Too many failed login attempts. Try again in ${remainingMinutes} minute${remainingMinutes === 1 ? '' : 's'}.`;
+}
+
+function canAccessUser(req: Request, userId: string) {
+  const authReq = req as Request & { userId?: string; userRole?: 'student' | 'admin' };
+  return authReq.userRole === 'admin' || authReq.userId === userId;
+}
 
 export class UserController {
   async signup(req: Request, res: Response): Promise<void> {
@@ -33,10 +67,11 @@ export class UserController {
         return;
       }
 
-      if (body.password.length < 8) {
+      const passwordError = validatePasswordStrength(body.password);
+      if (passwordError) {
         res.status(400).json({
           success: false,
-          message: 'Password must be at least 8 characters long',
+          message: passwordError,
         } as ApiResponse);
         return;
       }
@@ -59,6 +94,11 @@ export class UserController {
       };
 
       const user = await userService.createUser(signupPayload);
+      const authToken = createAuthToken({
+        id: user._id?.toString() || '',
+        email: user.email,
+        role: user.role,
+      });
 
       const response: ApiResponse<AuthResponse> = {
         success: true,
@@ -68,6 +108,8 @@ export class UserController {
           email: user.email,
           name: user.name,
           role: user.role,
+          token: authToken.token,
+          expiresAt: authToken.expiresAt,
         },
       };
 
@@ -133,15 +175,54 @@ export class UserController {
         return;
       }
 
-      // Compare password
-      const isPasswordValid = await user.comparePassword(body.password);
-      if (!isPasswordValid) {
-        res.status(401).json({
+      if (user.lockUntil && user.lockUntil > new Date()) {
+        res.status(423).json({
           success: false,
-          message: 'Invalid credentials',
+          message: getLockMessage(user.lockUntil),
         } as ApiResponse);
         return;
       }
+
+      if (user.lockUntil && user.lockUntil <= new Date()) {
+        user.loginAttempts = 0;
+        user.lockUntil = null;
+      }
+
+      // Compare password
+      const isPasswordValid = await user.comparePassword(body.password);
+      if (!isPasswordValid) {
+        const nextAttempts = (user.loginAttempts || 0) + 1;
+        user.loginAttempts = nextAttempts;
+
+        if (nextAttempts >= MAX_LOGIN_ATTEMPTS) {
+          user.lockUntil = new Date(Date.now() + LOGIN_LOCK_MINUTES * 60 * 1000);
+          await user.save();
+          res.status(423).json({
+            success: false,
+            message: getLockMessage(user.lockUntil),
+          } as ApiResponse);
+          return;
+        }
+
+        await user.save();
+        res.status(401).json({
+          success: false,
+          message: `Invalid credentials. ${MAX_LOGIN_ATTEMPTS - nextAttempts} attempt${MAX_LOGIN_ATTEMPTS - nextAttempts === 1 ? '' : 's'} remaining before temporary lock.`,
+        } as ApiResponse);
+        return;
+      }
+
+      if ((user.loginAttempts || 0) > 0 || user.lockUntil) {
+        user.loginAttempts = 0;
+        user.lockUntil = null;
+        await user.save();
+      }
+
+      const authToken = createAuthToken({
+        id: user._id?.toString() || '',
+        email: user.email,
+        role: user.role,
+      });
 
       const response: ApiResponse<AuthResponse> = {
         success: true,
@@ -151,6 +232,8 @@ export class UserController {
           email: user.email,
           name: user.name,
           role: user.role,
+          token: authToken.token,
+          expiresAt: authToken.expiresAt,
         },
       };
 
@@ -218,10 +301,11 @@ export class UserController {
         return;
       }
 
-      if (body.newPassword.length < 8) {
+      const passwordError = validatePasswordStrength(body.newPassword);
+      if (passwordError) {
         res.status(400).json({
           success: false,
-          message: 'Password must be at least 8 characters long',
+          message: passwordError,
         } as ApiResponse);
         return;
       }
@@ -252,6 +336,14 @@ export class UserController {
   async getUser(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+
+      if (!canAccessUser(req, id)) {
+        res.status(403).json({
+          success: false,
+          message: 'Forbidden: cannot access another user',
+        } as ApiResponse);
+        return;
+      }
 
       const user = await userService.getUserById(id);
       if (!user) {
@@ -297,6 +389,7 @@ export class UserController {
   async updateUser(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+      const authReq = req as Request & { userId?: string; userRole?: 'student' | 'admin' };
       const body = req.body as {
         name?: string;
         email?: string;
@@ -309,6 +402,22 @@ export class UserController {
         res.status(400).json({
           success: false,
           message: 'User ID is required',
+        } as ApiResponse);
+        return;
+      }
+
+      if (!canAccessUser(req, id)) {
+        res.status(403).json({
+          success: false,
+          message: 'Forbidden: cannot update another user',
+        } as ApiResponse);
+        return;
+      }
+
+      if (body.role && authReq.userRole !== 'admin') {
+        res.status(403).json({
+          success: false,
+          message: 'Forbidden: only admins can update roles',
         } as ApiResponse);
         return;
       }
@@ -418,6 +527,14 @@ export class UserController {
       const { id } = req.params;
       const { subjectId } = req.body;
 
+      if (!canAccessUser(req, id)) {
+        res.status(403).json({
+          success: false,
+          message: 'Forbidden: cannot update another user',
+        } as ApiResponse);
+        return;
+      }
+
       if (!id || !subjectId) {
         res.status(400).json({
           success: false,
@@ -457,6 +574,14 @@ export class UserController {
       const { id } = req.params;
       const { subjectId } = req.body;
 
+      if (!canAccessUser(req, id)) {
+        res.status(403).json({
+          success: false,
+          message: 'Forbidden: cannot update another user',
+        } as ApiResponse);
+        return;
+      }
+
       if (!id || !subjectId) {
         res.status(400).json({
           success: false,
@@ -494,6 +619,14 @@ export class UserController {
   async getWishlist(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+
+      if (!canAccessUser(req, id)) {
+        res.status(403).json({
+          success: false,
+          message: 'Forbidden: cannot access another user',
+        } as ApiResponse);
+        return;
+      }
 
       if (!id) {
         res.status(400).json({
@@ -533,6 +666,14 @@ export class UserController {
     try {
       const { id } = req.params;
       const { preferredSubjects, ageGroup } = req.body;
+
+      if (!canAccessUser(req, id)) {
+        res.status(403).json({
+          success: false,
+          message: 'Forbidden: cannot update another user',
+        } as ApiResponse);
+        return;
+      }
 
       if (!id || !ageGroup) {
         res.status(400).json({
@@ -596,6 +737,14 @@ export class UserController {
   async skipPreferences(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+
+      if (!canAccessUser(req, id)) {
+        res.status(403).json({
+          success: false,
+          message: 'Forbidden: cannot update another user',
+        } as ApiResponse);
+        return;
+      }
 
       if (!id) {
         res.status(400).json({

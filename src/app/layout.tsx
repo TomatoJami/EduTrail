@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { SessionTimeout } from "@/components/SessionTimeout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-screen flex flex-col bg-white">{children}</body>
+      <body className="min-h-screen flex flex-col bg-white">
+        <SessionTimeout />
+        {children}
+      </body>
     </html>
   );
 }

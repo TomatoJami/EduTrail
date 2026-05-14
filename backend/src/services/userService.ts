@@ -24,7 +24,7 @@ export class UserService {
 
   async getUserByEmail(email: string): Promise<IUser | null> {
     try {
-      const user = await User.findOne({ email }).select('+password');
+      const user = await User.findOne({ email }).select('+password +loginAttempts +lockUntil');
       return user;
     } catch (error) {
       console.error('Error in getUserByEmail:', error);
@@ -70,6 +70,8 @@ export class UserService {
       user.password = newPassword;
       user.resetPasswordToken = null;
       user.resetPasswordExpires = null;
+      user.loginAttempts = 0;
+      user.lockUntil = null;
 
       await user.save();
       return user;

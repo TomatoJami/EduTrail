@@ -45,7 +45,7 @@ router.post("/", (req, res) =>
  *       - Feedback
  *     summary: Get all feedback (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of feedback
@@ -62,7 +62,7 @@ router.get("/", adminMiddleware, (req, res) =>
  *       - Feedback
  *     summary: Get feedback by ID (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -87,7 +87,7 @@ router.get("/:id", adminMiddleware, (req, res) =>
  *       - Feedback
  *     summary: Get feedback by type (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: feedbackType

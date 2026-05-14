@@ -46,7 +46,7 @@ router.get('/:id', (req, res) => moduleController.getModuleById(req, res));
  *       - Modules
  *     summary: Create new module (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -72,7 +72,7 @@ router.post('/', adminMiddleware, (req, res) => moduleController.createModule(re
  *       - Modules
  *     summary: Update module (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -93,7 +93,7 @@ router.put('/:id', adminMiddleware, (req, res) => moduleController.updateModule(
  *       - Modules
  *     summary: Delete module (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

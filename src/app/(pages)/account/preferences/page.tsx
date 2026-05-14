@@ -143,7 +143,7 @@ export default function PreferencesPage() {
   return (
     <>
       <Header />
-      <main className="flex flex-1">
+      <main className="flex flex-1 flex-col md:flex-row">
         <AccountSidebar />
 
         {/* Main Content */}

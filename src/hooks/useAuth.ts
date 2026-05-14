@@ -9,6 +9,30 @@ export interface User {
   role: 'student' | 'admin';
 }
 
+function saveAuthSession(data: any) {
+  const { token, expiresAt, ...userData } = data || {};
+
+  localStorage.setItem('user', JSON.stringify(userData));
+  if (expiresAt) {
+    localStorage.setItem('authExpiresAt', expiresAt);
+  }
+  localStorage.setItem('authLastActivity', String(Date.now()));
+  window.dispatchEvent(new Event('auth-state-changed'));
+}
+
+function clearAuthSession() {
+  localStorage.removeItem('user');
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('authExpiresAt');
+  localStorage.removeItem('authLastActivity');
+  void fetch('/api/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'logout' }),
+  });
+  window.dispatchEvent(new Event('auth-state-changed'));
+}
+
 interface UseAuthReturn {
   user: User | null;
   isLoading: boolean;
@@ -59,8 +83,9 @@ export const useAuth = (): UseAuthReturn => {
 
       const data = await response.json();
       if (data.success) {
-        setUser(data.data);
-        localStorage.setItem('user', JSON.stringify(data.data));
+        const normalizedUser = normalizeUser(data.data);
+        setUser(normalizedUser);
+        saveAuthSession(data.data);
       } else {
         setError(data.message);
       }
@@ -83,8 +108,9 @@ export const useAuth = (): UseAuthReturn => {
 
       const data = await response.json();
       if (data.success) {
-        setUser(data.data);
-        localStorage.setItem('user', JSON.stringify(data.data));
+        const normalizedUser = normalizeUser(data.data);
+        setUser(normalizedUser);
+        saveAuthSession(data.data);
       } else {
         setError(data.message);
       }
@@ -97,7 +123,7 @@ export const useAuth = (): UseAuthReturn => {
 
   const logout = useCallback(() => {
     setUser(null);
-    localStorage.removeItem('user');
+    clearAuthSession();
   }, []);
 
   const updateProfile = useCallback(async (name?: string, email?: string, newPassword?: string) => {
@@ -132,6 +158,8 @@ export const useAuth = (): UseAuthReturn => {
         };
         setUser(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
+        localStorage.setItem('authLastActivity', String(Date.now()));
+        window.dispatchEvent(new Event('auth-state-changed'));
       } else {
         setError(data.message);
       }
@@ -153,7 +181,7 @@ export const useAuth = (): UseAuthReturn => {
 
         if (!normalizedStoredUser) {
           setUser(null);
-          localStorage.removeItem('user');
+          clearAuthSession();
           return;
         }
 
@@ -180,8 +208,10 @@ export const useAuth = (): UseAuthReturn => {
 
         setUser(freshUser);
         localStorage.setItem('user', JSON.stringify(freshUser));
+        localStorage.setItem('authLastActivity', String(Date.now()));
       } else {
         setUser(null);
+        clearAuthSession();
       }
     } catch (err) {
       console.error('Failed to parse stored user:', err);

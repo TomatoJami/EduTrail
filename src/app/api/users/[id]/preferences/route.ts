@@ -9,6 +9,8 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
+    const userId = request.headers.get('x-user-id');
+    const authorization = request.headers.get('authorization');
 
     if (!id) {
       return NextResponse.json(
@@ -23,6 +25,8 @@ export async function POST(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(userId ? { 'x-user-id': userId } : {}),
+        ...(authorization ? { Authorization: authorization } : {}),
       },
       body: JSON.stringify(body),
     });

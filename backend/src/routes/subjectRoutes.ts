@@ -46,7 +46,7 @@ router.get('/:id', (req, res) => subjectController.getSubjectById(req, res));
  *       - Subjects
  *     summary: Create new subject (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -70,7 +70,7 @@ router.post('/', adminMiddleware, (req, res) => subjectController.createSubject(
  *       - Subjects
  *     summary: Update subject (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -91,7 +91,7 @@ router.put('/:id', adminMiddleware, (req, res) => subjectController.updateSubjec
  *       - Subjects
  *     summary: Delete subject (Admin only)
  *     security:
- *       - userId: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

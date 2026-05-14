@@ -91,7 +91,7 @@ export default function AccountPage() {
   return (
     <>
       <Header />
-      <main className="flex flex-1">
+      <main className="flex flex-1 flex-col md:flex-row">
         <AccountSidebar />
         
 

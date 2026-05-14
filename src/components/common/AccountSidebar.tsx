@@ -8,12 +8,12 @@ export function AccountSidebar() {
   const pathname = usePathname();
 
   return (
-    <section className="hidden md:block w-56 border-r border-gray-200 bg-white sticky top-0">
-      <div className="h-[calc(100vh-4rem)] p-4 flex flex-col">
+    <aside className="w-full border-b border-gray-200 bg-white md:w-56 md:shrink-0 md:border-b-0 md:border-r">
+      <div className="h-full px-4 py-5 flex flex-col">
         {/* Back Button */}
         <button
           onClick={() => router.push('/')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium mb-6 transition"
+          className="mb-4 flex items-center gap-2 self-start text-gray-600 hover:text-gray-900 font-medium transition md:mb-6"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -57,6 +57,6 @@ export function AccountSidebar() {
           </Link>
         </nav>
       </div>
-    </section>
+    </aside>
   );
 }

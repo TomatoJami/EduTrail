@@ -207,7 +207,7 @@ export function MarkdownContent({ content }: { content: string }) {
               <img
                 src={safeHref(block.src)}
                 alt={block.alt}
-                className="max-h-[520px] w-full rounded-lg border border-slate-200 object-contain"
+                className="mx-auto block max-h-80 w-auto max-w-full sm:max-w-xl object-contain"
               />
               {block.alt && block.alt !== "Chapter image" && (
                 <figcaption className="mt-2 text-center text-sm text-slate-500">{block.alt}</figcaption>

@@ -4,6 +4,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export async function GET(request: Request) {
   const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
   const { searchParams } = new URL(request.url);
   const module_id = searchParams.get('module_id');
 
@@ -12,6 +13,10 @@ export async function GET(request: Request) {
   };
   if (userId) {
     headers['x-user-id'] = userId;
+  }
+
+  if (authorization) {
+    headers.Authorization = authorization;
   }
 
   const url = module_id ? `${API_URL}/chapters?module_id=${module_id}` : `${API_URL}/chapters`;
@@ -35,6 +40,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
   const body = await request.json();
 
   if (!userId) {
@@ -50,6 +56,7 @@ export async function POST(request: Request) {
       headers: {
         'Content-Type': 'application/json',
         'x-user-id': userId,
+        ...(authorization ? { Authorization: authorization } : {}),
       },
       body: JSON.stringify(body),
     });

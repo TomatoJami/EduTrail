@@ -23,11 +23,11 @@ const options = {
     ],
     components: {
       securitySchemes: {
-        userId: {
-          type: 'apiKey',
-          in: 'header',
-          name: 'x-user-id',
-          description: 'User ID header for authenticated requests',
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Paste the JWT from POST /auth/login. Swagger will send it as Authorization: Bearer <token>.',
         },
       },
       schemas: {

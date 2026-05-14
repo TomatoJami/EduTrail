@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
     
     if (!userId) {
       return NextResponse.json(
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
         'x-user-id': userId,
+        ...(authorization ? { Authorization: authorization } : {}),
       },
     });
 

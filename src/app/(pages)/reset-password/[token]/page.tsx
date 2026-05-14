@@ -6,6 +6,14 @@ import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { validatePassword } from "@/utils/helpers";
 
+const getPasswordRequirements = (password: string) => [
+  { label: "8+ characters", met: password.length >= 8 },
+  { label: "1 letter", met: /[A-Za-z]/.test(password) },
+  { label: "1 uppercase letter", met: /[A-Z]/.test(password) },
+  { label: "1 digit", met: /\d/.test(password) },
+  { label: "1 special character", met: /[^A-Za-z0-9]/.test(password) },
+];
+
 export default function ResetPasswordPage() {
   const params = useParams<{ token: string }>();
   const router = useRouter();
@@ -108,6 +116,16 @@ export default function ResetPasswordPage() {
               required
               disabled={loading}
             />
+            <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
+              {getPasswordRequirements(password).map((requirement) => (
+                <span
+                  key={requirement.label}
+                  className={`text-xs ${requirement.met ? "text-green-600" : "text-gray-600"}`}
+                >
+                  {requirement.met ? "✓" : "•"} {requirement.label}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div>

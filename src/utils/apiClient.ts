@@ -190,7 +190,7 @@ class ApiClient {
         const formData = new FormData();
         formData.append('image', file);
 
-        const response = await this.client.post(`/upload?folder=${folder}`, formData, {
+        const response = await axios.post(`/api/upload?folder=${folder}`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
             'x-user-id': this.client.defaults.headers.common['x-user-id'] || '',
