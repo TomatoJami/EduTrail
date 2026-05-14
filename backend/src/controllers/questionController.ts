@@ -286,14 +286,14 @@ export class QuestionController {
                 question_id: { $in: questionIds },
             });
 
-            console.log(`[getUserQuestionsProgress] Found progress records: ${progress.length}`, progress.map(p => ({ question_id: String(p.question_id), status: p.status })));
+            console.log(`[getUserQuestionsProgress] Found progress records: ${progress.length}`, progress.map(p => ({ question_id: String(p.question_id), is_completed: p.is_completed })));
 
             // Convert ObjectIds to strings for JSON response
             const progressWithStringIds = progress.map(p => ({
               _id: p._id.toString(),
               user_id: p.user_id.toString(),
               question_id: p.question_id.toString(),
-              status: p.status,
+              is_completed: p.is_completed,
             }));
 
             res.status(200).json({

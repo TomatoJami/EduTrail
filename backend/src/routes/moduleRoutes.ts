@@ -14,6 +14,17 @@ const router = Router();
  *     responses:
  *       200:
  *         description: List of all modules
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Module'
  */
 router.get('/', (req, res) => moduleController.getAllModules(req, res));
 
@@ -33,6 +44,15 @@ router.get('/', (req, res) => moduleController.getAllModules(req, res));
  *     responses:
  *       200:
  *         description: Module data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Module'
  *       404:
  *         description: Module not found
  */
@@ -52,15 +72,19 @@ router.get('/:id', (req, res) => moduleController.getModuleById(req, res));
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               courseId:
- *                 type: string
+ *             $ref: '#/components/schemas/ModuleInput'
  *     responses:
  *       201:
  *         description: Module created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Module'
  */
 router.post('/', adminMiddleware, (req, res) => moduleController.createModule(req, res));
 
@@ -79,6 +103,12 @@ router.post('/', adminMiddleware, (req, res) => moduleController.createModule(re
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ModuleUpdateInput'
  *     responses:
  *       200:
  *         description: Module updated

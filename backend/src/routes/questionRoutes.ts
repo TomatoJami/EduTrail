@@ -17,21 +17,20 @@ const router = Router();
  *         schema:
  *           type: string
  *         description: Optional. Filter questions by module ID
- *       - in: query
- *         name: type
- *         schema:
- *           type: string
- *           enum: ["test", "short-answer", "fill-blank"]
- *         description: Optional. Filter questions by type
  *     responses:
  *       200:
  *         description: List of all questions or filtered questions
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 type: object
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Question'
  */
 router.get('/', (req, res) => questionController.getAllQuestions(req, res));
 
@@ -80,8 +79,8 @@ router.get('/', (req, res) => questionController.getAllQuestions(req, res));
  *                         type: string
  *                       question_id:
  *                         type: string
- *                       status:
- *                         type: string
+ *                       is_completed:
+ *                         type: boolean
  *       400:
  *         description: Missing userId or moduleId
  *       500:
@@ -109,16 +108,12 @@ router.get('/user/:userId/modules/:moduleId/questions', (req, res) => questionCo
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 _id:
- *                   type: string
- *                 type:
- *                   type: string
- *                   enum: ["test", "short-answer", "fill-blank"]
- *                 typeId:
- *                   type: object
- *                   description: Type-specific question data
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Question'
  *       404:
  *         description: Question not found
  */
@@ -138,74 +133,7 @@ router.get('/:id', (req, res) => questionController.getQuestionById(req, res));
  *       content:
  *         application/json:
  *           schema:
- *             oneOf:
- *               - type: object
- *                 title: Test Question
- *                 properties:
- *                   type:
- *                     type: string
- *                     enum: ["test"]
- *                   module_id:
- *                     type: string
- *                   question:
- *                     type: string
- *                   options:
- *                     type: array
- *                     items:
- *                       type: string
- *                     minItems: 2
- *                   correctAnswer:
- *                     type: integer
- *                   explanation:
- *                     type: string
- *                 required: ["type", "module_id", "question", "options", "correctAnswer"]
- *               - type: object
- *                 title: Short Answer Question
- *                 properties:
- *                   type:
- *                     type: string
- *                     enum: ["short-answer"]
- *                   module_id:
- *                     type: string
- *                   question:
- *                     type: string
- *                   correctAnswers:
- *                     type: array
- *                     items:
- *                       type: string
- *                     minItems: 1
- *                   caseSensitive:
- *                     type: boolean
- *                   explanation:
- *                     type: string
- *                 required: ["type", "module_id", "question", "correctAnswers"]
- *               - type: object
- *                 title: Fill in the Blank Question
- *                 properties:
- *                   type:
- *                     type: string
- *                     enum: ["fill-blank"]
- *                   module_id:
- *                     type: string
- *                   questionText:
- *                     type: string
- *                   blanks:
- *                     type: array
- *                     minItems: 1
- *                     items:
- *                       type: object
- *                       properties:
- *                         blankId:
- *                           type: string
- *                         correctAnswers:
- *                           type: array
- *                           items:
- *                             type: string
- *                         caseSensitive:
- *                           type: boolean
- *                   explanation:
- *                     type: string
- *                 required: ["type", "module_id", "questionText", "blanks"]
+ *             $ref: '#/components/schemas/UniversalQuestionInput'
  *     responses:
  *       201:
  *         description: Question created successfully
@@ -230,22 +158,7 @@ router.post('/', adminMiddleware, (req, res) => questionController.createQuestio
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               module_id:
- *                 type: string
- *               question:
- *                 type: string
- *               options:
- *                 type: array
- *                 items:
- *                   type: string
- *                 minItems: 2
- *               correctAnswer:
- *                 type: integer
- *               explanation:
- *                 type: string
- *             required: ["module_id", "question", "options", "correctAnswer"]
+ *             $ref: '#/components/schemas/TestQuestionInput'
  *     responses:
  *       201:
  *         description: Test question created successfully
@@ -273,22 +186,7 @@ router.post('/test', adminMiddleware, (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               module_id:
- *                 type: string
- *               question:
- *                 type: string
- *               correctAnswers:
- *                 type: array
- *                 items:
- *                   type: string
- *                 minItems: 1
- *               caseSensitive:
- *                 type: boolean
- *               explanation:
- *                 type: string
- *             required: ["module_id", "question", "correctAnswers"]
+ *             $ref: '#/components/schemas/ShortAnswerQuestionInput'
  *     responses:
  *       201:
  *         description: Short answer question created successfully
@@ -316,29 +214,7 @@ router.post('/short-answer', adminMiddleware, (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               module_id:
- *                 type: string
- *               questionText:
- *                 type: string
- *               blanks:
- *                 type: array
- *                 minItems: 1
- *                 items:
- *                   type: object
- *                   properties:
- *                     blankId:
- *                       type: string
- *                     correctAnswers:
- *                       type: array
- *                       items:
- *                         type: string
- *                     caseSensitive:
- *                       type: boolean
- *               explanation:
- *                 type: string
- *             required: ["module_id", "questionText", "blanks"]
+ *             $ref: '#/components/schemas/FillBlankQuestionInput'
  *     responses:
  *       201:
  *         description: Fill in the blank question created successfully
@@ -352,6 +228,37 @@ router.post('/fill-blank', adminMiddleware, (req, res) => {
   questionController.createQuestion({ ...req, body } as any, res);
 });
 
+/**
+ * @swagger
+ * /questions/{id}:
+ *   put:
+ *     tags:
+ *       - Questions
+ *     summary: Update question by ID (Admin only)
+ *     description: The accepted fields depend on the existing question type.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Question wrapper ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/QuestionUpdateInput'
+ *     responses:
+ *       200:
+ *         description: Question updated successfully
+ *       404:
+ *         description: Question not found
+ *       500:
+ *         description: Failed to update question
+ */
 router.put('/:id', adminMiddleware, (req, res) => questionController.updateQuestion(req, res));
 
 /**

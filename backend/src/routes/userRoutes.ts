@@ -17,21 +17,7 @@ const router = Router();
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *               - name
- *             properties:
- *               email:
- *                 type: string
- *                 example: user@example.com
- *               password:
- *                 type: string
- *                 example: securepassword123
- *               name:
- *                 type: string
- *                 example: John Doe
+ *             $ref: '#/components/schemas/SignupRequest'
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -42,8 +28,8 @@ const router = Router();
  *               properties:
  *                 success:
  *                   type: boolean
- *                 user:
- *                   $ref: '#/components/schemas/User'
+ *                 data:
+ *                   $ref: '#/components/schemas/AuthUser'
  *       400:
  *         description: Validation error
  */
@@ -62,17 +48,7 @@ router.post('/signup', (req, res) => userController.signup(req, res));
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 example: user@example.com
- *               password:
- *                 type: string
- *                 example: securepassword123
+ *             $ref: '#/components/schemas/LoginRequest'
  *     responses:
  *       200:
  *         description: Login successful
@@ -83,8 +59,8 @@ router.post('/signup', (req, res) => userController.signup(req, res));
  *               properties:
  *                 success:
  *                   type: boolean
- *                 user:
- *                   $ref: '#/components/schemas/User'
+ *                 data:
+ *                   $ref: '#/components/schemas/AuthUser'
  *       401:
  *         description: Invalid credentials
  */
@@ -99,6 +75,10 @@ router.post('/login', (req, res) => userController.login(req, res));
  *     summary: Send password reset email
  *     requestBody:
  *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ForgotPasswordRequest'
  *     responses:
  *       200:
  *         description: If the email exists, a reset email was sent
@@ -114,20 +94,25 @@ router.post('/forgot-password', (req, res) => userController.forgotPassword(req,
  *     summary: Reset password using token
  *     requestBody:
  *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ResetPasswordRequest'
  *     responses:
  *       200:
  *         description: Password reset successfully
  */
 router.post('/reset-password', (req, res) => userController.resetPassword(req, res));
 
-// Public routes
 /**
  * @swagger
- * /{id}:
+ * /users/{id}:
  *   get:
  *     tags:
  *       - Users
  *     summary: Get user by ID
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -148,11 +133,13 @@ router.get('/:id', authMiddleware, (req, res) => userController.getUser(req, res
 
 /**
  * @swagger
- * /:
+ * /users:
  *   get:
  *     tags:
  *       - Users
  *     summary: Get all users
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of all users
@@ -167,11 +154,13 @@ router.get('/', adminMiddleware, (req, res) => userController.getAllUsers(req, r
 
 /**
  * @swagger
- * /{id}:
+ * /users/{id}:
  *   put:
  *     tags:
  *       - Users
  *     summary: Update user
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -183,14 +172,7 @@ router.get('/', adminMiddleware, (req, res) => userController.getAllUsers(req, r
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
+ *             $ref: '#/components/schemas/UserUpdateInput'
  *     responses:
  *       200:
  *         description: User updated
@@ -204,8 +186,10 @@ router.put('/:id', authMiddleware, (req, res) => userController.updateUser(req, 
  * /users/{id}:
  *   delete:
  *     tags:
- *       - User
+ *       - Users
  *     summary: Delete a user
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -223,11 +207,13 @@ router.delete('/:id', adminMiddleware, (req, res) => userController.deleteUser(r
 // Wishlist routes
 /**
  * @swagger
- * /{id}/wishlist/add:
+ * /users/{id}/wishlist/add:
  *   post:
  *     tags:
  *       - Wishlist
- *     summary: Add course to wishlist
+ *     summary: Add subject to wishlist
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -239,23 +225,22 @@ router.delete('/:id', adminMiddleware, (req, res) => userController.deleteUser(r
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               courseId:
- *                 type: string
+ *             $ref: '#/components/schemas/WishlistInput'
  *     responses:
  *       200:
- *         description: Course added to wishlist
+ *         description: Subject added to wishlist
  */
 router.post('/:id/wishlist/add', authMiddleware, (req, res) => userController.addToWishlist(req, res));
 
 /**
  * @swagger
- * /{id}/wishlist/remove:
+ * /users/{id}/wishlist/remove:
  *   post:
  *     tags:
  *       - Wishlist
- *     summary: Remove course from wishlist
+ *     summary: Remove subject from wishlist
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -267,23 +252,22 @@ router.post('/:id/wishlist/add', authMiddleware, (req, res) => userController.ad
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               courseId:
- *                 type: string
+ *             $ref: '#/components/schemas/WishlistInput'
  *     responses:
  *       200:
- *         description: Course removed from wishlist
+ *         description: Subject removed from wishlist
  */
 router.post('/:id/wishlist/remove', authMiddleware, (req, res) => userController.removeFromWishlist(req, res));
 
 /**
  * @swagger
- * /{id}/wishlist:
+ * /users/{id}/wishlist:
  *   get:
  *     tags:
  *       - Wishlist
  *     summary: Get wishlist
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -299,11 +283,13 @@ router.get('/:id/wishlist', authMiddleware, (req, res) => userController.getWish
 // Preferences routes
 /**
  * @swagger
- * /{id}/preferences:
+ * /users/{id}/preferences:
  *   post:
  *     tags:
  *       - Preferences
  *     summary: Save user preferences
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -315,10 +301,7 @@ router.get('/:id/wishlist', authMiddleware, (req, res) => userController.getWish
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               preferences:
- *                 type: object
+ *             $ref: '#/components/schemas/PreferencesInput'
  *     responses:
  *       200:
  *         description: Preferences saved
@@ -327,11 +310,13 @@ router.post('/:id/preferences', authMiddleware, (req, res) => userController.sav
 
 /**
  * @swagger
- * /{id}/preferences/skip:
+ * /users/{id}/preferences/skip:
  *   post:
  *     tags:
  *       - Preferences
  *     summary: Skip preferences setup
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

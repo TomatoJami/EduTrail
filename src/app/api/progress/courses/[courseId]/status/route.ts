@@ -14,7 +14,9 @@ function getAuthHeaders(request: NextRequest) {
     headers['x-user-id'] = userId;
   }
 
-  if (token) {
+  if (authorization) {
+    headers.Authorization = authorization;
+  } else if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
@@ -28,13 +30,6 @@ export async function PUT(
   try {
     const { courseId } = await params;
     const headers = getAuthHeaders(request);
-
-    if (!headers['x-user-id']) {
-      return NextResponse.json(
-        { success: false, message: 'User ID is required' },
-        { status: 400 }
-      );
-    }
 
     const body = await request.json();
 

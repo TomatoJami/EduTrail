@@ -1,15 +1,34 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+function getAuthHeaders(request: NextRequest) {
+  const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
+  const token = request.cookies.get('authToken')?.value;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (userId) {
+    headers['x-user-id'] = userId;
+  }
+
+  if (authorization) {
+    headers.Authorization = authorization;
+  } else if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const userId = request.headers.get('x-user-id');
-    const authorization = request.headers.get('authorization');
 
     if (!id) {
       return NextResponse.json(
@@ -18,15 +37,9 @@ export async function POST(
       );
     }
 
-    console.log('Skipping preferences for user:', id);
-
     const response = await fetch(`${API_URL}/users/${id}/preferences/skip`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(userId ? { 'x-user-id': userId } : {}),
-        ...(authorization ? { Authorization: authorization } : {}),
-      },
+      headers: getAuthHeaders(request),
     });
 
     const data = await response.json();

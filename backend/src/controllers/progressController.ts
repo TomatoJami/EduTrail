@@ -8,11 +8,15 @@ import { Chapter } from '../models/Chapter';
 import { Question } from '../models/Question';
 import { ApiResponse } from '../types';
 
+function getAuthenticatedUserId(req: Request) {
+  return (req as Request & { userId?: string }).userId || (req.headers['x-user-id'] as string);
+}
+
 export class ProgressController {
 
   async getCoursesByUser(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.headers['x-user-id'] as string;
+      const userId = getAuthenticatedUserId(req);
 
       if (!userId) {
         res.status(400).json({
@@ -43,7 +47,7 @@ export class ProgressController {
   async getCourseProgress(req: Request, res: Response): Promise<void> {
     try {
       const { courseId } = req.params;
-      const userId = req.headers["x-user-id"] as string;
+      const userId = getAuthenticatedUserId(req);
 
       console.log(`[getCourseProgress] START - userId: ${userId}, courseId: ${courseId}`);
 
@@ -151,7 +155,7 @@ export class ProgressController {
   async bookmarkCourse(req: Request, res: Response): Promise<void> {
     try {
       const { courseId } = req.params;
-      const userId = req.headers['x-user-id'] as string;
+      const userId = getAuthenticatedUserId(req);
 
       if (!userId || !courseId) {
         res.status(400).json({
@@ -207,7 +211,7 @@ export class ProgressController {
   async startCourse(req: Request, res: Response): Promise<void> {
     try {
       const { courseId } = req.params;
-      const userId = req.headers['x-user-id'] as string;
+      const userId = getAuthenticatedUserId(req);
 
       if (!userId || !courseId) {
         res.status(400).json({
@@ -264,7 +268,7 @@ export class ProgressController {
     try {
       const { courseId } = req.params;
       const { status } = req.body;
-      const userId = req.headers['x-user-id'] as string;
+      const userId = getAuthenticatedUserId(req);
 
       if (!userId || !courseId) {
         res.status(400).json({
@@ -350,7 +354,7 @@ export class ProgressController {
     try {
       const { chapterId } = req.params;
       const { is_completed } = req.body;
-      const userId = req.headers['x-user-id'] as string;
+      const userId = getAuthenticatedUserId(req);
 
       console.log(`[UpdateProgress] User: ${userId}, Chapter: ${chapterId}, Completed: ${is_completed}`);
 
@@ -411,7 +415,7 @@ export class ProgressController {
   async getChapterProgress(req: Request, res: Response): Promise<void> {
     try {
       const { chapterId } = req.params;
-      const userId = req.headers['x-user-id'] as string;
+      const userId = getAuthenticatedUserId(req);
 
       if (!userId || !chapterId) {
         res.status(400).json({
@@ -452,7 +456,7 @@ export class ProgressController {
     try {
       const { questionId } = req.params;
       const { is_completed } = req.body;
-      const userId = req.headers['x-user-id'] as string;
+      const userId = getAuthenticatedUserId(req);
 
       if (!userId || !questionId) {
         res.status(400).json({
@@ -500,7 +504,7 @@ export class ProgressController {
   async getQuestionProgress(req: Request, res: Response): Promise<void> {
     try {
       const { questionId } = req.params;
-      const userId = req.headers['x-user-id'] as string;
+      const userId = getAuthenticatedUserId(req);
 
       if (!userId || !questionId) {
         res.status(400).json({
@@ -543,7 +547,7 @@ export class ProgressController {
   async getModuleQuestionStatuses(req: Request, res: Response): Promise<void> {
     try {
       const { moduleId } = req.params;
-      const userId = req.headers['x-user-id'] as string;
+      const userId = getAuthenticatedUserId(req);
 
       if (!userId || !moduleId) {
         res.status(400).json({

@@ -17,9 +17,14 @@ const router = Router();
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Course'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Course'
  */
 router.get('/', (req, res) => courseController.getAllCourses(req, res));
 
@@ -42,7 +47,12 @@ router.get('/', (req, res) => courseController.getAllCourses(req, res));
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Course'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Course'
  *       404:
  *         description: Course not found
  */
@@ -62,23 +72,19 @@ router.get('/:id', (req, res) => courseController.getCourseById(req, res));
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - name
- *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
- *               image:
- *                 type: string
+ *             $ref: '#/components/schemas/CourseInput'
  *     responses:
  *       201:
  *         description: Course created
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Course'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Course'
  *       403:
  *         description: Insufficient permissions
  */
@@ -104,12 +110,7 @@ router.post('/', adminMiddleware, (req, res) => courseController.createCourse(re
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
+ *             $ref: '#/components/schemas/CourseUpdateInput'
  *     responses:
  *       200:
  *         description: Course updated

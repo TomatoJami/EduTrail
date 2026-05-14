@@ -204,12 +204,12 @@ export default function Home() {
 
                 <div className="min-w-0 flex-1 py-8 sm:py-10">
                   <div className="mx-auto justify-center max-w-6xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-center gap-50 mb-10 text-sm font-medium text-gray-500">
+                    <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 sm:gap-x-12 lg:gap-50 mb-10 text-sm font-medium text-gray-500">
                       {["In Progress", "Saved", "Completed"].map((tab) => (
                         <button
                           key={tab}
                           onClick={() => setActiveTab(tab)}
-                          className={`text-lg pb-2 transition ${
+                          className={`whitespace-nowrap px-1 text-base sm:text-lg pb-2 transition ${
                             activeTab === tab
                               ? "text-indigo-600 border-b-2 border-indigo-600"
                               : "hover:text-gray-900"

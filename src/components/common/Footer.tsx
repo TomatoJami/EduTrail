@@ -22,11 +22,11 @@ export function Footer() {
           {/* Links */}
           <div className="flex justify-end">
             <div className="text-right">
-              <h3 className="font-semibold mb-3">ABOUT US</h3>
+              <h3 className="font-semibold mb-3">CONTACT US</h3>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li>
                   <Link href="/feedback" className="hover:text-white transition">
-                    About Us
+                    Contact Us
                   </Link>
                 </li>
               </ul>

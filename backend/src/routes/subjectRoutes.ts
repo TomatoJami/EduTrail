@@ -14,6 +14,17 @@ const router = Router();
  *     responses:
  *       200:
  *         description: List of all subjects
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Subject'
  */
 router.get('/', (req, res) => subjectController.getAllSubjects(req, res));
 
@@ -33,6 +44,15 @@ router.get('/', (req, res) => subjectController.getAllSubjects(req, res));
  *     responses:
  *       200:
  *         description: Subject data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Subject'
  *       404:
  *         description: Subject not found
  */
@@ -52,13 +72,19 @@ router.get('/:id', (req, res) => subjectController.getSubjectById(req, res));
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
+ *             $ref: '#/components/schemas/SubjectInput'
  *     responses:
  *       201:
  *         description: Subject created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Subject'
  */
 router.post('/', adminMiddleware, (req, res) => subjectController.createSubject(req, res));
 
@@ -77,6 +103,12 @@ router.post('/', adminMiddleware, (req, res) => subjectController.createSubject(
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SubjectUpdateInput'
  *     responses:
  *       200:
  *         description: Subject updated

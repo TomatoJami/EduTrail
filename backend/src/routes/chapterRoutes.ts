@@ -14,6 +14,17 @@ const router = Router();
  *     responses:
  *       200:
  *         description: List of all chapters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Chapter'
  */
 router.get('/', (req, res) => chapterController.getAllChapters(req, res));
 
@@ -33,6 +44,15 @@ router.get('/', (req, res) => chapterController.getAllChapters(req, res));
  *     responses:
  *       200:
  *         description: Chapter data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Chapter'
  *       404:
  *         description: Chapter not found
  */
@@ -52,17 +72,19 @@ router.get('/:id', (req, res) => chapterController.getChapterById(req, res));
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *               content:
- *                type: string
- *               module_id:
- *                 type: string
+ *             $ref: '#/components/schemas/ChapterInput'
  *     responses:
  *       201:
  *         description: Chapter created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Chapter'
  */
 router.post('/', adminMiddleware, (req, res) => chapterController.createChapter(req, res));
 
@@ -81,6 +103,12 @@ router.post('/', adminMiddleware, (req, res) => chapterController.createChapter(
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ChapterUpdateInput'
  *     responses:
  *       200:
  *         description: Chapter updated

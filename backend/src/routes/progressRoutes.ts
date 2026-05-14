@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { progressController } from '../controllers/progressController';
+import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
+
+router.use(authMiddleware);
 
 // ============ CourseProgress Routes ============
 

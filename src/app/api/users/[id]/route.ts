@@ -1,16 +1,35 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+function getAuthHeaders(request: NextRequest) {
+  const userId = request.headers.get('x-user-id');
+  const authorization = request.headers.get('authorization');
+  const token = request.cookies.get('authToken')?.value;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (userId) {
+    headers['x-user-id'] = userId;
+  }
+
+  if (authorization) {
+    headers.Authorization = authorization;
+  } else if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const userId = request.headers.get('x-user-id');
-  const authorization = request.headers.get('authorization');
 
     if (!id) {
       return NextResponse.json(
@@ -19,22 +38,9 @@ export async function PUT(
       );
     }
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized: x-user-id header is required' },
-        { status: 401 }
-      );
-    }
-
-    console.log('Updating user:', id, body);
-
     const response = await fetch(`${API_URL}/users/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': userId,
-        ...(authorization ? { Authorization: authorization } : {}),
-      },
+      headers: getAuthHeaders(request),
       body: JSON.stringify(body),
     });
 
@@ -51,13 +57,11 @@ export async function PUT(
 }
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const userId = request.headers.get('x-user-id');
-  const authorization = request.headers.get('authorization');
 
     if (!id) {
       return NextResponse.json(
@@ -66,22 +70,9 @@ export async function GET(
       );
     }
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized: x-user-id header is required' },
-        { status: 401 }
-      );
-    }
-
-    console.log('Fetching user:', id);
-
     const response = await fetch(`${API_URL}/users/${id}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': userId,
-        ...(authorization ? { Authorization: authorization } : {}),
-      },
+      headers: getAuthHeaders(request),
     });
 
     const data = await response.json();
@@ -97,13 +88,11 @@ export async function GET(
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const userId = request.headers.get('x-user-id');
-  const authorization = request.headers.get('authorization');
 
     if (!id) {
       return NextResponse.json(
@@ -112,22 +101,9 @@ export async function DELETE(
       );
     }
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized: x-user-id header is required' },
-        { status: 401 }
-      );
-    }
-
-    console.log('Deleting user:', id);
-
     const response = await fetch(`${API_URL}/users/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': userId,
-        ...(authorization ? { Authorization: authorization } : {}),
-      },
+      headers: getAuthHeaders(request),
     });
 
     const data = await response.json();
