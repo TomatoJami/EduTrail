@@ -48,7 +48,6 @@ export class QuestionController {
                 data: question,
             } as ApiResponse);
         } catch (error) {
-            console.error('Error fetching question:', error);
             res.status(500).json({
                 success: false,
                 message: 'Failed to fetch question',
@@ -259,13 +258,29 @@ export class QuestionController {
     async getUserQuestionsProgress(req: Request, res: Response): Promise<void> {
         try {
             const { userId, moduleId } = req.params;
-
-            console.log(`[getUserQuestionsProgress] START - userId: ${userId}, moduleId: ${moduleId}`);
+            const authReq = req as Request & { userId?: string; userRole?: 'student' | 'admin' };
 
             if (!userId || !moduleId) {
                 res.status(400).json({
                     success: false,
                     message: 'userId and moduleId are required',
+                } as ApiResponse);
+                return;
+            }
+
+            // Prevent users from reading another student's question progress by changing the URL.
+            if (authReq.userRole !== 'admin' && authReq.userId !== userId) {
+                res.status(403).json({
+                    success: false,
+                    message: 'Forbidden: cannot access another user progress',
+                } as ApiResponse);
+                return;
+            }
+
+            if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(moduleId)) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Invalid userId or moduleId',
                 } as ApiResponse);
                 return;
             }
@@ -276,7 +291,6 @@ export class QuestionController {
 
             // Get all questions for this module
             const questions = await Question.find({ module_id: moduleObjectId });
-            console.log(`[getUserQuestionsProgress] Found questions: ${questions.length}`);
 
             const questionIds = questions.map(q => q._id);
 
@@ -285,8 +299,6 @@ export class QuestionController {
                 user_id: userObjectId,
                 question_id: { $in: questionIds },
             });
-
-            console.log(`[getUserQuestionsProgress] Found progress records: ${progress.length}`, progress.map(p => ({ question_id: String(p.question_id), is_completed: p.is_completed })));
 
             // Convert ObjectIds to strings for JSON response
             const progressWithStringIds = progress.map(p => ({
@@ -302,7 +314,6 @@ export class QuestionController {
                 data: progressWithStringIds,
             } as ApiResponse);
         } catch (error) {
-            console.error(`[getUserQuestionsProgress] ERROR:`, error);
             res.status(500).json({
                 success: false,
                 message: 'Failed to fetch user questions progress',

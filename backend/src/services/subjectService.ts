@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { ISubject, Subject } from '../models/Subject';
 import { Course } from '../models/Course';
+import { courseService } from './courseService';
 
 export interface SubjectPayload {
   subject_name: string;
@@ -34,9 +35,20 @@ export class SubjectService {
       throw new Error('Invalid subject id');
     }
 
-    await Course.deleteMany({ subject_id: new mongoose.Types.ObjectId(id) });
+    const subjectObjectId = new mongoose.Types.ObjectId(id);
+    const subject = await Subject.findById(subjectObjectId);
+    if (!subject) {
+      return null;
+    }
 
-    return Subject.findByIdAndDelete(id);
+    const courses = await Course.find({ subject_id: subjectObjectId }).select('_id');
+
+    // Delete each course through CourseService so modules, chapters, questions, and progress are also removed.
+    await Promise.all(
+      courses.map((course) => courseService.deleteCourse(String(course._id)))
+    );
+
+    return Subject.findByIdAndDelete(subjectObjectId);
   }
 
   async getSubjectById(id: string): Promise<ISubject | null> {

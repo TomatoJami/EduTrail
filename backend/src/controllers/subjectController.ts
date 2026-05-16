@@ -5,9 +5,7 @@ import { ApiResponse } from '../types';
 export class SubjectController {
   async getAllSubjects(req: Request, res: Response): Promise<void> {
     try {
-      console.log('Fetching all subjects...');
       const subjects = await subjectService.getAllSubjects();
-      console.log(`Found ${subjects.length} subjects:`, subjects);
 
       res.status(200).json({
         success: true,
@@ -15,7 +13,6 @@ export class SubjectController {
         data: subjects,
       } as ApiResponse);
     } catch (error) {
-      console.error('Error fetching subjects:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch subjects',
@@ -41,7 +38,6 @@ export class SubjectController {
         data: subject,
       } as ApiResponse);
     } catch (error) {
-      console.error('Error fetching subject:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch subject',

@@ -43,7 +43,6 @@ export async function PUT(
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Error updating course status:', error);
     return NextResponse.json(
       {
         success: false,

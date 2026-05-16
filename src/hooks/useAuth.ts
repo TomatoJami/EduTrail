@@ -50,7 +50,7 @@ export const useAuth = (): UseAuthReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 👇 НОВОЕ СОСТОЯНИЕ
+  // Tracks whether the initial auth state has been loaded.
   const [initialized, setInitialized] = useState(false);
 
   const normalizeUser = useCallback((input: any): User | null => {
@@ -170,7 +170,7 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [user, normalizeUser]);
 
-  // 👇 ИЗМЕНЁННЫЙ loadUser
+  // Restores the current user from local storage and validates it with the API.
   const loadUser = useCallback(async () => {
     try {
       const storedUser = localStorage.getItem('user');
@@ -214,7 +214,6 @@ export const useAuth = (): UseAuthReturn => {
         clearAuthSession();
       }
     } catch (err) {
-      console.error('Failed to parse stored user:', err);
       const storedUser = localStorage.getItem('user');
       if (!storedUser) {
         setUser(null);

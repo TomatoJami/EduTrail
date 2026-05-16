@@ -33,7 +33,6 @@ export default function PreferencesPage() {
           await fetchUserPreferences();
         }
       } catch (err) {
-        console.error('Failed to load data:', err);
       } finally {
         setIsInitialized(true);
       }
@@ -62,7 +61,6 @@ export default function PreferencesPage() {
       const data = await response.json();
 
       if (data.success && data.data) {
-        console.log('User preferences loaded:', data.data);
         
         if (data.data.preferredSubjects && Array.isArray(data.data.preferredSubjects)) {
           const subjectIds = data.data.preferredSubjects.map((subj: any) => {
@@ -79,7 +77,6 @@ export default function PreferencesPage() {
         }
       }
     } catch (err) {
-      console.error('Failed to fetch user preferences:', err);
     }
   };
 
@@ -123,7 +120,6 @@ export default function PreferencesPage() {
       setSaveMessage({ type: 'success', text: 'Preferences saved successfully!' });
     } catch (err) {
       setError('An error occurred. Please try again.');
-      console.error(err);
     } finally {
       setSaving(false);
     }

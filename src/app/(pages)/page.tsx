@@ -63,7 +63,6 @@ export default function Home() {
         const data = await res.json();
         setCourses(data.data || []);
       } catch (err) {
-        console.error(err);
         setCourses([]);
       } finally {
         setIsLoadingCourses(false);
@@ -127,10 +126,6 @@ export default function Home() {
                 }
               }
             } catch (error) {
-              console.error(
-                `Error fetching progress for course ${course._id}:`,
-                error
-              );
             }
           })
         );

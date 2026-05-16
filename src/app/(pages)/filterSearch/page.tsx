@@ -62,7 +62,6 @@ function FilterSearchContent() {
         }
         setIsInitialized(true);
       } catch (err) {
-        console.error("Failed to load data:", err);
         setIsInitialized(true);
       }
     };

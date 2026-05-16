@@ -30,7 +30,6 @@ export async function GET(request: Request) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Error fetching modules:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch modules' },
       { status: 500 }
@@ -64,7 +63,6 @@ export async function POST(request: Request) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Error creating module:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to create module' },
       { status: 500 }

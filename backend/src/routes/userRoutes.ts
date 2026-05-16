@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { userController } from '../controllers/userController';
 import { adminMiddleware, authMiddleware } from '../middleware/authMiddleware';
+import { authRateLimiter, passwordResetRateLimiter } from '../middleware/rateLimitMiddleware';
 
 const router = Router();
 
@@ -33,7 +34,7 @@ const router = Router();
  *       400:
  *         description: Validation error
  */
-router.post('/signup', (req, res) => userController.signup(req, res));
+router.post('/signup', authRateLimiter, (req, res) => userController.signup(req, res));
 
 /**
  * @swagger
@@ -64,7 +65,7 @@ router.post('/signup', (req, res) => userController.signup(req, res));
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', (req, res) => userController.login(req, res));
+router.post('/login', authRateLimiter, (req, res) => userController.login(req, res));
 
 /**
  * @swagger
@@ -83,7 +84,7 @@ router.post('/login', (req, res) => userController.login(req, res));
  *       200:
  *         description: If the email exists, a reset email was sent
  */
-router.post('/forgot-password', (req, res) => userController.forgotPassword(req, res));
+router.post('/forgot-password', passwordResetRateLimiter, (req, res) => userController.forgotPassword(req, res));
 
 /**
  * @swagger
@@ -102,7 +103,7 @@ router.post('/forgot-password', (req, res) => userController.forgotPassword(req,
  *       200:
  *         description: Password reset successfully
  */
-router.post('/reset-password', (req, res) => userController.resetPassword(req, res));
+router.post('/reset-password', passwordResetRateLimiter, (req, res) => userController.resetPassword(req, res));
 
 /**
  * @swagger

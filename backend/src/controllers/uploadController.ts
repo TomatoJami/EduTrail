@@ -5,7 +5,7 @@ import { ApiResponse } from '../types';
 export class UploadController {
   async uploadImage(req: Request, res: Response): Promise<void> {
     try {
-      // Проверка наличия файла
+      // Ensure a file was sent before validating image metadata.
       if (!req.file) {
         res.status(400).json({
           success: false,
@@ -14,7 +14,7 @@ export class UploadController {
         return;
       }
 
-      // Проверка типа файла
+      // Only image MIME types supported by the course editor are accepted.
       const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
       if (!allowedMimes.includes(req.file.mimetype)) {
         res.status(400).json({
@@ -24,7 +24,7 @@ export class UploadController {
         return;
       }
 
-      // Проверка размера (макс 5MB)
+      // Keep uploads small enough to process in memory safely.
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (req.file.size > maxSize) {
         res.status(400).json({
@@ -34,7 +34,7 @@ export class UploadController {
         return;
       }
 
-      // Определить папку из query параметра
+      // Restrict uploads to known storage folders.
       const folder = (req.query.folder as string) || 'subjects';
       if (!['subjects', 'courses', 'questions', 'chapters'].includes(folder)) {
         res.status(400).json({
@@ -44,7 +44,7 @@ export class UploadController {
         return;
       }
 
-      // Загрузить картинку в Supabase
+      // Normalize and store the image through Supabase Storage.
       const imageUrl = await supabaseService.uploadImage(
         req.file.buffer,
         req.file.originalname,
@@ -61,7 +61,6 @@ export class UploadController {
         },
       } as ApiResponse);
     } catch (error) {
-      console.error('Upload error:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to upload image',

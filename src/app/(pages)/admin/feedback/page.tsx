@@ -106,7 +106,6 @@ export default function AdminFeedbackPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load feedback";
       setError(message);
-      console.error("Load feedback error:", message);
     } finally {
       setLoading(false);
     }

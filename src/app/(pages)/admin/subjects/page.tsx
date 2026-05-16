@@ -72,11 +72,6 @@ export default function AdminSubjectsPage() {
 
       if (!subjectsRes.ok) {
         const errorText = await subjectsRes.text();
-        console.error("Subjects response error:", {
-          status: subjectsRes.status,
-          statusText: subjectsRes.statusText,
-          body: errorText,
-        });
         throw new Error(`Failed to fetch subjects (${subjectsRes.status}): ${errorText}`);
       }
 
@@ -88,11 +83,6 @@ export default function AdminSubjectsPage() {
 
       if (!coursesRes.ok) {
         const errorText = await coursesRes.text();
-        console.error("Courses response error:", {
-          status: coursesRes.status,
-          statusText: coursesRes.statusText,
-          body: errorText,
-        });
         throw new Error(`Failed to fetch courses (${coursesRes.status}): ${errorText}`);
       }
 
@@ -106,7 +96,6 @@ export default function AdminSubjectsPage() {
       setCourses(coursesJson.data || []);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Failed to load admin subjects";
-      console.error("loadData error:", err);
       setError(errorMsg);
     } finally {
       setLoading(false);

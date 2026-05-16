@@ -5,8 +5,8 @@ export type CourseStatus = 'in_progress' | 'completed';
 export interface ICourseProgress extends Document {
   user_id: mongoose.Types.ObjectId;
   course_id: mongoose.Types.ObjectId;
-  status?: CourseStatus;  // опционально - только для учащихся/завершивших
-  is_bookmarked: boolean; // независимый флаг закладки
+  status?: CourseStatus;  // Present only after a learner starts or completes a course.
+  is_bookmarked: boolean; // Independent bookmark flag.
   createdAt: Date;
   updatedAt: Date;
 }

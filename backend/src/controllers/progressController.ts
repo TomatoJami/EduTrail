@@ -49,8 +49,6 @@ export class ProgressController {
       const { courseId } = req.params;
       const userId = getAuthenticatedUserId(req);
 
-      console.log(`[getCourseProgress] START - userId: ${userId}, courseId: ${courseId}`);
-
       if (!userId || !courseId) {
         res.status(400).json({
           success: false,
@@ -65,7 +63,6 @@ export class ProgressController {
         courseObjectId = new mongoose.Types.ObjectId(courseId);
         userObjectId = new mongoose.Types.ObjectId(userId);
       } catch (e) {
-        console.error(`[getCourseProgress] Invalid ID format:`, courseId, userId);
         res.status(400).json({
           success: false,
           message: "Invalid ID format",
@@ -78,17 +75,13 @@ export class ProgressController {
         course_id: courseObjectId,
       }).populate("course_id");
 
-      console.log(`[getCourseProgress] courseProgress:`, courseProgress);
-
       // Get all modules for this course
       const modules = await Module.find({ course_id: courseObjectId });
-      console.log(`[getCourseProgress] Found modules for course: ${modules.length}`, modules.map(m => ({ _id: String(m._id), title: m.title })));
 
       const moduleIds = modules.map((m: any) => new mongoose.Types.ObjectId(String(m._id)));
 
       // Get all chapters for these modules
       const courseChapters = await Chapter.find({ module_id: { $in: moduleIds } });
-      console.log(`[getCourseProgress] Found chapters for modules: ${courseChapters.length}`, courseChapters.map(c => ({ _id: String(c._id), title: c.title, module_id: String(c.module_id) })));
 
       const chapterIds = courseChapters.map((ch: any) => new mongoose.Types.ObjectId(String(ch._id)));
 
@@ -97,8 +90,6 @@ export class ProgressController {
         user_id: userObjectId,
         chapter_id: { $in: chapterIds },
       });
-
-      console.log(`[getCourseProgress] Found chapter progress for user: ${chapters.length}`, chapters.map(c => ({ chapter_id: String(c.chapter_id), is_completed: c.is_completed })));
 
       // Get question progress only for questions in this course
       const questions = await QuestionProgress.find({
@@ -122,9 +113,6 @@ export class ProgressController {
         questionsMap[questionId] = Boolean(q.is_completed);
       }
 
-      console.log(`[getCourseProgress] Final chaptersMap:`, chaptersMap);
-      console.log(`[getCourseProgress] Final questionsMap:`, questionsMap);
-
       // Build response with both progress data and courseProgress metadata
       const responseData = {
         success: true,
@@ -138,12 +126,9 @@ export class ProgressController {
         },
       };
 
-      console.log(`[getCourseProgress] RESPONSE DATA:`, JSON.stringify(responseData, null, 2));
-
       res.status(200).json(responseData);
 
     } catch (error) {
-      console.error(`[getCourseProgress] ERROR:`, error);
       res.status(500).json({
         success: false,
         message: "Failed to fetch course progress",
@@ -356,8 +341,6 @@ export class ProgressController {
       const { is_completed } = req.body;
       const userId = getAuthenticatedUserId(req);
 
-      console.log(`[UpdateProgress] User: ${userId}, Chapter: ${chapterId}, Completed: ${is_completed}`);
-
       if (!userId || !chapterId) {
         res.status(400).json({
           success: false,
@@ -394,8 +377,6 @@ export class ProgressController {
         }
       );
 
-      console.log(`[UpdateProgress] Saved:`, chapterProgress);
-
       res.status(200).json({
         success: true,
         message: 'Chapter progress updated successfully',
@@ -403,7 +384,6 @@ export class ProgressController {
       });
 
     } catch (error) {
-      console.error(`[UpdateProgress] Error:`, error);
       res.status(500).json({
         success: false,
         message: 'Failed to update chapter progress',

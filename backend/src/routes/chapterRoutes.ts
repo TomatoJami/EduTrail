@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { chapterController } from '../controllers/chapterController';
-import { adminMiddleware } from '../middleware/authMiddleware';
+import { adminMiddleware, authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
@@ -158,6 +158,6 @@ router.delete('/:id', adminMiddleware, (req, res) => chapterController.deleteCha
  *       200:
  *         description: User chapters progress
  */
-router.get('/user/:userId/modules/:moduleId/chapters', (req, res) => chapterController.getUserChaptersProgress(req, res));
+router.get('/user/:userId/modules/:moduleId/chapters', authMiddleware, (req, res) => chapterController.getUserChaptersProgress(req, res));
 
 export default router;

@@ -94,12 +94,10 @@ export async function adminMiddleware(req: AuthRequest, res: Response, next: Nex
 
 export function loggingMiddleware(req: Request, res: Response, next: NextFunction) {
   const { method, url } = req;
-  console.log(`[${new Date().toISOString()}] ${method} ${url}`);
   next();
 }
 
 export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
-  console.error('Error:', err);
 
   const status = err.status || 500;
   const message = err.message || 'Internal server error';

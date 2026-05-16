@@ -46,7 +46,6 @@ export class ModuleController {
                 data: module,
             } as ApiResponse);
         } catch (error) {
-            console.error('Error fetching module:', error);
             res.status(500).json({
                 success: false,
                 message: 'Failed to fetch module',

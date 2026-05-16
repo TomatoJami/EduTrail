@@ -58,20 +58,15 @@ export class QuestionService {
     // First, try to get wrapper questions
     let questions = await Question.find({ module_id: moduleId }).sort({ createdAt: 1 });
     
-    console.log(`[getQuestionsByModuleId] Found ${questions.length} wrapper questions`);
-    
     // If no wrapper questions found, migrate existing type-specific questions
     if (questions.length === 0) {
-      console.log(`[getQuestionsByModuleId] No wrapper questions, migrating...`);
       await this.migrateQuestionsForModule(moduleId);
       questions = await Question.find({ module_id: moduleId }).sort({ createdAt: 1 });
-      console.log(`[getQuestionsByModuleId] After migration: ${questions.length} wrapper questions`);
     }
     
     const result = [];
     for (const q of questions) {
       const typeData = await this.populateTypeData(q);
-      console.log(`[getQuestionsByModuleId] Question ${q._id}, type: ${q.type}, data:`, typeData);
       if (typeData) {
         const typeDataObj = typeData.toObject ? typeData.toObject() : typeData;
         result.push({
@@ -81,17 +76,14 @@ export class QuestionService {
         });
       }
     }
-    console.log(`[getQuestionsByModuleId] Returning ${result.length} questions`);
     return result;
   }
 
   private async migrateQuestionsForModule(moduleId: string): Promise<void> {
     try {
-      console.log(`[migrateQuestionsForModule] Starting migration for module ${moduleId}`);
       
       // Find all TestQuestions in this module
       const testQuestions = await TestQuestion.find({ module_id: moduleId });
-      console.log(`[migrateQuestionsForModule] Found ${testQuestions.length} TestQuestions`);
       
       for (const tq of testQuestions) {
         const existing = await Question.findOne({ typeId: tq._id });
@@ -102,13 +94,11 @@ export class QuestionService {
             typeId: tq._id,
           });
           await question.save();
-          console.log(`[migrateQuestionsForModule] Created wrapper for TestQuestion ${tq._id}`);
         }
       }
 
       // Find all ShortAnswerQuestions in this module
       const shortAnswerQuestions = await ShortAnswerQuestion.find({ module_id: moduleId });
-      console.log(`[migrateQuestionsForModule] Found ${shortAnswerQuestions.length} ShortAnswerQuestions`);
       
       for (const saq of shortAnswerQuestions) {
         const existing = await Question.findOne({ typeId: saq._id });
@@ -119,13 +109,11 @@ export class QuestionService {
             typeId: saq._id,
           });
           await question.save();
-          console.log(`[migrateQuestionsForModule] Created wrapper for ShortAnswerQuestion ${saq._id}`);
         }
       }
 
       // Find all FillInTheBlankQuestions in this module
       const fillBlankQuestions = await FillInTheBlankQuestion.find({ module_id: moduleId });
-      console.log(`[migrateQuestionsForModule] Found ${fillBlankQuestions.length} FillInTheBlankQuestions`);
       
       for (const fbq of fillBlankQuestions) {
         const existing = await Question.findOne({ typeId: fbq._id });
@@ -136,13 +124,9 @@ export class QuestionService {
             typeId: fbq._id,
           });
           await question.save();
-          console.log(`[migrateQuestionsForModule] Created wrapper for FillInTheBlankQuestion ${fbq._id}`);
         }
       }
-      
-      console.log(`[migrateQuestionsForModule] Migration completed for module ${moduleId}`);
     } catch (error) {
-      console.error('[migrateQuestionsForModule] Migration error:', error);
     }
   }
 
@@ -150,19 +134,15 @@ export class QuestionService {
     try {
       if (question.type === 'test') {
         const data = await TestQuestion.findById(question.typeId);
-        console.log(`[populateTypeData] TestQuestion ${question.typeId}:`, data?.toObject ? data.toObject() : data);
         return data;
       } else if (question.type === 'short-answer') {
         const data = await ShortAnswerQuestion.findById(question.typeId);
-        console.log(`[populateTypeData] ShortAnswerQuestion ${question.typeId}:`, data?.toObject ? data.toObject() : data);
         return data;
       } else if (question.type === 'fill-blank') {
         const data = await FillInTheBlankQuestion.findById(question.typeId);
-        console.log(`[populateTypeData] FillInTheBlankQuestion ${question.typeId}:`, data?.toObject ? data.toObject() : data);
         return data;
       }
     } catch (error) {
-      console.error(`[populateTypeData] Error for question ${question._id}:`, error);
     }
     return null;
   }

@@ -1,5 +1,8 @@
 import crypto from 'crypto';
 import { User, IUser } from '../models/User';
+import { CourseProgress } from '../models/CourseProgress';
+import { ChapterProgress } from '../models/ChapterProgress';
+import { QuestionProgress } from '../models/QuestionProgress';
 import { SignupPayload, AuthPayload, User as UserType } from '../types';
 
 export class UserService {
@@ -11,13 +14,9 @@ export class UserService {
         name: payload.name,
         role: payload.role || 'student',
       });
-
-      console.log('Creating user:', { email: user.email, name: user.name });
       await user.save();
-      console.log('User created successfully:', user._id);
       return user;
     } catch (error) {
-      console.error('Error in createUser:', error);
       throw error;
     }
   }
@@ -27,7 +26,6 @@ export class UserService {
       const user = await User.findOne({ email }).select('+password +loginAttempts +lockUntil');
       return user;
     } catch (error) {
-      console.error('Error in getUserByEmail:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to fetch user: ${errorMessage}`);
     }
@@ -112,7 +110,19 @@ export class UserService {
 
   async deleteUser(id: string): Promise<IUser | null> {
     try {
-      const user = await User.findByIdAndDelete(id);
+      const user = await User.findById(id);
+      if (!user) {
+        return null;
+      }
+
+      // Remove all learning progress owned by this user before deleting the account.
+      await Promise.all([
+        CourseProgress.deleteMany({ user_id: user._id }),
+        ChapterProgress.deleteMany({ user_id: user._id }),
+        QuestionProgress.deleteMany({ user_id: user._id }),
+      ]);
+
+      await User.findByIdAndDelete(user._id);
       return user;
     } catch (error) {
       throw new Error(`Failed to delete user: ${error}`);

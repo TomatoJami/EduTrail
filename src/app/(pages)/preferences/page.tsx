@@ -46,7 +46,6 @@ export default function PreferencesPage() {
         setSubjects(data.data || []);
       }
     } catch (err) {
-      console.error('Failed to fetch subjects:', err);
       setError('Failed to load subjects');
     } finally {
       setLoading(false);
@@ -93,7 +92,6 @@ export default function PreferencesPage() {
       router.push('/');
     } catch (err) {
       setError('An error occurred. Please try again.');
-      console.error(err);
     } finally {
       setSaving(false);
     }
@@ -122,7 +120,6 @@ export default function PreferencesPage() {
       router.push('/');
     } catch (err) {
       setError('An error occurred. Please try again.');
-      console.error(err);
     } finally {
       setSaving(false);
     }

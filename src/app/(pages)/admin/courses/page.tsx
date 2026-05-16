@@ -228,7 +228,6 @@ export default function AdminCoursesPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load courses";
       setError(message);
-      console.error("Load courses error:", message);
     } finally {
       setLoading(false);
     }
@@ -250,7 +249,6 @@ export default function AdminCoursesPage() {
         await Promise.all(courseModules.map((module) => loadModuleContent(module._id)));
       }
     } catch (err) {
-      console.error("Load modules error:", err);
     }
   };
 
@@ -271,7 +269,6 @@ export default function AdminCoursesPage() {
         }));
       }
     } catch (err) {
-      console.error("Load chapters error:", err);
     }
   };
 
@@ -289,7 +286,6 @@ export default function AdminCoursesPage() {
         setQuestions((prev) => ({ ...prev, [moduleId]: Array.isArray(data.data) ? data.data : [] }));
       }
     } catch (err) {
-      console.error("Load questions error:", err);
     }
   };
 

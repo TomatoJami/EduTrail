@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { questionController } from '../controllers/questionController';
-import { adminMiddleware } from '../middleware/authMiddleware';
+import { adminMiddleware, authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
@@ -86,7 +86,7 @@ router.get('/', (req, res) => questionController.getAllQuestions(req, res));
  *       500:
  *         description: Failed to fetch user questions progress
  */
-router.get('/user/:userId/modules/:moduleId/questions', (req, res) => questionController.getUserQuestionsProgress(req, res));
+router.get('/user/:userId/modules/:moduleId/questions', authMiddleware, (req, res) => questionController.getUserQuestionsProgress(req, res));
 
 /**
  * @swagger

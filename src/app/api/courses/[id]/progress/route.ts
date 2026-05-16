@@ -43,8 +43,6 @@ export async function GET(
       );
     }
 
-    console.log(`[Course Progress] GET - courseId: ${courseId}, userId: ${userId}`);
-
     // Call backend endpoint that already does all the work
     const response = await fetch(`${API_URL}/progress/courses/${courseId}`, {
       method: 'GET',
@@ -52,7 +50,6 @@ export async function GET(
     });
 
     if (!response.ok) {
-      console.error(`[Course Progress] Backend returned ${response.status}`);
       return NextResponse.json(
         {
           success: false,
@@ -64,7 +61,6 @@ export async function GET(
     }
 
     const backendData = await response.json();
-    console.log(`[Course Progress] Backend response:`, JSON.stringify(backendData, null, 2));
 
     // Extract the full data object from backend (includes chapters, questions, status, is_bookmarked, etc)
     const fullData = backendData.data || {};
@@ -72,9 +68,6 @@ export async function GET(
     // Extract just chapters and questions for the frontend component
     const chapters = fullData.chapters || {};
     const questions = fullData.questions || {};
-
-    console.log(`[Course Progress] Final chapters:`, chapters);
-    console.log(`[Course Progress] Final questions:`, questions);
 
     return NextResponse.json({
       success: true,
@@ -84,7 +77,6 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error fetching course progress:', error);
     return NextResponse.json(
       {
         success: false,

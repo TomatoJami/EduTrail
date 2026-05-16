@@ -264,7 +264,7 @@ export default function CourseDetailPage() {
 				}
 			}
 
-			// 2. quiz (ВАЖНО)
+			// 2. quiz
 			if (module.questions.length > 0) {
 				const allDone = module.questions.every(
 					q => userProgress.questions?.[q._id]
@@ -321,7 +321,6 @@ export default function CourseDetailPage() {
 			}
 
 			const data = await response.json();
-			console.log('Course started:', data);
 
 			// Update course progress state and redirect to first chapter
 			setCourseProgress(data.data);
@@ -330,7 +329,6 @@ export default function CourseDetailPage() {
 				router.push(`/courses/${courseId}/${firstChapterId}`);
 			}
 		} catch (err) {
-			console.error('Error starting course:', err);
 			alert(err instanceof Error ? err.message : 'Failed to start course');
 		} finally {
 			setIsLoading(false);
@@ -378,9 +376,7 @@ export default function CourseDetailPage() {
 			const data = await response.json();
 			setCourseProgress(data.data);
 			setIsBookmarked(data.data?.is_bookmarked || false);
-			console.log('Bookmark toggled:', data);
 		} catch (err) {
-			console.error('Error bookmarking course:', err);
 			alert(err instanceof Error ? err.message : 'Failed to bookmark course');
 		}
 	};

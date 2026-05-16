@@ -62,7 +62,6 @@ export function CourseCard({
 
       router.push(`/courses/${course._id}`);
     } catch (err) {
-      console.error("Error starting course:", err);
       alert("Failed to start course");
     } finally {
       setIsLoading(false);
@@ -106,7 +105,6 @@ export function CourseCard({
         );
       }
     } catch (err) {
-      console.error("Error bookmarking course:", err);
       alert("Failed to bookmark course");
     } finally {
       setIsBookmarkLoading(false);

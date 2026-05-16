@@ -93,7 +93,6 @@ export default function ChapterPage() {
     const module = modules.find((m) => m._id === moduleId);
 
     if (module?.questions) {
-      console.log('Loading quiz questions:', module.questions);
       setQuizQuestions(module.questions);
       setSelectedAnswers({});
       setIsQuizSubmitted(false);
@@ -132,7 +131,6 @@ export default function ChapterPage() {
         if (!contentRes.ok) throw new Error("Failed to fetch content");
         const contentData = await contentRes.json();
         const fetchedModules: Module[] = contentData.data || [];
-        console.log('Loaded modules with content:', fetchedModules);
         if (!abortController.signal.aborted) setModules(fetchedModules);
 
         // Open all modules by default
@@ -226,7 +224,6 @@ export default function ChapterPage() {
         } catch (err) {
             // Don't show error if request was aborted
             if (err instanceof Error && err.name === 'AbortError') {
-              console.log("Request was aborted, skipping error");
               return;
             }
             setError(
@@ -300,7 +297,6 @@ export default function ChapterPage() {
           }
 
           const result = await response.json();
-          console.log("[Chapter Progress] Saved chapter:", chapterId);
 
           setUserProgress((prev) => ({
             ...prev,
@@ -310,7 +306,6 @@ export default function ChapterPage() {
             },
           }));
         } catch (e) {
-          console.error("[Chapter Progress] Error:", e);
           setError(e instanceof Error ? e.message : "Failed to save progress");
         }
       }
@@ -441,6 +436,41 @@ export default function ChapterPage() {
       const questionIds = item.questionIds || [];
       return questionIds.every((questionId) => Boolean(userProgress.questions[questionId]));
     });
+  const canOpenFinish = areAllModulesComplete || isCourseFinished;
+
+  const firstIncompleteRequiredItem = requiredItems.find((item) => {
+    if (item.type === "chapter") {
+      return !userProgress.chapters[item.id];
+    }
+
+    const questionIds = item.questionIds || [];
+    return questionIds.some((questionId) => !userProgress.questions[questionId]);
+  });
+
+  // Direct /finish visits are redirected until every required learning item is complete.
+  useEffect(() => {
+    if (loading || chapterId !== "finish") {
+      return;
+    }
+
+    if (canOpenFinish) {
+      return;
+    }
+
+    if (firstIncompleteRequiredItem) {
+      router.replace(`/courses/${courseId}/${firstIncompleteRequiredItem.id}`);
+      return;
+    }
+
+    router.replace(`/courses/${courseId}`);
+  }, [
+    canOpenFinish,
+    chapterId,
+    courseId,
+    firstIncompleteRequiredItem,
+    loading,
+    router,
+  ]);
 
 
   if (loading) {
@@ -593,24 +623,34 @@ export default function ChapterPage() {
                     </div>
                   ))}
 
-                  {/* Finish Item */}
-                <Link
-                  href={`/courses/${courseId}/finish`}
-                  className={`flex items-start gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                    chapterId === "finish"
-                      ? "bg-indigo-50 text-indigo-700"
-                      : "text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  <CheckIcon
-                    done={
-                      userProgress.chapters["finish"] === true ||
-                      courseProgress?.status === "completed" ||
-                      courseProgress?.status === "finished"
-                    }
-                  />
-                  <span className="leading-5 font-semibold break-words">Finish</span>
-                </Link>
+                  {/* Finish stays disabled until all required chapters and quizzes are complete. */}
+                {canOpenFinish ? (
+                  <Link
+                    href={`/courses/${courseId}/finish`}
+                    className={`flex items-start gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                      chapterId === "finish"
+                        ? "bg-indigo-50 text-indigo-700"
+                        : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <CheckIcon
+                      done={
+                        userProgress.chapters["finish"] === true ||
+                        courseProgress?.status === "completed" ||
+                        courseProgress?.status === "finished"
+                      }
+                    />
+                    <span className="leading-5 font-semibold break-words">Finish</span>
+                  </Link>
+                ) : (
+                  <div
+                    aria-disabled="true"
+                    className="flex cursor-not-allowed items-start gap-3 rounded-lg px-3 py-2 text-sm text-slate-400"
+                  >
+                    <CheckIcon done={false} />
+                    <span className="leading-5 font-semibold break-words">Finish</span>
+                  </div>
+                )}
                 </div>
               </div>
             </div>
@@ -941,6 +981,23 @@ export default function ChapterPage() {
                   })()}
                 </>
               ) : currentItem?.type === "finish" ? (
+                !areAllModulesComplete ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-amber-100">
+                      <svg className="h-10 w-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+                      </svg>
+                    </div>
+
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-3 break-words">
+                      Course is not ready to finish
+                    </h1>
+
+                    <p className="max-w-2xl text-lg text-slate-600 break-words">
+                      Complete all chapters and questions before opening the finish step.
+                    </p>
+                  </div>
+                ) : (
                 <div className="flex flex-col items-center justify-center py-12">
                   {/* Success Icon */}
                   <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 mb-6">
@@ -961,6 +1018,7 @@ export default function ChapterPage() {
                     Now click the button below to finish the course and return to the main page.
                   </p>
                 </div>
+                )
               ) : (
                 <div className="text-slate-500 break-words">Content not found.</div>
               )}
@@ -1047,7 +1105,6 @@ export default function ChapterPage() {
                                 },
                               }));
                             } catch (e) {
-                              console.error("[Quiz] Error completing quiz:", e);
                             }
                           }
 
@@ -1103,7 +1160,6 @@ export default function ChapterPage() {
                             // Navigate back to course
                             router.push(`/courses/${courseId}`);
                           } catch (e) {
-                            console.error("[Finish Course] Error:", e);
                             setFinishError(e instanceof Error ? e.message : "Complete all modules first.");
                           }
                         }}

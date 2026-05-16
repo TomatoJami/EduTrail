@@ -39,11 +39,9 @@ export class SupabaseService {
         });
 
       if (error) {
-        console.error('Supabase upload error:', error);
         throw new Error(`Failed to upload image: ${error.message}`);
       }
-
-      // Получить публичный URL
+      // Return a public URL because course images are displayed to all learners.
       const { data: publicUrlData } = supabase.storage.from('images').getPublicUrl(data.path);
 
       if (!publicUrlData.publicUrl) {
@@ -52,7 +50,6 @@ export class SupabaseService {
 
       return publicUrlData.publicUrl;
     } catch (error) {
-      console.error('Error resizing or uploading image:', error);
       throw error instanceof Error ? error : new Error('Failed to resize or upload image');
     }
   }
@@ -63,7 +60,7 @@ export class SupabaseService {
    */
   async deleteImage(imageUrl: string): Promise<void> {
     try {
-      // Извлечь путь из URL
+      // Extract the object path from the public URL.
       const url = new URL(imageUrl);
       const pathParts = url.pathname.split('/object/public/images/');
       if (pathParts.length < 2) {
@@ -75,12 +72,10 @@ export class SupabaseService {
       const { error } = await supabase.storage.from('images').remove([filePath]);
 
       if (error) {
-        console.error('Supabase delete error:', error);
         throw new Error(`Failed to delete image: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error deleting image:', error);
-      // Не выбрасываем ошибку, просто логируем
+      // Keep image cleanup non-blocking for course updates.
     }
   }
 }

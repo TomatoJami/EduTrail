@@ -48,7 +48,6 @@ export class ChapterController {
                 data: chapter,
             } as ApiResponse);
         } catch (error) {
-            console.error('Error fetching chapter:', error);
             res.status(500).json({
                 success: false,
                 message: 'Failed to fetch chapter',
@@ -190,13 +189,29 @@ export class ChapterController {
     async getUserChaptersProgress(req: Request, res: Response): Promise<void> {
         try {
             const { userId, moduleId } = req.params;
-
-            console.log(`[getUserChaptersProgress] START - userId: ${userId}, moduleId: ${moduleId}`);
+            const authReq = req as Request & { userId?: string; userRole?: 'student' | 'admin' };
 
             if (!userId || !moduleId) {
                 res.status(400).json({
                     success: false,
                     message: 'userId and moduleId are required',
+                } as ApiResponse);
+                return;
+            }
+
+            // Prevent users from reading another student's chapter progress by changing the URL.
+            if (authReq.userRole !== 'admin' && authReq.userId !== userId) {
+                res.status(403).json({
+                    success: false,
+                    message: 'Forbidden: cannot access another user progress',
+                } as ApiResponse);
+                return;
+            }
+
+            if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(moduleId)) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Invalid userId or moduleId',
                 } as ApiResponse);
                 return;
             }
@@ -207,7 +222,6 @@ export class ChapterController {
 
             // Get all chapters for this module
             const chapters = await Chapter.find({ module_id: moduleObjectId });
-            console.log(`[getUserChaptersProgress] Found chapters: ${chapters.length}`);
 
             const chapterIds = chapters.map(ch => ch._id);
 
@@ -216,8 +230,6 @@ export class ChapterController {
                 user_id: userObjectId,
                 chapter_id: { $in: chapterIds },
             });
-
-            console.log(`[getUserChaptersProgress] Found progress records: ${progress.length}`, progress.map(p => ({ chapter_id: String(p.chapter_id), is_completed: p.is_completed })));
 
             // Convert ObjectIds to strings for JSON response
             const progressWithStringIds = progress.map(p => ({
@@ -233,7 +245,6 @@ export class ChapterController {
                 data: progressWithStringIds,
             } as ApiResponse);
         } catch (error) {
-            console.error(`[getUserChaptersProgress] ERROR:`, error);
             res.status(500).json({
                 success: false,
                 message: 'Failed to fetch user chapters progress',

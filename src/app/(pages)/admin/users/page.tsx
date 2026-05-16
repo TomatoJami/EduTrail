@@ -75,7 +75,6 @@ export default function AdminUsersPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load users";
       setError(message);
-      console.error("Load users error:", message);
     } finally {
       setLoading(false);
     }
@@ -131,7 +130,6 @@ export default function AdminUsersPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to update user";
       setError(message);
-      console.error("Update user error:", message);
     } finally {
       setSaving(false);
     }
@@ -171,7 +169,6 @@ export default function AdminUsersPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to delete user";
       setError(message);
-      console.error("Delete user error:", message);
     } finally {
       setSaving(false);
     }

@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
   const authorization = request.headers.get("authorization");
   const token = request.cookies.get("authToken")?.value;
 
-    // Проверяем user_id из заголовка
+    // Validate the user id provided by the authenticated frontend request.
     if (!userId || !mongoose.isValidObjectId(userId)) {
       return NextResponse.json(
         {
@@ -67,10 +67,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Получаем данные только от фронтенда
+    // Accept only feedback fields controlled by the frontend form.
     const body = await request.json();
 
-    // Проверяем обязательные поля
+    // Required fields are checked before forwarding to the backend API.
     if (!body.feedbackType || !body.data?.trim()) {
       return NextResponse.json(
         {
@@ -81,11 +81,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Формируем payload для backend API
+    // Build the backend payload and attach the user id server-side.
     const payload = {
       feedbackType: body.feedbackType,
       data: body.data.trim(),
-      user_id: userId, // добавляем автоматически
+      user_id: userId,
     };
 
     const headers = getAuthHeaders(request);

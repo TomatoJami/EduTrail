@@ -30,7 +30,6 @@ export async function GET(
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Error fetching question:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch question' },
       { status: 500 }
@@ -68,7 +67,6 @@ export async function PUT(
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Error updating question:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to update question' },
       { status: 500 }
@@ -103,7 +101,6 @@ export async function DELETE(
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Error deleting question:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to delete question' },
       { status: 500 }

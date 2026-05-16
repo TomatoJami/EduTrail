@@ -115,10 +115,6 @@ export default function Courses() {
                 }
               }
             } catch (error) {
-              console.error(
-                `Error fetching progress for course ${course._id}:`,
-                error
-              );
             }
           })
         );
@@ -311,7 +307,7 @@ export default function Courses() {
                             )}
                           </div>
 
-                          {/* Если нет preferences */}
+                          {/* No preferences yet */}
                           {(!user?.preferredSubjects || user.preferredSubjects.length === 0) ? (
                             <div className="text-center py-12">
                               <p className="text-slate-600 text-lg mb-4">
@@ -322,7 +318,7 @@ export default function Courses() {
                               </p>
                             </div>
                           ) : (
-                            /* Если есть preferences → показываем курсы */
+                            /* Preferences exist, so show recommended courses */
                             <>
                               {recommendedCourses.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -49,7 +49,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(loggingMiddleware);
 
 // Swagger documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_API_DOCS === 'true') {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
 // Routes
 app.use('/api/auth', userRoutes);
@@ -93,17 +95,9 @@ async function startServer() {
     await connectDB();
 
     app.listen(PORT, () => {
-      console.log(`
-╔═════════════════════════════════════════════╗
-║        EduTrail Backend Server              ║
-║              Server running on              ║
-║           http://localhost:${PORT}             ║
-║     CORS Origin: ${CORS_ORIGIN}      ║
-╚═════════════════════════════════════════════╝
-      `);
+      console.info(`EduTrail backend is running on http://localhost:${PORT}`);
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 }

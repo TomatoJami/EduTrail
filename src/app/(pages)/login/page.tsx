@@ -50,7 +50,6 @@ export default function LoginPage() {
       router.push('/preferences');
     } catch (err) {
       setError('An error occurred. Please try again.');
-      console.error(err);
     } finally {
       setLoading(false);
     }

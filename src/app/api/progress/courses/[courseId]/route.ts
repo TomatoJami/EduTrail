@@ -40,7 +40,6 @@ export async function GET(
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Error fetching course progress:', error);
     return NextResponse.json(
       {
         success: false,

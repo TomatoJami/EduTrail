@@ -18,7 +18,6 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as AuthRequestBody;
     const { action, email, password, name, token, newPassword } = body;
-    console.log('Auth POST received, action:', action);
 
     switch (action) {
       case 'logout': {
@@ -185,7 +184,6 @@ export async function POST(request: Request) {
         );
     }
   } catch (error) {
-    console.error('Auth route error:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     if (error instanceof TypeError && error.message === 'fetch failed') {

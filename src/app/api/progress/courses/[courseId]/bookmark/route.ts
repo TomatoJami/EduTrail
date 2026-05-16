@@ -40,7 +40,6 @@ export async function POST(
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Error bookmarking course:', error);
     return NextResponse.json(
       {
         success: false,

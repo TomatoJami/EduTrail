@@ -6,6 +6,8 @@ import { SignupPayload, AuthPayload, ApiResponse, AuthResponse } from '../types'
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCK_MINUTES = 15;
+const LOGIN_ERROR_MESSAGE = 'Email or Password is incorrect';
+const LOGIN_LIMIT_ERROR_MESSAGE = 'Login attempt limit exceeded. Please try again later.';
 
 function validatePasswordStrength(password: string): string | null {
   if (password.length < 8) {
@@ -24,12 +26,6 @@ function validatePasswordStrength(password: string): string | null {
     return 'Password must contain at least one special character';
   }
   return null;
-}
-
-function getLockMessage(lockUntil: Date): string {
-  const remainingMs = lockUntil.getTime() - Date.now();
-  const remainingMinutes = Math.max(1, Math.ceil(remainingMs / 60000));
-  return `Too many failed login attempts. Try again in ${remainingMinutes} minute${remainingMinutes === 1 ? '' : 's'}.`;
 }
 
 function canAccessUser(req: Request, userId: string) {
@@ -115,7 +111,6 @@ export class UserController {
 
       res.status(201).json(response);
     } catch (error) {
-      console.error('Signup error:', error);
 
       const err = error as any;
 
@@ -170,7 +165,7 @@ export class UserController {
       if (!user) {
         res.status(401).json({
           success: false,
-          message: 'Invalid credentials',
+          message: LOGIN_ERROR_MESSAGE,
         } as ApiResponse);
         return;
       }
@@ -178,7 +173,7 @@ export class UserController {
       if (user.lockUntil && user.lockUntil > new Date()) {
         res.status(423).json({
           success: false,
-          message: getLockMessage(user.lockUntil),
+          message: LOGIN_LIMIT_ERROR_MESSAGE,
         } as ApiResponse);
         return;
       }
@@ -191,6 +186,7 @@ export class UserController {
       // Compare password
       const isPasswordValid = await user.comparePassword(body.password);
       if (!isPasswordValid) {
+        // Keep counting failed attempts internally, but return a generic message.
         const nextAttempts = (user.loginAttempts || 0) + 1;
         user.loginAttempts = nextAttempts;
 
@@ -199,7 +195,7 @@ export class UserController {
           await user.save();
           res.status(423).json({
             success: false,
-            message: getLockMessage(user.lockUntil),
+            message: LOGIN_LIMIT_ERROR_MESSAGE,
           } as ApiResponse);
           return;
         }
@@ -207,7 +203,7 @@ export class UserController {
         await user.save();
         res.status(401).json({
           success: false,
-          message: `Invalid credentials. ${MAX_LOGIN_ATTEMPTS - nextAttempts} attempt${MAX_LOGIN_ATTEMPTS - nextAttempts === 1 ? '' : 's'} remaining before temporary lock.`,
+          message: LOGIN_ERROR_MESSAGE,
         } as ApiResponse);
         return;
       }
@@ -239,7 +235,6 @@ export class UserController {
 
       res.status(200).json(response);
     } catch (error) {
-      console.error('Login error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({
         success: false,
@@ -457,7 +452,6 @@ export class UserController {
         },
       } as ApiResponse);
     } catch (error) {
-      console.error('Update user error:', error);
 
       const err = error as any;
 
@@ -512,7 +506,6 @@ export class UserController {
         },
       } as ApiResponse);
     } catch (error) {
-      console.error('Delete user error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({
         success: false,
@@ -559,7 +552,6 @@ export class UserController {
         data: user,
       } as ApiResponse);
     } catch (error) {
-      console.error('Add to wishlist error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({
         success: false,
@@ -606,7 +598,6 @@ export class UserController {
         data: user,
       } as ApiResponse);
     } catch (error) {
-      console.error('Remove from wishlist error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({
         success: false,
@@ -652,7 +643,6 @@ export class UserController {
         data: user.preferredSubjects,
       } as ApiResponse);
     } catch (error) {
-      console.error('Get wishlist error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({
         success: false,
@@ -724,7 +714,6 @@ export class UserController {
         },
       } as ApiResponse);
     } catch (error) {
-      console.error('Save preferences error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({
         success: false,
@@ -775,7 +764,6 @@ export class UserController {
         },
       } as ApiResponse);
     } catch (error) {
-      console.error('Skip preferences error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({
         success: false,
