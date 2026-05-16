@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Header } from "@/components/common/Header";
@@ -281,7 +282,7 @@ export default function Home() {
           <>
             <Header />
 
-            <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 pt-32 pb-40 min-h-screen flex items-center">
+            <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-[calc(100vh-4rem)] flex items-center">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 <div className="text-center">
                   <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
@@ -299,6 +300,63 @@ export default function Home() {
                   >
                     Get Started
                   </Link>
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-white py-16 sm:py-20">
+              <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                <h2 className="text-center text-3xl font-bold text-gray-950">
+                  Why Choose EduTrail?
+                </h2>
+
+                <div className="mt-12 grid gap-6 md:grid-cols-3">
+                  {[
+                    {
+                      title: "Track Progress",
+                      description:
+                        "Monitor your learning journey with detailed progress tracking and insights.",
+                      image: "/programming.png",
+                      alt: "Progress tracking icon",
+                    },
+                    {
+                      title: "Skill Paths",
+                      description:
+                        "Follow structured learning paths designed by experts in the field.",
+                      image: "/notebook.png",
+                      alt: "Skill path notebook icon",
+                    },
+                    {
+                      title: "Fast Learning",
+                      description:
+                        "Accelerate your learning with our optimized course structure",
+                      image: "/bolt.png",
+                      alt: "Fast learning bolt icon",
+                    },
+                  ].map((item) => (
+                    <article
+                      key={item.title}
+                      className="rounded-md border border-indigo-100 bg-indigo-50/60 p-5 shadow-sm"
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100">
+                        <Image
+                          src={item.image}
+                          alt={item.alt}
+                          width={20}
+                          height={20}
+                          className="h-5 w-5 object-contain"
+                        />
+                      </div>
+
+                      <h3 className="mt-4 text-xl font-bold text-gray-950">
+                        {item.title}
+                      </h3>
+
+                      <p className="mt-2 text-sm leading-6 text-gray-700">
+                        {item.description}
+                      </p>
+                    </article>
+                  ))}
                 </div>
               </div>
             </section>
