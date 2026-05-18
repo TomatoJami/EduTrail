@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { Chapter, IChapter } from '../models/Chapter';
+import { deleteRemovedSupabaseImages, deleteSupabaseImages } from './storageCleanupService';
 
 export interface ChapterPayload {
   title: string;
@@ -56,10 +57,21 @@ export class ChapterService {
       nextPayload.module_id = new mongoose.Types.ObjectId(payload.module_id);
     }
 
-    return Chapter.findByIdAndUpdate(id, nextPayload, {
+    const previousChapter = await Chapter.findById(id);
+    if (!previousChapter) {
+      return null;
+    }
+
+    const updatedChapter = await Chapter.findByIdAndUpdate(id, nextPayload, {
       new: true,
       runValidators: true,
     }).populate('module_id');
+
+    if (payload.content !== undefined) {
+      await deleteRemovedSupabaseImages(previousChapter.content, payload.content);
+    }
+
+    return updatedChapter;
   }
 
   async deleteChapter(id: string): Promise<IChapter | null> {
@@ -82,6 +94,7 @@ export class ChapterService {
         },
         { $inc: { order: -1 } }
       );
+      await deleteSupabaseImages(deletedChapter.content);
     }
 
     return deletedChapter;

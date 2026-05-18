@@ -67,7 +67,7 @@ export class SupabaseService {
         throw new Error('Invalid image URL');
       }
 
-      const filePath = `images/${pathParts[1]}`;
+      const filePath = pathParts[1];
 
       const { error } = await supabase.storage.from('images').remove([filePath]);
 

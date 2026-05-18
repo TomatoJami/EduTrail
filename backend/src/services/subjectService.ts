@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { ISubject, Subject } from '../models/Subject';
 import { Course } from '../models/Course';
 import { courseService } from './courseService';
+import { deleteRemovedSupabaseImages, deleteSupabaseImages } from './storageCleanupService';
 
 export interface SubjectPayload {
   subject_name: string;
@@ -24,10 +25,21 @@ export class SubjectService {
       throw new Error('Invalid subject id');
     }
 
-    return Subject.findByIdAndUpdate(id, payload, {
+    const previousSubject = await Subject.findById(id);
+    if (!previousSubject) {
+      return null;
+    }
+
+    const updatedSubject = await Subject.findByIdAndUpdate(id, payload, {
       new: true,
       runValidators: true,
     });
+
+    if (payload.subject_img !== undefined) {
+      await deleteRemovedSupabaseImages(previousSubject.subject_img, payload.subject_img);
+    }
+
+    return updatedSubject;
   }
 
   async deleteSubject(id: string): Promise<ISubject | null> {
@@ -48,7 +60,13 @@ export class SubjectService {
       courses.map((course) => courseService.deleteCourse(String(course._id)))
     );
 
-    return Subject.findByIdAndDelete(subjectObjectId);
+    const deletedSubject = await Subject.findByIdAndDelete(subjectObjectId);
+
+    if (deletedSubject) {
+      await deleteSupabaseImages(deletedSubject.subject_img);
+    }
+
+    return deletedSubject;
   }
 
   async getSubjectById(id: string): Promise<ISubject | null> {

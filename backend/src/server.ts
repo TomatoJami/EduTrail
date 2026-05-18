@@ -1,11 +1,12 @@
 import 'express-async-errors';
 import dotenv from 'dotenv';
 import path from 'path';
-import dns from 'dns';
-import app from './app';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+
+import dns from 'dns';
+import app from './app';
 
 // Use public resolvers so MongoDB SRV lookups work even if the local DNS resolver fails.
 dns.setServers(['1.1.1.1', '1.0.0.1', '8.8.8.8', '8.8.4.4']);

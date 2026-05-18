@@ -9,6 +9,7 @@ import { FillInTheBlankQuestion } from '../models/FillInTheBlankQuestion';
 import { ChapterProgress } from '../models/ChapterProgress';
 import { QuestionProgress } from '../models/QuestionProgress';
 import { CourseProgress } from '../models/CourseProgress';
+import { deleteRemovedSupabaseImages, deleteSupabaseImages } from './storageCleanupService';
 
 export interface CoursePayload {
   title: string;
@@ -50,10 +51,21 @@ export class CourseService {
       nextPayload.subject_id = new mongoose.Types.ObjectId(payload.subject_id);
     }
 
-    return Course.findByIdAndUpdate(id, nextPayload, {
+    const previousCourse = await Course.findById(id);
+    if (!previousCourse) {
+      return null;
+    }
+
+    const updatedCourse = await Course.findByIdAndUpdate(id, nextPayload, {
       returnDocument: 'after',
       runValidators: true,
     }).populate('subject_id');
+
+    if (payload.course_img !== undefined) {
+      await deleteRemovedSupabaseImages(previousCourse.course_img, payload.course_img);
+    }
+
+    return updatedCourse;
   }
 
   async deleteCourse(id: string): Promise<ICourse | null> {
@@ -73,12 +85,18 @@ export class CourseService {
 
     if (moduleIds.length > 0) {
       const [courseChapters, courseQuestions] = await Promise.all([
-        Chapter.find({ module_id: { $in: moduleIds } }).select('_id'),
+        Chapter.find({ module_id: { $in: moduleIds } }).select('_id content'),
         Question.find({ module_id: { $in: moduleIds } }).select('_id'),
       ]);
 
       const chapterIds = courseChapters.map((chapter) => chapter._id);
       const questionIds = courseQuestions.map((question) => question._id);
+
+      const [testQuestions, shortAnswerQuestions, fillInTheBlankQuestions] = await Promise.all([
+        TestQuestion.find({ module_id: { $in: moduleIds } }).select('question_img'),
+        ShortAnswerQuestion.find({ module_id: { $in: moduleIds } }).select('question_img'),
+        FillInTheBlankQuestion.find({ module_id: { $in: moduleIds } }).select('question_img'),
+      ]);
 
       await Promise.all([
         chapterIds.length > 0
@@ -94,12 +112,21 @@ export class CourseService {
         Chapter.deleteMany({ module_id: { $in: moduleIds } }),
         Module.deleteMany({ course_id: courseObjectId }),
       ]);
+
+      await deleteSupabaseImages(
+        ...courseChapters.map((chapter) => chapter.content),
+        ...testQuestions.map((question) => question.question_img),
+        ...shortAnswerQuestions.map((question) => question.question_img),
+        ...fillInTheBlankQuestions.map((question) => question.question_img)
+      );
     }
 
     await Promise.all([
       CourseProgress.deleteMany({ course_id: courseObjectId }),
       Course.findByIdAndDelete(courseObjectId),
     ]);
+
+    await deleteSupabaseImages(course.course_img);
 
     return course;
   }

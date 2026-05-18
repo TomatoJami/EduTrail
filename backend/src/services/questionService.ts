@@ -4,6 +4,7 @@ import { TestQuestion, ITestQuestion } from '../models/TestQuestion';
 import { ShortAnswerQuestion, IShortAnswerQuestion } from '../models/ShortAnswerQuestion';
 import { FillInTheBlankQuestion, IFillInTheBlankQuestion } from '../models/FillInTheBlankQuestion';
 import { QuestionType, TestQuestion as TestQuestionType, ShortAnswerQuestion as ShortAnswerQuestionType, FillInTheBlankQuestion as FillInTheBlankQuestionType } from '../types';
+import { deleteRemovedSupabaseImages, deleteSupabaseImages } from './storageCleanupService';
 
 export interface CreateTestQuestionPayload {
   question: string;
@@ -268,6 +269,8 @@ export class QuestionService {
       throw new Error('Question not found');
     }
 
+    const typeData = await this.populateTypeData(question);
+
     // Delete the specific type question
     if (question.type === 'test') {
       await TestQuestion.findByIdAndDelete(question.typeId);
@@ -279,6 +282,8 @@ export class QuestionService {
 
     // Delete the base question
     await Question.findByIdAndDelete(id);
+
+    await deleteSupabaseImages(typeData?.question_img);
   }
 
   async updateQuestion(id: string, payload: Partial<CreateTestQuestionPayload & CreateShortAnswerPayload & CreateFillBlankPayload & { type: string }>): Promise<any | null> {
@@ -318,6 +323,11 @@ export class QuestionService {
       throw new Error('Invalid question id');
     }
 
+    const previousQuestion = await TestQuestion.findById(id);
+    if (!previousQuestion) {
+      return null;
+    }
+
     const updateData: any = {};
     if (payload.question) updateData.question = payload.question;
     if (payload.question_img !== undefined) updateData.question_img = payload.question_img;
@@ -325,15 +335,26 @@ export class QuestionService {
     if (payload.correctAnswer !== undefined) updateData.correctAnswer = payload.correctAnswer;
     if (payload.explanation !== undefined) updateData.explanation = payload.explanation;
 
-    return TestQuestion.findByIdAndUpdate(id, updateData, {
+    const updatedQuestion = await TestQuestion.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     });
+
+    if (payload.question_img !== undefined) {
+      await deleteRemovedSupabaseImages(previousQuestion.question_img, payload.question_img);
+    }
+
+    return updatedQuestion;
   }
 
   async updateShortAnswerQuestion(id: string, payload: Partial<CreateShortAnswerPayload>): Promise<IShortAnswerQuestion | null> {
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid question id');
+    }
+
+    const previousQuestion = await ShortAnswerQuestion.findById(id);
+    if (!previousQuestion) {
+      return null;
     }
 
     const updateData: any = {};
@@ -343,15 +364,26 @@ export class QuestionService {
     if (payload.explanation !== undefined) updateData.explanation = payload.explanation;
     if (payload.caseSensitive !== undefined) updateData.caseSensitive = payload.caseSensitive;
 
-    return ShortAnswerQuestion.findByIdAndUpdate(id, updateData, {
+    const updatedQuestion = await ShortAnswerQuestion.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     });
+
+    if (payload.question_img !== undefined) {
+      await deleteRemovedSupabaseImages(previousQuestion.question_img, payload.question_img);
+    }
+
+    return updatedQuestion;
   }
 
   async updateFillBlankQuestion(id: string, payload: Partial<CreateFillBlankPayload>): Promise<IFillInTheBlankQuestion | null> {
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid question id');
+    }
+
+    const previousQuestion = await FillInTheBlankQuestion.findById(id);
+    if (!previousQuestion) {
+      return null;
     }
 
     const updateData: any = {};
@@ -360,10 +392,16 @@ export class QuestionService {
     if (payload.blanks) updateData.blanks = payload.blanks;
     if (payload.explanation !== undefined) updateData.explanation = payload.explanation;
 
-    return FillInTheBlankQuestion.findByIdAndUpdate(id, updateData, {
+    const updatedQuestion = await FillInTheBlankQuestion.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     });
+
+    if (payload.question_img !== undefined) {
+      await deleteRemovedSupabaseImages(previousQuestion.question_img, payload.question_img);
+    }
+
+    return updatedQuestion;
   }
 }
 
