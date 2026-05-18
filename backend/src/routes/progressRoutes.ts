@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
+// Every progress endpoint requires an authenticated learner.
 router.use(authMiddleware);
 
 // ============ CourseProgress Routes ============
@@ -36,6 +37,7 @@ router.use(authMiddleware);
  *       400:
  *         description: User ID is required
  */
+// GET /progress/courses lists progress records for the authenticated user.
 router.get('/courses', (req, res) => progressController.getCoursesByUser(req, res));
 
 /**
@@ -71,6 +73,7 @@ router.get('/courses', (req, res) => progressController.getCoursesByUser(req, re
  *       404:
  *         description: Course progress not found
  */
+// GET /progress/courses/:courseId returns calculated course progress.
 router.get('/courses/:courseId', (req, res) =>
   progressController.getCourseProgress(req, res)
 );
@@ -106,6 +109,7 @@ router.get('/courses/:courseId', (req, res) =>
  *                 data:
  *                   $ref: '#/components/schemas/CourseProgress'
  */
+// POST /progress/courses/:courseId/bookmark toggles the bookmark flag.
 router.post('/courses/:courseId/bookmark', (req, res) =>
   progressController.bookmarkCourse(req, res)
 );
@@ -141,6 +145,7 @@ router.post('/courses/:courseId/bookmark', (req, res) =>
  *                 data:
  *                   $ref: '#/components/schemas/CourseProgress'
  */
+// POST /progress/courses/:courseId/start starts or resumes a course.
 router.post('/courses/:courseId/start', (req, res) =>
   progressController.startCourse(req, res)
 );
@@ -191,6 +196,7 @@ router.post('/courses/:courseId/start', (req, res) =>
  *       404:
  *         description: Course progress not found
  */
+// PUT /progress/courses/:courseId/status updates course completion status.
 router.put('/courses/:courseId/status', (req, res) =>
   progressController.updateCourseStatus(req, res)
 );
@@ -232,6 +238,7 @@ router.put('/courses/:courseId/status', (req, res) =>
  *       404:
  *         description: Chapter progress not found
  */
+// GET /progress/chapters/:chapterId returns one chapter progress record.
 router.get('/chapters/:chapterId', (req, res) =>
   progressController.getChapterProgress(req, res)
 );
@@ -279,6 +286,7 @@ router.get('/chapters/:chapterId', (req, res) =>
  *                 data:
  *                   $ref: '#/components/schemas/ChapterProgress'
  */
+// PUT /progress/chapters/:chapterId upserts chapter completion.
 router.put('/chapters/:chapterId', (req, res) =>
   progressController.updateChapterProgress(req, res)
 );
@@ -318,6 +326,7 @@ router.put('/chapters/:chapterId', (req, res) =>
  *       404:
  *         description: Question progress not found
  */
+// GET /progress/questions/:questionId returns one question progress record.
 router.get('/questions/:questionId', (req, res) =>
   progressController.getQuestionProgress(req, res)
 );
@@ -372,6 +381,7 @@ router.get('/questions/:questionId', (req, res) =>
  *                 data:
  *                   $ref: '#/components/schemas/QuestionProgress'
  */
+// PUT /progress/questions/:questionId upserts question completion.
 router.put('/questions/:questionId', (req, res) =>
   progressController.updateQuestionStatus(req, res)
 );
@@ -409,6 +419,7 @@ router.put('/questions/:questionId', (req, res) =>
  *                   items:
  *                     $ref: '#/components/schemas/QuestionProgress'
  */
+// GET /progress/modules/:moduleId/questions returns all question statuses in a module.
 router.get('/modules/:moduleId/questions', (req, res) =>
   progressController.getModuleQuestionStatuses(req, res)
 );

@@ -17,6 +17,7 @@ export default function ForgotPasswordPage() {
     setMessage("");
 
     try {
+      // Request a backend-generated password reset email.
       const response = await fetch("/api/auth", {
         method: "POST",
         headers: {

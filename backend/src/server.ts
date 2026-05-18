@@ -13,6 +13,7 @@ dns.setServers(['1.1.1.1', '1.0.0.1', '8.8.8.8', '8.8.4.4']);
 
 // Import database
 import connectDB from './config/database';
+import { userService } from './services/userService';
 
 const PORT = process.env.PORT || 5000;
 
@@ -22,14 +23,16 @@ async function startServer() {
     // Connect to database
     await connectDB();
 
+    await userService.ensureDefaultAdminUser();
+
     app.listen(PORT, () => {
       console.info(`EduTrail backend is running on http://localhost:${PORT}`);
     });
-  } catch (error) {
+  } catch {
     process.exit(1);
   }
 }
 
-startServer();
+void startServer();
 
 export default app;

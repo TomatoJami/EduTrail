@@ -4,6 +4,7 @@ import { adminMiddleware, authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
+// Question routes expose reads publicly and protect writes/progress with auth middleware.
 /**
  * @swagger
  * /questions:
@@ -32,6 +33,7 @@ const router = Router();
  *                       items:
  *                         $ref: '#/components/schemas/Question'
  */
+// GET /questions optionally filters questions by module_id query.
 router.get('/', (req, res) => questionController.getAllQuestions(req, res));
 
 /**
@@ -86,6 +88,7 @@ router.get('/', (req, res) => questionController.getAllQuestions(req, res));
  *       500:
  *         description: Failed to fetch user questions progress
  */
+// GET /questions/user/:userId/modules/:moduleId/questions returns learner question progress.
 router.get('/user/:userId/modules/:moduleId/questions', authMiddleware, (req, res) => questionController.getUserQuestionsProgress(req, res));
 
 /**
@@ -117,6 +120,7 @@ router.get('/user/:userId/modules/:moduleId/questions', authMiddleware, (req, re
  *       404:
  *         description: Question not found
  */
+// GET /questions/:id returns one normalized question by id.
 router.get('/:id', (req, res) => questionController.getQuestionById(req, res));
 
 /**
@@ -142,6 +146,7 @@ router.get('/:id', (req, res) => questionController.getQuestionById(req, res));
  *       500:
  *         description: Failed to create question
  */
+// POST /questions creates any supported question type and is limited to admins.
 router.post('/', adminMiddleware, (req, res) => questionController.createQuestion(req, res));
 
 /**
@@ -168,8 +173,9 @@ router.post('/', adminMiddleware, (req, res) => questionController.createQuestio
  *         description: Failed to create question
  */
 router.post('/test', adminMiddleware, (req, res) => {
+  // POST /questions/test forces the legacy multiple-choice type before creating.
   const body = { ...req.body, type: 'test' };
-  questionController.createQuestion({ ...req, body } as any, res);
+  void questionController.createQuestion({ ...req, body } as any, res);
 });
 
 /**
@@ -196,8 +202,9 @@ router.post('/test', adminMiddleware, (req, res) => {
  *         description: Failed to create question
  */
 router.post('/short-answer', adminMiddleware, (req, res) => {
+  // POST /questions/short-answer forces the legacy short-answer type before creating.
   const body = { ...req.body, type: 'short-answer' };
-  questionController.createQuestion({ ...req, body } as any, res);
+  void questionController.createQuestion({ ...req, body } as any, res);
 });
 
 /**
@@ -224,8 +231,9 @@ router.post('/short-answer', adminMiddleware, (req, res) => {
  *         description: Failed to create question
  */
 router.post('/fill-blank', adminMiddleware, (req, res) => {
+  // POST /questions/fill-blank forces the legacy fill-blank type before creating.
   const body = { ...req.body, type: 'fill-blank' };
-  questionController.createQuestion({ ...req, body } as any, res);
+  void questionController.createQuestion({ ...req, body } as any, res);
 });
 
 /**
@@ -259,6 +267,7 @@ router.post('/fill-blank', adminMiddleware, (req, res) => {
  *       500:
  *         description: Failed to update question
  */
+// PUT /questions/:id updates a question and is limited to admins.
 router.put('/:id', adminMiddleware, (req, res) => questionController.updateQuestion(req, res));
 
 /**
@@ -286,6 +295,7 @@ router.put('/:id', adminMiddleware, (req, res) => questionController.updateQuest
  *       500:
  *         description: Failed to delete question
  */
+// DELETE /questions/:id removes a question and is limited to admins.
 router.delete('/:id', adminMiddleware, (req, res) => questionController.deleteQuestion(req, res));
 
 export default router;

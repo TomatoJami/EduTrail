@@ -1,13 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Sidebar } from "@/components/common/Sidebar";
-import { Course, Question, Chapter, Module, UserProgress } from "@/types";
+import { Course, Module, UserProgress } from "@/types";
 
 const pageContainer = "mx-auto max-w-5xl px-4 sm:px-6 lg:px-8";
 
@@ -99,7 +98,7 @@ export default function CourseDetailPage() {
 				const user = JSON.parse(storedUser);
 				const userId = user._id || user.id;
 
-				// COURSE
+				// Load the course shell from the Next.js API proxy.
 				const courseResponse = await fetch(`/api/courses/${courseId}`);
 				const courseData = await courseResponse.json();
 
@@ -114,19 +113,20 @@ export default function CourseDetailPage() {
 
 				setCourse(fetchedCourse as Course);
 
-				// CONTENT
+				// Load modules, chapters, and questions as one assembled content payload.
 				const contentResponse = await fetch(`/api/courses/${courseId}/content`);
 				const contentData = await contentResponse.json();
 				setModules(contentData.data || []);
 
 				// PROGRESS (✔ FIXED: x-user-id header added)
+				// Load per-chapter and per-question completion for this learner.
 				const progressResponse = await fetch(`/api/courses/${courseId}/progress`, {
 					headers: {
 						"x-user-id": userId,
 					},
 				});
 
-				// Fetch course progress (CourseProgress model)
+				// Load course-level status and bookmark metadata.
 				const courseProgressResponse = await fetch(`/api/progress/courses/${courseId}`, {
 					headers: {
 						'x-user-id': JSON.parse(storedUser)._id || JSON.parse(storedUser).id,
@@ -256,22 +256,22 @@ export default function CourseDetailPage() {
 	};
 
 	const getFirstUncompletedStep = () => {
-		for (const module of modules) {
+		for (const courseModule of modules) {
 			// 1. chapters
-			for (const chapter of module.chapters) {
+			for (const chapter of courseModule.chapters) {
 				if (!userProgress.chapters[chapter._id]) {
 					return { type: "chapter", id: chapter._id };
 				}
 			}
 
 			// 2. quiz
-			if (module.questions.length > 0) {
-				const allDone = module.questions.every(
+			if (courseModule.questions.length > 0) {
+				const allDone = courseModule.questions.every(
 					q => userProgress.questions?.[q._id]
 				);
 
 				if (!allDone) {
-					return { type: "quiz", moduleId: module._id };
+					return { type: "quiz", moduleId: courseModule._id };
 				}
 			}
 		}
@@ -294,6 +294,7 @@ export default function CourseDetailPage() {
 			const user = JSON.parse(storedUser);
 			const userId = user._id || user.id;
 
+			// Ask the backend to create or update this learner's course progress.
 			const response = await fetch(`/api/progress/courses/${courseId}/start`, {
 				method: 'POST',
 				headers: {
@@ -310,7 +311,7 @@ export default function CourseDetailPage() {
 					try {
 						const errorData = await response.json();
 						errorMessage = errorData.message || errorMessage;
-					} catch (e) {
+					} catch {
 						errorMessage = `Server error: ${response.status}`;
 					}
 				} else {
@@ -347,6 +348,7 @@ export default function CourseDetailPage() {
 			const user = JSON.parse(storedUser);
 			const userId = user._id || user.id;
 
+			// Toggle the bookmark record on the backend, then mirror it in local state.
 			const response = await fetch(`/api/progress/courses/${courseId}/bookmark`, {
 				method: 'POST',
 				headers: {
@@ -363,7 +365,7 @@ export default function CourseDetailPage() {
 					try {
 						const errorData = await response.json();
 						errorMessage = errorData.message || errorMessage;
-					} catch (e) {
+					} catch {
 						errorMessage = `Server error: ${response.status}`;
 					}
 				} else {
@@ -413,8 +415,8 @@ export default function CourseDetailPage() {
 									<div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.32),_transparent_34%),radial-gradient(circle_at_bottom_left,_rgba(56,189,248,0.18),_transparent_30%)] pointer-events-none" />
 										<div className={pageContainer}>
 											<div className="mb-3 text-sm text-white/70">
-												<a href="/" className="hover:text-white">Home </a> &gt; 
-                                                <a href="/courses" className="hover:text-white"> Learning Path </a> &gt; <span className="font-semibold text-white">{course.title}</span>
+												<Link href="/" className="hover:text-white">Home </Link> &gt; 
+                                                <Link href="/courses" className="hover:text-white"> Learning Path </Link> &gt; <span className="font-semibold text-white">{course.title}</span>
 											</div>
 											<div className="flex flex-wrap items-start gap-3">
 												<h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{course.title}</h1>

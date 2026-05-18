@@ -11,7 +11,6 @@ import { Course, CourseProgress } from "@/types";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseProgressMap, setCourseProgressMap] = useState<
     Record<string, CourseProgress>
@@ -29,7 +28,6 @@ export default function Home() {
 
       if (!storedUser) {
         setIsLoggedIn(false);
-        setIsAdmin(false);
         setUserId(null);
         return;
       }
@@ -43,10 +41,8 @@ export default function Home() {
           id?: string;
         };
 
-        setIsAdmin(parsedUser.role === "admin");
         setUserId(parsedUser._id || parsedUser.id || null);
       } catch {
-        setIsAdmin(false);
         setUserId(null);
       }
     };

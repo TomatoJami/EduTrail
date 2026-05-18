@@ -9,12 +9,15 @@ export interface ChapterPayload {
   module_id: string;
 }
 
+// Owns chapter persistence and Supabase image cleanup for chapter content.
 export class ChapterService {
   async getAllChapters(): Promise<IChapter[]> {
+    // Reads every chapter when no module filter is supplied.
     return Chapter.find().populate('module_id').sort({ order: 1 });
   }
 
   async getChaptersByModuleId(moduleId: string): Promise<IChapter[]> {
+    // Reads chapters for one module in learning order.
     if (!mongoose.isValidObjectId(moduleId)) {
       throw new Error('Invalid module id');
     }
@@ -22,6 +25,7 @@ export class ChapterService {
   }
 
   async createChapter(payload: ChapterPayload): Promise<IChapter> {
+    // Creates a chapter and auto-assigns the next order when none is supplied.
     const moduleId = new mongoose.Types.ObjectId(payload.module_id);
     
     let order = payload.order;
@@ -44,6 +48,7 @@ export class ChapterService {
   }
 
   async updateChapter(id: string, payload: Partial<ChapterPayload>): Promise<IChapter | null> {
+    // Updates chapter text and removes Supabase images no longer referenced.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid chapter id');
     }
@@ -75,6 +80,7 @@ export class ChapterService {
   }
 
   async deleteChapter(id: string): Promise<IChapter | null> {
+    // Deletes a chapter and all images referenced by its content.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid chapter id');
     }
@@ -101,6 +107,7 @@ export class ChapterService {
   }
 
   async getChapterById(id: string): Promise<IChapter | null> {
+    // Reads one chapter by id.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid chapter id');
     }

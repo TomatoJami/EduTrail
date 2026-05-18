@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
       headers.Authorization = authorization;
     }
 
+    // Stream the browser FormData to the backend so Supabase writes stay server-side.
     const response = await fetch(`${API_URL}/upload?folder=${encodeURIComponent(folder)}`, {
       method: "POST",
       headers,

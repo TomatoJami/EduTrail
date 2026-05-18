@@ -4,6 +4,7 @@ import { adminMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
+// Public read routes expose courses; mutating routes below require adminMiddleware.
 /**
  * @swagger
  * /courses:
@@ -26,6 +27,7 @@ const router = Router();
  *                       items:
  *                         $ref: '#/components/schemas/Course'
  */
+// GET /courses returns the full public course catalog.
 router.get('/', (req, res) => courseController.getAllCourses(req, res));
 
 /**
@@ -56,6 +58,7 @@ router.get('/', (req, res) => courseController.getAllCourses(req, res));
  *       404:
  *         description: Course not found
  */
+// GET /courses/:id returns one course by id.
 router.get('/:id', (req, res) => courseController.getCourseById(req, res));
 
 /**
@@ -88,6 +91,7 @@ router.get('/:id', (req, res) => courseController.getCourseById(req, res));
  *       403:
  *         description: Insufficient permissions
  */
+// POST /courses creates a course and is limited to admins.
 router.post('/', adminMiddleware, (req, res) => courseController.createCourse(req, res));
 
 /**
@@ -119,6 +123,7 @@ router.post('/', adminMiddleware, (req, res) => courseController.createCourse(re
  *       403:
  *         description: Insufficient permissions
  */
+// PUT /courses/:id updates a course and is limited to admins.
 router.put('/:id', adminMiddleware, (req, res) => courseController.updateCourse(req, res));
 
 /**
@@ -144,6 +149,7 @@ router.put('/:id', adminMiddleware, (req, res) => courseController.updateCourse(
  *       403:
  *         description: Недостаточно прав
  */
+// DELETE /courses/:id removes a course and is limited to admins.
 router.delete('/:id', adminMiddleware, (req, res) => courseController.deleteCourse(req, res));
 
 export default router;

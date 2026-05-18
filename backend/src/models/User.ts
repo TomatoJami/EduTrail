@@ -87,7 +87,7 @@ const UserSchema = new Schema<IUser>(
 );
 
 // Pre-save middleware to hash password using PBKDF2
-UserSchema.pre<IUser>('save', async function () {
+UserSchema.pre<IUser>('save', function () {
   if (!this.isModified('password')) {
     return;
   }
@@ -102,13 +102,13 @@ UserSchema.pre<IUser>('save', async function () {
 });
 
 // Method to compare passwords
-UserSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
+UserSchema.methods.comparePassword = function (password: string): Promise<boolean> {
   try {
     const [salt, hash] = this.password.split('$');
     const testHash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
-    return hash === testHash;
-  } catch (error) {
-    return false;
+    return Promise.resolve(hash === testHash);
+  } catch {
+    return Promise.resolve(false);
   }
 };
 

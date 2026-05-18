@@ -5,8 +5,10 @@ import { Chapter } from '../models/Chapter';
 import { ChapterProgress } from '../models/ChapterProgress';
 import { ApiResponse } from '../types';
 
+// Handles HTTP validation/response shaping for chapter content and progress requests.
 export class ChapterController {
     async getAllChapters(req: Request, res: Response): Promise<void> {
+        // Returns all chapters or the chapters for a requested module_id query.
         try {
             const { module_id } = req.query;
             
@@ -32,6 +34,7 @@ export class ChapterController {
     }
 
     async getChapterById(req: Request, res: Response): Promise<void> {
+        // Fetches one chapter for lesson pages and admin editing.
         try {
             const { id } = req.params;
             const chapter = await chapterService.getChapterById(id);
@@ -57,6 +60,7 @@ export class ChapterController {
     }
 
     async createChapter(req: Request, res: Response): Promise<void> {
+        // Validates chapter input before creating content under a module.
         try {
             const body = req.body as {
                 title?: string;
@@ -104,6 +108,7 @@ export class ChapterController {
     }
 
     async updateChapter(req: Request, res: Response): Promise<void> {
+        // Updates chapter content and lets the service clean removed images.
         try {
             const { id } = req.params;
             const body = req.body as {
@@ -152,6 +157,7 @@ export class ChapterController {
     }
 
     async deleteChapter(req: Request, res: Response): Promise<void> {
+        // Deletes a chapter and triggers related storage cleanup.
         try {
             const { id } = req.params;
         
@@ -187,6 +193,7 @@ export class ChapterController {
     }
 
     async getUserChaptersProgress(req: Request, res: Response): Promise<void> {
+        // Returns chapter completion records for one user/module pair.
         try {
             const { userId, moduleId } = req.params;
             const authReq = req as Request & { userId?: string; userRole?: 'student' | 'admin' };

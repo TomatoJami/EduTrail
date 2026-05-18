@@ -10,6 +10,7 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
+// Wraps Supabase Storage calls so controllers/services do not handle raw storage APIs.
 export class SupabaseService {
   /**
    * Загрузить картинку в Supabase Storage
@@ -19,6 +20,7 @@ export class SupabaseService {
    * @returns публичный URL картинки
    */
   async uploadImage(file: Buffer, fileName: string, folder: 'subjects' | 'courses' | 'questions' | 'chapters'): Promise<string> {
+    // Uploads a generated filename into the selected images subfolder.
     try {
       const resizedImage = await sharp(file)
         .resize(400, 400, {
@@ -59,6 +61,7 @@ export class SupabaseService {
    * @param imageUrl - публичный URL картинки
    */
   async deleteImage(imageUrl: string): Promise<void> {
+    // Converts a public Supabase URL back to a storage path and removes it.
     try {
       // Extract the object path from the public URL.
       const url = new URL(imageUrl);
@@ -74,7 +77,7 @@ export class SupabaseService {
       if (error) {
         throw new Error(`Failed to delete image: ${error.message}`);
       }
-    } catch (error) {
+    } catch {
       // Keep image cleanup non-blocking for course updates.
     }
   }

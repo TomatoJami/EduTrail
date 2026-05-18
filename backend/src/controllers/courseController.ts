@@ -31,8 +31,10 @@ function findTextLimitError(fields: Record<string, string | undefined>, goals: s
   return null;
 }
 
+// Handles HTTP validation/response shaping for course CRUD requests.
 export class CourseController {
   async getAllCourses(req: Request, res: Response): Promise<void> {
+    // Returns the full course catalog for public course lists and admin tables.
     try {
       const courses = await courseService.getAllCourses();
 
@@ -51,6 +53,7 @@ export class CourseController {
   }
 
   async getCourseById(req: Request, res: Response): Promise<void> {
+    // Looks up a single course by route id and returns 404 when it does not exist.
     try {
       const { id } = req.params;
 
@@ -78,6 +81,7 @@ export class CourseController {
   }
 
   async createCourse(req: Request, res: Response): Promise<void> {
+    // Validates admin course input before passing the payload to the service layer.
     try {
       const body = req.body as {
         title?: string;
@@ -150,6 +154,7 @@ export class CourseController {
   }
 
   async updateCourse(req: Request, res: Response): Promise<void> {
+    // Validates editable course fields and persists the update through CourseService.
     try {
       const { id } = req.params;
       const body = req.body as {
@@ -231,6 +236,7 @@ export class CourseController {
   }
 
   async deleteCourse(req: Request, res: Response): Promise<void> {
+    // Deletes a course and lets the service cascade nested data and image cleanup.
     try {
       const { id } = req.params;
 

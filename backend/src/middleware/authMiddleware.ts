@@ -93,11 +93,10 @@ export async function adminMiddleware(req: AuthRequest, res: Response, next: Nex
 }
 
 export function loggingMiddleware(req: Request, res: Response, next: NextFunction) {
-  const { method, url } = req;
   next();
 }
 
-export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
 
   const status = err.status || 500;
   const message = err.message || 'Internal server error';

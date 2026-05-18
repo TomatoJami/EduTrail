@@ -18,6 +18,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      // Authenticate through the Next.js API route so cookies and token cleanup stay centralized.
       const response = await fetch('/api/auth', {
         method: 'POST',
         headers: {
@@ -38,7 +39,7 @@ export default function LoginPage() {
       }
 
       if (data?.data) {
-        const { token, expiresAt, ...user } = data.data;
+        const { token: _token, expiresAt, ...user } = data.data;
         localStorage.setItem('user', JSON.stringify(user));
         if (expiresAt) {
           localStorage.setItem('authExpiresAt', expiresAt);
@@ -48,7 +49,7 @@ export default function LoginPage() {
       }
 
       router.push('/preferences');
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);

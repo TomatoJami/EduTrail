@@ -51,6 +51,7 @@ export default function FeedbackPage() {
 
       const user = JSON.parse(storedUser);
 
+    // Submit feedback through the API proxy with the current user id attached.
     const response = await fetch("/api/feedback", {
     method: "POST",
     headers: {

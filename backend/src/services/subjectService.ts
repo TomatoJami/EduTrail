@@ -9,18 +9,22 @@ export interface SubjectPayload {
   subject_img: string;
 }
 
+// Owns subject persistence and image cleanup when subjects change or are deleted.
 export class SubjectService {
   async getAllSubjects(): Promise<ISubject[]> {
+    // Reads all subjects for public selection and admin management.
     return Subject.find().sort({ createdAt: -1 });
   }
 
   async createSubject(payload: SubjectPayload): Promise<ISubject> {
+    // Persists a new subject document.
     const subject = new Subject(payload);
     await subject.save();
     return subject;
   }
 
   async updateSubject(id: string, payload: Partial<SubjectPayload>): Promise<ISubject | null> {
+    // Updates subject fields and deletes the previous image when it was replaced.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid subject id');
     }
@@ -43,6 +47,7 @@ export class SubjectService {
   }
 
   async deleteSubject(id: string): Promise<ISubject | null> {
+    // Deletes the subject and any Supabase image referenced by subject_img.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid subject id');
     }
@@ -70,6 +75,7 @@ export class SubjectService {
   }
 
   async getSubjectById(id: string): Promise<ISubject | null> {
+    // Reads one subject for detail/edit views.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid subject id');
     }

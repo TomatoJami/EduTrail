@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 export interface User {
   id: string;
@@ -10,7 +10,8 @@ export interface User {
 }
 
 function saveAuthSession(data: any) {
-  const { token, expiresAt, ...userData } = data || {};
+  // Stores only safe user/session metadata in browser storage.
+  const { token: _token, expiresAt, ...userData } = data || {};
 
   localStorage.setItem('user', JSON.stringify(userData));
   if (expiresAt) {
@@ -21,10 +22,12 @@ function saveAuthSession(data: any) {
 }
 
 function clearAuthSession() {
+  // Removes local auth state and asks the backend proxy to clear auth cookies.
   localStorage.removeItem('user');
   localStorage.removeItem('authToken');
   localStorage.removeItem('authExpiresAt');
   localStorage.removeItem('authLastActivity');
+  // Tell the auth proxy to clear the HTTP-only session cookie as well.
   void fetch('/api/auth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -46,6 +49,7 @@ interface UseAuthReturn {
 }
 
 export const useAuth = (): UseAuthReturn => {
+  // Centralizes auth state and profile actions for client components.
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +58,7 @@ export const useAuth = (): UseAuthReturn => {
   const [initialized, setInitialized] = useState(false);
 
   const normalizeUser = useCallback((input: any): User | null => {
+    // Converts backend user shapes into the frontend User contract.
     if (!input) {
       return null;
     }
@@ -72,9 +77,11 @@ export const useAuth = (): UseAuthReturn => {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    // Authenticates the user and stores the normalized session on success.
     setIsLoading(true);
     setError(null);
     try {
+      // Login goes through the Next.js API route so token cookies stay server-managed.
       const response = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,12 +101,14 @@ export const useAuth = (): UseAuthReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [normalizeUser]);
 
   const signup = useCallback(async (email: string, password: string, name: string) => {
+    // Creates a user account and stores the normalized session on success.
     setIsLoading(true);
     setError(null);
     try {
+      // Signup uses the auth proxy and stores the normalized user after success.
       const response = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,14 +128,16 @@ export const useAuth = (): UseAuthReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [normalizeUser]);
 
   const logout = useCallback(() => {
+    // Clears React state and all persisted auth state.
     setUser(null);
     clearAuthSession();
   }, []);
 
   const updateProfile = useCallback(async (name?: string, email?: string, newPassword?: string) => {
+    // Sends only changed profile fields to the backend.
     setIsLoading(true);
     setError(null);
     try {
@@ -140,6 +151,7 @@ export const useAuth = (): UseAuthReturn => {
       if (email) updateData.email = email;
       if (newPassword) updateData.password = newPassword;
 
+      // Persist profile changes through the user proxy with only changed fields.
       const response = await fetch(`/api/users/${user.id}`, {
         method: 'PUT',
         headers: {
@@ -172,6 +184,7 @@ export const useAuth = (): UseAuthReturn => {
 
   // Restores the current user from local storage and validates it with the API.
   const loadUser = useCallback(async () => {
+    // Restores the local session and refreshes it from the backend when possible.
     try {
       const storedUser = localStorage.getItem('user');
 
@@ -185,6 +198,7 @@ export const useAuth = (): UseAuthReturn => {
           return;
         }
 
+        // Refresh the stored user from the backend so role/profile changes are reflected.
         const response = await fetch(`/api/users/${normalizedStoredUser.id}`, {
           method: 'GET',
           headers: {

@@ -5,6 +5,7 @@ import { authRateLimiter, passwordResetRateLimiter } from '../middleware/rateLim
 
 const router = Router();
 
+// Auth routes are rate-limited; profile/admin routes below are protected per handler.
 /**
  * @swagger
  * /auth/signup:
@@ -34,6 +35,7 @@ const router = Router();
  *       400:
  *         description: Validation error
  */
+// POST /auth/signup creates a new learner account behind the auth rate limiter.
 router.post('/signup', authRateLimiter, (req, res) => userController.signup(req, res));
 
 /**
@@ -65,6 +67,7 @@ router.post('/signup', authRateLimiter, (req, res) => userController.signup(req,
  *       401:
  *         description: Invalid credentials
  */
+// POST /auth/login checks credentials behind the auth rate limiter.
 router.post('/login', authRateLimiter, (req, res) => userController.login(req, res));
 
 /**
@@ -84,6 +87,7 @@ router.post('/login', authRateLimiter, (req, res) => userController.login(req, r
  *       200:
  *         description: If the email exists, a reset email was sent
  */
+// POST /auth/forgot-password starts a password reset flow.
 router.post('/forgot-password', passwordResetRateLimiter, (req, res) => userController.forgotPassword(req, res));
 
 /**
@@ -103,6 +107,7 @@ router.post('/forgot-password', passwordResetRateLimiter, (req, res) => userCont
  *       200:
  *         description: Password reset successfully
  */
+// POST /auth/reset-password completes a password reset flow.
 router.post('/reset-password', passwordResetRateLimiter, (req, res) => userController.resetPassword(req, res));
 
 /**
@@ -130,6 +135,7 @@ router.post('/reset-password', passwordResetRateLimiter, (req, res) => userContr
  *       404:
  *         description: Пользователь не найден
  */
+// GET /users/:id returns a profile for the owner or an admin.
 router.get('/:id', authMiddleware, (req, res) => userController.getUser(req, res));
 
 /**
@@ -151,6 +157,7 @@ router.get('/:id', authMiddleware, (req, res) => userController.getUser(req, res
  *               items:
  *                 $ref: '#/components/schemas/User'
  */
+// GET /users lists all users and is limited to admins.
 router.get('/', adminMiddleware, (req, res) => userController.getAllUsers(req, res));
 
 /**
@@ -180,6 +187,7 @@ router.get('/', adminMiddleware, (req, res) => userController.getAllUsers(req, r
  *       404:
  *         description: Пользователь не найден
  */
+// PUT /users/:id updates a profile for the owner or an admin.
 router.put('/:id', authMiddleware, (req, res) => userController.updateUser(req, res));
 
 /**
@@ -203,6 +211,7 @@ router.put('/:id', authMiddleware, (req, res) => userController.updateUser(req, 
  *       404:
  *         description: Пользователь не найден
  */
+// DELETE /users/:id removes an account and is limited to admins.
 router.delete('/:id', adminMiddleware, (req, res) => userController.deleteUser(req, res));
 
 // Wishlist routes
@@ -231,6 +240,7 @@ router.delete('/:id', adminMiddleware, (req, res) => userController.deleteUser(r
  *       200:
  *         description: Subject added to wishlist
  */
+// POST /users/:id/wishlist/add adds one subject to the user's wishlist.
 router.post('/:id/wishlist/add', authMiddleware, (req, res) => userController.addToWishlist(req, res));
 
 /**
@@ -258,6 +268,7 @@ router.post('/:id/wishlist/add', authMiddleware, (req, res) => userController.ad
  *       200:
  *         description: Subject removed from wishlist
  */
+// POST /users/:id/wishlist/remove removes one subject from the user's wishlist.
 router.post('/:id/wishlist/remove', authMiddleware, (req, res) => userController.removeFromWishlist(req, res));
 
 /**
@@ -279,6 +290,7 @@ router.post('/:id/wishlist/remove', authMiddleware, (req, res) => userController
  *       200:
  *         description: Список избранных курсов
  */
+// GET /users/:id/wishlist returns the user's wishlist subjects.
 router.get('/:id/wishlist', authMiddleware, (req, res) => userController.getWishlist(req, res));
 
 // Preferences routes
@@ -307,6 +319,7 @@ router.get('/:id/wishlist', authMiddleware, (req, res) => userController.getWish
  *       200:
  *         description: Preferences saved
  */
+// POST /users/:id/preferences saves onboarding preferences.
 router.post('/:id/preferences', authMiddleware, (req, res) => userController.savePreferences(req, res));
 
 /**
@@ -328,6 +341,7 @@ router.post('/:id/preferences', authMiddleware, (req, res) => userController.sav
  *       200:
  *         description: Setup skipped
  */
+// POST /users/:id/preferences/skip marks onboarding as skipped.
 router.post('/:id/preferences/skip', authMiddleware, (req, res) => userController.skipPreferences(req, res));
 
 export default router;

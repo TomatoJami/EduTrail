@@ -42,6 +42,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      // Register through the auth proxy so the backend creates the user and session.
       const response = await fetch('/api/auth', {
         method: 'POST',
         headers: {

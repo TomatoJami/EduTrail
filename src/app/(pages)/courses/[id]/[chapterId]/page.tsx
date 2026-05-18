@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/common/Header";
-import { Footer } from "@/components/common/Footer";
-import { Sidebar } from "@/components/common/Sidebar";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { Course, Module, UserProgress, Question } from "@/types";
 
@@ -90,10 +88,10 @@ export default function ChapterPage() {
 
     // Extract moduleId from quiz-{moduleId}
     const moduleId = chapterId.substring(5);
-    const module = modules.find((m) => m._id === moduleId);
+    const courseModule = modules.find((m) => m._id === moduleId);
 
-    if (module?.questions) {
-      setQuizQuestions(module.questions);
+    if (courseModule?.questions) {
+      setQuizQuestions(courseModule.questions);
       setSelectedAnswers({});
       setIsQuizSubmitted(false);
     }
@@ -116,7 +114,7 @@ export default function ChapterPage() {
         }
         
 
-        // Course
+        // Load the course shell through the Next.js API proxy.
         const courseRes = await fetch(`/api/courses/${courseId}`, {
           signal: abortController.signal,
         });
@@ -124,7 +122,7 @@ export default function ChapterPage() {
         const courseData = await courseRes.json();
         if (!abortController.signal.aborted) setCourse(courseData.data || courseData);
 
-        // Modules + chapters + questions
+        // Load modules, chapters, and questions as one content payload.
         const contentRes = await fetch(`/api/courses/${courseId}/content`, {
           signal: abortController.signal,
         });
@@ -142,7 +140,7 @@ export default function ChapterPage() {
 
         const user = JSON.parse(storedUser);
 
-        // Progress
+        // Load learner progress so completed chapters/questions render correctly.
         const progressRes = await fetch(`/api/courses/${courseId}/progress`, {
           headers: {
             "x-user-id": user._id || user.id || "",
@@ -281,6 +279,7 @@ export default function ChapterPage() {
           const user = storedUser ? JSON.parse(storedUser) : null;
           const userId = user?._id || user?.id || "";
 
+          // Persist automatic chapter completion before moving to the next item.
           const response = await fetch(`/api/progress/chapters/${chapterId}`, {
             method: "PUT",
             headers: {
@@ -296,7 +295,7 @@ export default function ChapterPage() {
             throw new Error(`Failed to save progress: ${response.statusText}`);
           }
 
-          const result = await response.json();
+          await response.json();
 
           setUserProgress((prev) => ({
             ...prev,
@@ -376,8 +375,8 @@ export default function ChapterPage() {
   const currentItem = navItems.find((item) => item.id === chapterId);
 
   const currentChapter = useMemo(() => {
-    for (const module of modules) {
-      const chapter = module.chapters.find((c) => c._id === chapterId);
+    for (const courseModule of modules) {
+      const chapter = courseModule.chapters.find((c) => c._id === chapterId);
       if (chapter) return chapter;
     }
     return null;
@@ -1081,7 +1080,7 @@ export default function ChapterPage() {
                               const user = storedUser ? JSON.parse(storedUser) : null;
                               const userId = user?._id || user?.id || "";
 
-                              // Save each question as completed
+                              // Save each question as completed on the backend.
                               for (const question of quizQuestions) {
                                 await fetch(`/api/progress/questions/${question._id}`, {
                                   method: "PUT",
@@ -1104,7 +1103,7 @@ export default function ChapterPage() {
                                   ),
                                 },
                               }));
-                            } catch (e) {
+                            } catch {
                             }
                           }
 
@@ -1131,7 +1130,7 @@ export default function ChapterPage() {
                             const user = storedUser ? JSON.parse(storedUser) : null;
                             const userId = user?._id || user?.id || "";
 
-                            // Mark course as completed
+                            // Mark the course as completed after all required items are done.
                             const response = await fetch(`/api/progress/courses/${courseId}/status`, {
                               method: "PUT",
                               headers: {

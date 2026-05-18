@@ -7,8 +7,10 @@ export interface FeedbackPayload {
   user_id: string;
 }
 
+// Owns feedback persistence and query helpers for admin review screens.
 export class FeedbackService {
   async createFeedback(payload: FeedbackPayload): Promise<IFeedback> {
+    // Stores one feedback entry from the public feedback form.
     if (!mongoose.isValidObjectId(payload.user_id)) {
       throw new Error("Invalid user_id");
     }
@@ -25,12 +27,14 @@ export class FeedbackService {
   }
 
   async getAllFeedback(): Promise<IFeedback[]> {
+    // Reads feedback entries newest-first for admin review.
     return Feedback.find()
       .populate("user_id")
       .sort({ createdAt: -1 });
   }
 
   async getFeedbackById(id: string): Promise<IFeedback | null> {
+    // Reads one feedback entry by id.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error("Invalid feedback id");
     }
@@ -39,6 +43,7 @@ export class FeedbackService {
   }
 
   async getFeedbackByType(feedbackType: FeedbackType): Promise<IFeedback[]> {
+    // Reads feedback entries filtered by category.
     if (!["Error", "Wish"].includes(feedbackType)) {
         throw new Error('feedbackType must be either "Error" or "Wish"');
     }

@@ -39,6 +39,7 @@ export default function PreferencesPage() {
 
   const fetchSubjects = async () => {
     try {
+      // Load available subjects so the learner can choose onboarding preferences.
       const response = await fetch('/api/subjects');
       const data = await response.json();
 
@@ -70,6 +71,7 @@ export default function PreferencesPage() {
     setError('');
 
     try {
+      // Save onboarding preferences to the backend user profile.
       const response = await fetch(`/api/users/${userData?.id}/preferences`, {
         method: 'POST',
         headers: {
@@ -102,6 +104,7 @@ export default function PreferencesPage() {
     setError('');
 
     try {
+      // Mark onboarding as skipped without saving preferred subjects.
       const response = await fetch(`/api/users/${userData?.id}/preferences/skip`, {
         method: 'POST',
         headers: {

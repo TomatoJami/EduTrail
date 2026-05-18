@@ -12,9 +12,11 @@ function getAuthenticatedUserId(req: Request) {
   return (req as Request & { userId?: string }).userId || (req.headers['x-user-id'] as string);
 }
 
+// Handles learner progress endpoints and translates progress records into API responses.
 export class ProgressController {
 
   async getCoursesByUser(req: Request, res: Response): Promise<void> {
+    // Lists all course progress records for the authenticated user.
     try {
       const userId = getAuthenticatedUserId(req);
 
@@ -45,6 +47,7 @@ export class ProgressController {
   }
 
   async getCourseProgress(req: Request, res: Response): Promise<void> {
+    // Builds a course progress map from chapter and question completion records.
     try {
       const { courseId } = req.params;
       const userId = getAuthenticatedUserId(req);
@@ -62,7 +65,7 @@ export class ProgressController {
       try {
         courseObjectId = new mongoose.Types.ObjectId(courseId);
         userObjectId = new mongoose.Types.ObjectId(userId);
-      } catch (e) {
+      } catch {
         res.status(400).json({
           success: false,
           message: "Invalid ID format",
@@ -138,6 +141,7 @@ export class ProgressController {
   }
 
   async bookmarkCourse(req: Request, res: Response): Promise<void> {
+    // Toggles the bookmark flag on the user's course progress record.
     try {
       const { courseId } = req.params;
       const userId = getAuthenticatedUserId(req);
@@ -194,6 +198,7 @@ export class ProgressController {
   }
 
   async startCourse(req: Request, res: Response): Promise<void> {
+    // Creates or updates a course progress record with in_progress status.
     try {
       const { courseId } = req.params;
       const userId = getAuthenticatedUserId(req);
@@ -250,6 +255,7 @@ export class ProgressController {
   }
 
   async updateCourseStatus(req: Request, res: Response): Promise<void> {
+    // Marks a course completed only after all chapters/questions are complete.
     try {
       const { courseId } = req.params;
       const { status } = req.body;
@@ -336,6 +342,7 @@ export class ProgressController {
   }
 
   async updateChapterProgress(req: Request, res: Response): Promise<void> {
+    // Upserts one chapter completion state for the authenticated user.
     try {
       const { chapterId } = req.params;
       const { is_completed } = req.body;
@@ -393,6 +400,7 @@ export class ProgressController {
   }
 
   async getChapterProgress(req: Request, res: Response): Promise<void> {
+    // Reads one chapter progress record for the authenticated user.
     try {
       const { chapterId } = req.params;
       const userId = getAuthenticatedUserId(req);
@@ -433,6 +441,7 @@ export class ProgressController {
   }
 
   async updateQuestionStatus(req: Request, res: Response): Promise<void> {
+    // Upserts one question completion state for the authenticated user.
     try {
       const { questionId } = req.params;
       const { is_completed } = req.body;
@@ -482,6 +491,7 @@ export class ProgressController {
   }
 
   async getQuestionProgress(req: Request, res: Response): Promise<void> {
+    // Reads one question progress record for the authenticated user.
     try {
       const { questionId } = req.params;
       const userId = getAuthenticatedUserId(req);
@@ -525,6 +535,7 @@ export class ProgressController {
   }
 
   async getModuleQuestionStatuses(req: Request, res: Response): Promise<void> {
+    // Returns all question progress records scoped to a module.
     try {
       const { moduleId } = req.params;
       const userId = getAuthenticatedUserId(req);

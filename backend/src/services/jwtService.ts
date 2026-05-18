@@ -32,6 +32,8 @@ function getJwtSecret() {
 }
 
 export function createAuthToken(user: { id: string; email: string; role: 'student' | 'admin' }) {
+  // Encodes only the user id, email, role, and expiry into the token payload.
+  // Build a short-lived JWT that the frontend stores as an HTTP-only cookie.
   const issuedAt = Math.floor(Date.now() / 1000);
   const expiresAt = issuedAt + TOKEN_TTL_SECONDS;
 
@@ -68,6 +70,8 @@ function base64UrlDecode(input: string) {
 }
 
 export function verifyAuthToken(token: string): JwtPayload | null {
+  // Rejects malformed, tampered, or expired tokens before middleware trusts them.
+  // Verify signature and expiration before middleware trusts the request user.
   const parts = token.split('.');
   if (parts.length !== 3) {
     return null;

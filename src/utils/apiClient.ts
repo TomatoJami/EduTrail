@@ -7,6 +7,8 @@ class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
+    // Creates a shared Axios instance with the backend base URL.
+    // Centralized backend client for browser-side helpers that call the API directly.
     this.client = axios.create({
       baseURL: API_BASE_URL,
       headers: {
@@ -19,6 +21,7 @@ class ApiClient {
    * Set user ID for authenticated requests
    */
   setUserId(userId: string | null) {
+    // Adds or removes the x-user-id header used by protected backend routes.
     if (userId) {
       this.client.defaults.headers.common['x-user-id'] = userId;
     } else {
@@ -30,6 +33,7 @@ class ApiClient {
    * Get user ID from headers
    */
   getUserId(): string | undefined {
+    // Reads the current x-user-id header for callers that need it.
     return this.client.defaults.headers.common['x-user-id'] as string;
   }
 
@@ -39,6 +43,7 @@ class ApiClient {
   auth = {
     signup: async (email: string, password: string, name: string) => {
       try {
+        // Send new account data to the backend auth endpoint.
         const response = await this.client.post('/auth/signup', {
           email,
           password,
@@ -52,6 +57,7 @@ class ApiClient {
 
     login: async (email: string, password: string) => {
       try {
+        // Exchange email/password for the authenticated user payload.
         const response = await this.client.post('/auth/login', {
           email,
           password,
@@ -87,6 +93,7 @@ class ApiClient {
   courses = {
     getAll: async () => {
       try {
+        // Load the public course list from the backend.
         const response = await this.client.get('/courses');
         return response.data as ApiResponse<any>;
       } catch (error) {
@@ -137,6 +144,7 @@ class ApiClient {
   subjects = {
     getAll: async () => {
       try {
+        // Load subjects from the backend for course filtering and admin forms.
         const response = await this.client.get('/subjects');
         return response.data as ApiResponse<any>;
       } catch (error) {
@@ -190,6 +198,7 @@ class ApiClient {
         const formData = new FormData();
         formData.append('image', file);
 
+        // Use the Next.js upload proxy so files go through backend validation before Supabase.
         const response = await axios.post(`/api/upload?folder=${folder}`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',

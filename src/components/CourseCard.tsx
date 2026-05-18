@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Course, CourseProgress, CourseCardProps } from "@/types";
+import { CourseCardProps } from "@/types";
 
 
 function BookmarkIcon() {
@@ -61,7 +61,7 @@ export function CourseCard({
       // }
 
       router.push(`/courses/${course._id}`);
-    } catch (err) {
+    } catch {
       alert("Failed to start course");
     } finally {
       setIsLoading(false);
@@ -104,7 +104,7 @@ export function CourseCard({
           data.data?.is_bookmarked || false
         );
       }
-    } catch (err) {
+    } catch {
       alert("Failed to bookmark course");
     } finally {
       setIsBookmarkLoading(false);

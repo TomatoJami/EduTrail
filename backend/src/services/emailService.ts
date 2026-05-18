@@ -24,6 +24,8 @@ const transporter = isConfigured
   : null;
 
 export async function sendPasswordResetEmail(email: string, resetToken: string) {
+  // Builds the frontend reset URL and sends it via the configured SMTP transport.
+  // Send the reset link only after the controller has created a valid reset token.
   if (!transporter || !mailFrom) {
     throw new Error('SMTP is not configured');
   }

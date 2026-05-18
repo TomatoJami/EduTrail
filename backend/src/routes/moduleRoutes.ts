@@ -4,6 +4,7 @@ import { adminMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
+// Module routes are read publicly but require admin access for create/update/delete.
 /**
  * @swagger
  * /modules:
@@ -26,6 +27,7 @@ const router = Router();
  *                       items:
  *                         $ref: '#/components/schemas/Module'
  */
+// GET /modules optionally filters modules by course_id query.
 router.get('/', (req, res) => moduleController.getAllModules(req, res));
 
 /**
@@ -56,6 +58,7 @@ router.get('/', (req, res) => moduleController.getAllModules(req, res));
  *       404:
  *         description: Module not found
  */
+// GET /modules/:id returns one module by id.
 router.get('/:id', (req, res) => moduleController.getModuleById(req, res));
 
 /**
@@ -86,6 +89,7 @@ router.get('/:id', (req, res) => moduleController.getModuleById(req, res));
  *                     data:
  *                       $ref: '#/components/schemas/Module'
  */
+// POST /modules creates a module and is limited to admins.
 router.post('/', adminMiddleware, (req, res) => moduleController.createModule(req, res));
 
 /**
@@ -113,6 +117,7 @@ router.post('/', adminMiddleware, (req, res) => moduleController.createModule(re
  *       200:
  *         description: Module updated
  */
+// PUT /modules/:id updates a module and is limited to admins.
 router.put('/:id', adminMiddleware, (req, res) => moduleController.updateModule(req, res));
 
 /**
@@ -134,6 +139,7 @@ router.put('/:id', adminMiddleware, (req, res) => moduleController.updateModule(
  *       200:
  *         description: Module deleted
  */
+// DELETE /modules/:id removes a module and nested content.
 router.delete('/:id', adminMiddleware, (req, res) => moduleController.deleteModule(req, res));
 
 export default router;

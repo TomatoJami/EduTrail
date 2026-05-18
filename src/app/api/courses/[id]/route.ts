@@ -14,7 +14,9 @@ function getAuthHeaders(request: NextRequest) {
     headers['x-user-id'] = userId;
   }
 
-  if (token) {
+  if (authorization) {
+    headers.Authorization = authorization;
+  } else if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 

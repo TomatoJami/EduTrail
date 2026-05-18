@@ -4,6 +4,7 @@ import { adminMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
+// Public read routes expose subjects; mutating routes below require adminMiddleware.
 /**
  * @swagger
  * /subjects:
@@ -26,6 +27,7 @@ const router = Router();
  *                       items:
  *                         $ref: '#/components/schemas/Subject'
  */
+// GET /subjects returns all subjects for filters and onboarding.
 router.get('/', (req, res) => subjectController.getAllSubjects(req, res));
 
 /**
@@ -56,6 +58,7 @@ router.get('/', (req, res) => subjectController.getAllSubjects(req, res));
  *       404:
  *         description: Subject not found
  */
+// GET /subjects/:id returns one subject by id.
 router.get('/:id', (req, res) => subjectController.getSubjectById(req, res));
 
 /**
@@ -86,6 +89,7 @@ router.get('/:id', (req, res) => subjectController.getSubjectById(req, res));
  *                     data:
  *                       $ref: '#/components/schemas/Subject'
  */
+// POST /subjects creates a subject and is limited to admins.
 router.post('/', adminMiddleware, (req, res) => subjectController.createSubject(req, res));
 
 /**
@@ -113,6 +117,7 @@ router.post('/', adminMiddleware, (req, res) => subjectController.createSubject(
  *       200:
  *         description: Subject updated
  */
+// PUT /subjects/:id updates a subject and is limited to admins.
 router.put('/:id', adminMiddleware, (req, res) => subjectController.updateSubject(req, res));
 
 /**
@@ -134,6 +139,7 @@ router.put('/:id', adminMiddleware, (req, res) => subjectController.updateSubjec
  *       200:
  *         description: Subject deleted
  */
+// DELETE /subjects/:id removes a subject and is limited to admins.
 router.delete('/:id', adminMiddleware, (req, res) => subjectController.deleteSubject(req, res));
 
 export default router;

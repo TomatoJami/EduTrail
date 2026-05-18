@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { userService } from '../services/userService';
 import { sendPasswordResetEmail } from '../services/emailService';
 import { createAuthToken } from '../services/jwtService';
-import { SignupPayload, AuthPayload, ApiResponse, AuthResponse } from '../types';
+import { SignupPayload, ApiResponse, AuthResponse } from '../types';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCK_MINUTES = 15;
@@ -33,8 +33,10 @@ function canAccessUser(req: Request, userId: string) {
   return authReq.userRole === 'admin' || authReq.userId === userId;
 }
 
+// Handles auth, profile, preferences, and admin user HTTP workflows.
 export class UserController {
   async signup(req: Request, res: Response): Promise<void> {
+    // Creates a student account after validating email and password strength.
     try {
       const body = req.body as {
         email?: string;
@@ -147,6 +149,7 @@ export class UserController {
   }
 
   async login(req: Request, res: Response): Promise<void> {
+    // Authenticates by email/password and returns a short-lived auth token.
     try {
       const body = req.body as {
         email?: string;
@@ -245,6 +248,7 @@ export class UserController {
   }
 
   async forgotPassword(req: Request, res: Response): Promise<void> {
+    // Creates a reset token and sends the reset email without revealing account existence.
     try {
       const body = req.body as { email?: string };
 
@@ -282,6 +286,7 @@ export class UserController {
   }
 
   async resetPassword(req: Request, res: Response): Promise<void> {
+    // Validates the reset token and replaces the stored password hash.
     try {
       const body = req.body as {
         token?: string;
@@ -329,6 +334,7 @@ export class UserController {
   }
 
   async getUser(req: Request, res: Response): Promise<void> {
+    // Returns the requested profile only when the caller owns it or is admin.
     try {
       const { id } = req.params;
 
@@ -364,6 +370,7 @@ export class UserController {
   }
 
   async getAllUsers(req: Request, res: Response): Promise<void> {
+    // Lists users for the admin panel with passwords excluded by the service/model.
     try {
       const users = await userService.getAllUsers();
 
@@ -382,6 +389,7 @@ export class UserController {
   }
 
   async updateUser(req: Request, res: Response): Promise<void> {
+    // Updates allowed profile fields and restricts role changes to admins.
     try {
       const { id } = req.params;
       const authReq = req as Request & { userId?: string; userRole?: 'student' | 'admin' };
@@ -475,6 +483,7 @@ export class UserController {
   }
 
   async deleteUser(req: Request, res: Response): Promise<void> {
+    // Deletes a user and lets the service remove their progress records.
     try {
       const { id } = req.params;
 
@@ -516,6 +525,7 @@ export class UserController {
   }
 
   async addToWishlist(req: Request, res: Response): Promise<void> {
+    // Adds a subject to the user's wishlist after ownership checks.
     try {
       const { id } = req.params;
       const { subjectId } = req.body;
@@ -562,6 +572,7 @@ export class UserController {
   }
 
   async removeFromWishlist(req: Request, res: Response): Promise<void> {
+    // Removes a subject from the user's wishlist after ownership checks.
     try {
       const { id } = req.params;
       const { subjectId } = req.body;
@@ -608,6 +619,7 @@ export class UserController {
   }
 
   async getWishlist(req: Request, res: Response): Promise<void> {
+    // Reads the user's wishlist subjects for account pages.
     try {
       const { id } = req.params;
 
@@ -653,6 +665,7 @@ export class UserController {
   }
 
   async savePreferences(req: Request, res: Response): Promise<void> {
+    // Saves onboarding preferences and marks onboarding complete.
     try {
       const { id } = req.params;
       const { preferredSubjects, ageGroup } = req.body;
@@ -724,6 +737,7 @@ export class UserController {
   }
 
   async skipPreferences(req: Request, res: Response): Promise<void> {
+    // Marks onboarding complete without storing preferred subjects.
     try {
       const { id } = req.params;
 

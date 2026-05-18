@@ -211,6 +211,7 @@ export default function AdminCoursesPage() {
         return;
       }
 
+      // Load admin course data and subject options in parallel for the editor.
       const [coursesRes, subjectsRes] = await Promise.all([
         fetch("/api/courses", { headers: { "x-user-id": userId } }),
         fetch("/api/subjects", { headers: { "x-user-id": userId } }),
@@ -238,6 +239,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) return;
 
+      // Fetch modules only when an admin expands a course.
       const res = await fetch(`/api/modules?course_id=${courseId}`, {
         headers: { "x-user-id": userId },
       });
@@ -257,6 +259,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) return;
 
+      // Load chapters for the selected module before rendering nested editors.
       const res = await fetch(`/api/chapters?module_id=${moduleId}`, {
         headers: { "x-user-id": userId },
       });
@@ -277,6 +280,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) return;
 
+      // Load quiz questions for the selected module before rendering nested editors.
       const res = await fetch(`/api/questions?module_id=${moduleId}`, {
         headers: { "x-user-id": userId },
       });
@@ -320,6 +324,7 @@ export default function AdminCoursesPage() {
         return;
       }
 
+      // Create the course through the admin API proxy.
       const res = await fetch("/api/courses", {
         method: "POST",
         headers: {
@@ -378,6 +383,7 @@ export default function AdminCoursesPage() {
         return;
       }
 
+      // Update course metadata and image URL on the backend.
       const res = await fetch(`/api/courses/${editingCourse._id}`, {
         method: "PUT",
         headers: {
@@ -426,6 +432,7 @@ export default function AdminCoursesPage() {
         return;
       }
 
+      // Delete the course and let the backend cascade related records/storage cleanup.
       const res = await fetch(`/api/courses/${courseId}`, {
         method: "DELETE",
         headers: {
@@ -460,6 +467,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) throw new Error("Unauthorized");
 
+      // Create a module under the selected course.
       const res = await fetch("/api/modules", {
         method: "POST",
         headers: {
@@ -497,6 +505,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) throw new Error("Unauthorized");
 
+      // Persist module title/order changes.
       const res = await fetch(`/api/modules/${editingModule._id}`, {
         method: "PUT",
         headers: {
@@ -535,6 +544,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) throw new Error("Unauthorized");
 
+      // Delete the module and its nested learning content.
       const res = await fetch(`/api/modules/${moduleId}`, {
         method: "DELETE",
         headers: { "x-user-id": userId },
@@ -567,6 +577,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) throw new Error("Unauthorized");
 
+      // Create a chapter for the selected module.
       const res = await fetch("/api/chapters", {
         method: "POST",
         headers: {
@@ -605,6 +616,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) throw new Error("Unauthorized");
 
+      // Persist chapter text/content changes.
       const res = await fetch(`/api/chapters/${editingChapter._id}`, {
         method: "PUT",
         headers: {
@@ -646,6 +658,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) throw new Error("Unauthorized");
 
+      // Delete the chapter and let backend cleanup remove related images.
       const res = await fetch(`/api/chapters/${chapterId}`, {
         method: "DELETE",
         headers: { "x-user-id": userId },
@@ -718,6 +731,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) throw new Error("Unauthorized");
 
+      // Create a question using the payload shape for the selected question type.
       const res = await fetch("/api/questions", {
         method: "POST",
         headers: {
@@ -823,6 +837,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) throw new Error("Unauthorized");
 
+      // Persist question edits, including replacement image URLs.
       const res = await fetch(`/api/questions/${editingQuestion._id}`, {
         method: "PUT",
         headers: {
@@ -858,6 +873,7 @@ export default function AdminCoursesPage() {
       const userId = getUserId();
       if (!userId) throw new Error("Unauthorized");
 
+      // Delete the question and allow backend storage cleanup to run.
       const res = await fetch(`/api/questions/${questionId}`, {
         method: "DELETE",
         headers: { "x-user-id": userId },

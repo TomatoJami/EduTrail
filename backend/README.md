@@ -1,248 +1,266 @@
-# 🚀 EduTrail Backend API
+# EduTrail Backend API
 
-Express.js сервер для EduTrail платформы обучения.
+EduTrail Backend API is the Express and MongoDB service for the EduTrail learning platform. It provides authentication, administration, course content management, progress tracking, feedback, email delivery, image upload, and Supabase Storage cleanup.
 
-## 📋 Требования
+## Technology Stack
 
-- Node.js 16+
-- npm или yarn
-- MongoDB (локально или MongoDB Atlas)
+- Node.js
+- Express
+- TypeScript
+- MongoDB with Mongoose
+- JWT authentication
+- Supabase Storage
+- Sharp image processing
+- Nodemailer
+- Swagger UI
+- Vitest
+- Supertest
 
-## 🚀 Быстрый старт
+## Requirements
 
-### 1. Установка зависимостей
+- Node.js 20 or newer is recommended.
+- npm
+- MongoDB or MongoDB Atlas
+- Supabase project with a Storage bucket named `images`
+- SMTP credentials for password reset email delivery
 
-```bash
+## Installation
+
+From the `backend` directory:
+
+```cmd
 npm install
 ```
 
-### 2. Конфигурация
+## Environment Configuration
 
-Скопируй `.env.example` в `.env` и обнови переменные:
+Copy the example environment file:
 
-```bash
-cp .env.example .env
+```cmd
+copy .env.example .env.local
 ```
 
-**Переменные окружения:**
-- `MONGODB_URI` - Connection string MongoDB
-- `PORT` - Порт сервера (по умолчанию 5000)
-- `NODE_ENV` - Окружение (development/production)
-- `JWT_SECRET` - Секретный ключ для JWT
-- `CORS_ORIGIN` - URL фронтенда (по умолчанию http://localhost:3000)
+The backend loads environment variables from `backend/.env.local`.
 
-### 3. Запуск
+Required variables:
 
-**Development (с автоматической перезагрузкой):**
-```bash
+```env
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority&appName=EduTrail
+PORT=5000
+NODE_ENV=development
+JWT_SECRET=change_me_to_a_long_random_secret
+CORS_ORIGIN=http://localhost:3000
+ENABLE_API_DOCS=false
+FRONTEND_URL=http://localhost:3000
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password_here
+MAIL_FROM="EduTrail <your_email@gmail.com>"
+DEFAULT_ADMIN_EMAIL=admin@edutrail.local
+DEFAULT_ADMIN_PASSWORD=12345678A!
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+```
+
+Variable notes:
+
+- `MONGODB_URI` connects the API to MongoDB.
+- `JWT_SECRET` signs authentication tokens.
+- `CORS_ORIGIN` must match the frontend origin.
+- `FRONTEND_URL` is used when generating password reset links.
+- `DEFAULT_ADMIN_EMAIL` and `DEFAULT_ADMIN_PASSWORD` configure the admin user created on startup when it does not exist.
+- `ENABLE_API_DOCS=true` enables Swagger UI in production.
+- `SUPABASE_SERVICE_ROLE_KEY` is used only on the backend and must not be exposed to the frontend.
+
+## Development
+
+Start the API with automatic reload:
+
+```cmd
 npm run dev
 ```
 
-**Production:**
-```bash
+Default API URL:
+
+```text
+http://localhost:5000/api
+```
+
+Health check:
+
+```text
+GET /api/health
+```
+
+Swagger UI is available in development at:
+
+```text
+http://localhost:5000/api-docs
+```
+
+## Build and Production
+
+Build TypeScript:
+
+```cmd
 npm run build
-npm start
 ```
 
-## 📡 API Структура
+Start the compiled server:
 
-### Endpoints
-
-#### Auth Routes (`/api/auth`)
-```
-POST   /signup          - Регистрация нового пользователя
-POST   /login           - Вход в систему
-GET    /                - Получить всех пользователей
-GET    /:id             - Получить пользователя по ID
+```cmd
+npm run start
 ```
 
-#### Courses Routes (`/api/courses`)
-```
-GET    /                - Получить все курсы
-GET    /:id             - Получить курс по ID
-POST   /                - Создать курс (требует админ)
-PUT    /:id             - Обновить курс (требует админ)
-DELETE /:id             - Удалить курс (требует админ)
-```
+The production entry point is `dist/server.js`.
 
-#### Subjects Routes (`/api/subjects`)
-```
-GET    /                - Получить все предметы
-GET    /:id             - Получить предмет по ID
-POST   /                - Создать предмет (требует админ)
-PUT    /:id             - Обновить предмет (требует админ)
-DELETE /:id             - Удалить предмет (требует админ)
+## Testing and Validation
+
+Run backend tests:
+
+```cmd
+npm run test:run
 ```
 
-## 🔐 Аутентификация
+Run tests in watch mode:
 
-Используется простая система на основе `x-user-id` заголовка:
-
-```javascript
-// Запрос с аутентификацией
-fetch('http://localhost:5000/api/courses', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'x-user-id': 'mongo_user_id',
-  },
-  body: JSON.stringify({...})
-})
+```cmd
+npm run test
 ```
 
-## 📁 Структура проекта
+Run TypeScript validation:
 
-```
-src/
-├── server.ts              # Главный файл, инициализация Express
-├── controllers/           # Обработчики HTTP запросов
-│   ├── userController.ts
-│   ├── courseController.ts
-│   └── subjectController.ts
-├── services/              # Бизнес-логика
-│   ├── userService.ts
-│   ├── courseService.ts
-│   └── subjectService.ts
-├── models/                # MongoDB модели (Mongoose schemas)
-│   ├── User.ts
-│   ├── Course.ts
-│   └── Subject.ts
-├── routes/                # API маршруты
-│   ├── userRoutes.ts
-│   ├── courseRoutes.ts
-│   └── subjectRoutes.ts
-├── middleware/            # Express middleware
-│   └── authMiddleware.ts   # Auth, admin check, logging, error handling
-├── config/                # Конфигурация
-│   └── database.ts        # MongoDB подключение
-└── types/                 # TypeScript интерфейсы
-    └── index.ts
+```cmd
+npx tsc --noEmit
 ```
 
-## 🔄 Архитектура
+Run linting:
 
-### Слои приложения
-
-1. **Routes** - Определяют HTTP endpoints
-2. **Middleware** - Проверка прав, логирование, обработка ошибок
-3. **Controllers** - Парсинг запроса, валидация, координация
-4. **Services** - Бизнес-логика, работа с БД
-5. **Models** - Определение структуры данных (Mongoose)
-
-### Flow запроса
-
-```
-HTTP Request
-    ↓
-Router (выбирает маршрут)
-    ↓
-Middleware (auth, logging)
-    ↓
-Controller (парсинг, валидация)
-    ↓
-Service (бизнес-логика, БД)
-    ↓
-Response
+```cmd
+npm run lint
 ```
 
-## 📦 Зависимости
+## Application Structure
 
-- **express** - Web framework
-- **mongoose** - MongoDB ODM
-- **cors** - Cross-Origin Resource Sharing
-- **dotenv** - Environment variables
-- **express-async-errors** - Async error handling
+```text
+backend/
+|-- src/
+|   |-- app.ts                  # Express app, middleware, routes, Swagger, error handling
+|   |-- server.ts               # Environment loading, DNS setup, database connection, server start
+|   |-- config/                 # Database and Swagger configuration
+|   |-- controllers/            # HTTP request handlers
+|   |-- middleware/             # Authentication, authorization, logging, rate limiting
+|   |-- models/                 # Mongoose schemas and models
+|   |-- routes/                 # Express route definitions
+|   |-- services/               # Business logic and external integrations
+|   `-- types/                  # Shared backend TypeScript types
+|-- tests/                      # Unit and integration tests
+|-- package.json
+|-- tsconfig.json
+`-- vitest.config.ts
+```
 
-## 🛠️ Разработка
+## API Routes
 
-### Структура ответа
+Base path:
 
-Все endpoints возвращают JSON в формате:
+```text
+/api
+```
+
+Registered route groups:
+
+- `/api/auth` - signup, login, password reset, users, preferences.
+- `/api/users` - user endpoints using the same route module as auth.
+- `/api/subjects` - subject CRUD.
+- `/api/courses` - course CRUD, course content, course progress helpers.
+- `/api/modules` - module CRUD.
+- `/api/chapters` - chapter CRUD and chapter progress helpers.
+- `/api/questions` - question CRUD and question progress helpers.
+- `/api/progress` - course, chapter, and question progress updates.
+- `/api/feedback` - feedback creation and administration.
+- `/api/upload` - image upload to Supabase Storage.
+- `/api/user-chapters` - user chapter progress endpoints.
+- `/api/user-questions` - user question progress endpoints.
+- `/api/health` - service health check.
+
+## Authentication and Authorization
+
+The backend uses JWT authentication and role-based authorization middleware.
+
+Administrative operations require an authenticated user with the admin role. Some frontend proxy routes also forward `x-user-id` for compatibility with admin workflows.
+
+Auth-related traffic and password reset endpoints use rate limiting to reduce abuse.
+
+## Image Upload and Storage Cleanup
+
+Images are uploaded through `/api/upload` and stored in the Supabase Storage `images` bucket. The upload service normalizes images with Sharp before storing them.
+
+Supported upload folders:
+
+- `subjects`
+- `courses`
+- `chapters`
+- `questions`
+
+Cleanup behavior:
+
+- Replacing `subject_img`, `course_img`, or `question_img` deletes the previous Supabase image after the database update succeeds.
+- Removing Supabase image links from chapter markdown content deletes only the removed images.
+- Deleting a subject deletes its subject image and deletes related courses through the course service.
+- Deleting a course deletes its course image, nested chapter images, nested question images, modules, chapters, questions, and progress records.
+- Deleting a chapter deletes Supabase images referenced in its markdown content.
+- Deleting a question deletes the image stored on the type-specific question document.
+
+Only Supabase public URLs from the `images` bucket are selected for cleanup. External URLs are ignored.
+
+## Main Models
+
+- `User`
+- `Subject`
+- `Course`
+- `Module`
+- `Chapter`
+- `Question`
+- `TestQuestion`
+- `ShortAnswerQuestion`
+- `FillInTheBlankQuestion`
+- `CourseProgress`
+- `ChapterProgress`
+- `QuestionProgress`
+- `Feedback`
+
+Question data is split into a wrapper `Question` document and a type-specific document. The wrapper stores `module_id`, `type`, and `typeId`.
+
+## Response Format
+
+Successful response:
 
 ```json
 {
   "success": true,
-  "message": "Operation successful",
-  "data": { /* данные */ }
+  "message": "Operation completed successfully",
+  "data": {}
 }
 ```
 
-Или при ошибке:
+Error response:
 
 ```json
 {
   "success": false,
-  "message": "Error message",
+  "message": "Operation failed",
   "error": "Error details"
 }
 ```
 
-### Добавление нового endpoint
+## Operational Notes
 
-1. Создай маршрут в `/routes`
-2. Создай контроллер в `/controllers`
-3. Создай сервис в `/services` (если нужна бизнес-логика)
-4. Подключи в `server.ts`
-
-Пример:
-
-```typescript
-// routes/exampleRoutes.ts
-import { Router } from 'express';
-import { exampleController } from '@/controllers/exampleController';
-
-const router = Router();
-router.get('/', (req, res) => exampleController.getAll(req, res));
-export default router;
-
-// server.ts
-app.use('/api/example', exampleRoutes);
-```
-
-## 🚀 Деплой
-
-### Heroku
-```bash
-# Убедись что есть Procfile
-echo "web: npm start" > Procfile
-
-# Деплой
-heroku create
-git push heroku main
-```
-
-### Docker
-```bash
-# Создай Dockerfile
-docker build -t edutrail-backend .
-
-# Запусти
-docker run -p 5000:5000 edutrail-backend
-```
-
-## 🐛 Troubleshooting
-
-**MongoDB Connection Error**
-- Проверь, что MongoDB запущена
-- Убедись что MONGODB_URI правильный
-- Проверь сетевые настройки (особенно для MongoDB Atlas)
-
-**CORS Errors**
-- Убедись что CORS_ORIGIN в .env совпадает с URL фронтенда
-- Проверь заголовки запроса
-
-**Port Already in Use**
-```bash
-# Найди процесс на порту 5000
-lsof -i :5000
-
-# Убей процесс
-kill -9 <PID>
-```
-
-## 📚 Дополнительные ресурсы
-
-- [Express Documentation](https://expressjs.com)
-- [Mongoose Documentation](https://mongoosejs.com)
-- [MongoDB Manual](https://docs.mongodb.com/manual/)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- Restart the backend after changing `.env.local`.
+- Do not commit real credentials or service role keys.
+- Keep `CORS_ORIGIN` aligned with the frontend URL.
+- Keep `FRONTEND_URL` aligned with the public frontend URL so password reset links work correctly.
+- Ensure the Supabase `images` bucket exists before using image upload features.
+- Run the backend test suite after changes to services, controllers, middleware, progress logic, or storage cleanup.

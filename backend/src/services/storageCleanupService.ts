@@ -26,6 +26,7 @@ export function extractSupabaseImageUrls(value?: string | null): string[] {
 }
 
 export async function deleteSupabaseImages(...values: Array<string | null | undefined>): Promise<void> {
+  // Collect direct URLs and Markdown image URLs, then delete each unique Supabase image.
   const imageUrls = [...new Set(values.flatMap((value) => extractSupabaseImageUrls(value)))];
 
   await Promise.all(imageUrls.map((imageUrl) => supabaseService.deleteImage(imageUrl)));
@@ -35,6 +36,7 @@ export async function deleteRemovedSupabaseImages(
   previousValue?: string | null,
   nextValue?: string | null
 ): Promise<void> {
+  // During edits, remove only images that disappeared from the updated content.
   const nextUrls = new Set(extractSupabaseImageUrls(nextValue));
   const removedUrls = extractSupabaseImageUrls(previousValue).filter((imageUrl) => !nextUrls.has(imageUrl));
 

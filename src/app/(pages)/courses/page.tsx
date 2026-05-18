@@ -19,7 +19,6 @@ export default function Courses() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [error, setError] = useState("");
   const [displayedCoursesCount, setDisplayedCoursesCount] = useState(COURSES_PER_PAGE);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
@@ -39,7 +38,7 @@ export default function Courses() {
         const userData = JSON.parse(storedUser);
         setUserId(userData._id || userData.id || null);
         
-        // Fetch full user data with preferences
+        // Fetch full user data with preferences before rendering recommendations.
         const userResponse = await fetch(`/api/users/${userData.id || userData._id}`);
         const userDataFull = await userResponse.json();
 
@@ -49,14 +48,14 @@ export default function Courses() {
           setUser(userData);
         }
 
-        // Fetch subjects
+        // Fetch subjects for the course filter controls.
         const subjectsResponse = await fetch("/api/subjects");
         const subjectsData = await subjectsResponse.json();
         if (subjectsData.success) {
           setSubjects(subjectsData.data || []);
         }
 
-        // Fetch courses
+        // Fetch courses shown in the catalog grid.
         const coursesResponse = await fetch("/api/courses");
         const coursesData = await coursesResponse.json();
         if (coursesData.success) {
@@ -98,6 +97,7 @@ export default function Courses() {
             if (!course._id) return;
 
             try {
+              // Fetch each course progress record in parallel for card status/bookmarks.
               const response = await fetch(
                 `/api/progress/courses/${course._id}`,
                 {
@@ -114,7 +114,7 @@ export default function Courses() {
                   progressMap[course._id] = data.data;
                 }
               }
-            } catch (error) {
+            } catch {
             }
           })
         );
@@ -311,7 +311,7 @@ export default function Courses() {
                           {(!user?.preferredSubjects || user.preferredSubjects.length === 0) ? (
                             <div className="text-center py-12">
                               <p className="text-slate-600 text-lg mb-4">
-                                You haven't set your preferences yet.
+                                You haven&apos;t set your preferences yet.
                               </p>
                               <p className="text-sm text-slate-500">
                                 Add your interests to get personalized course recommendations.

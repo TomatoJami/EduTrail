@@ -7,12 +7,15 @@ export interface ModulePayload {
   course_id: string;
 }
 
+// Owns module persistence and cascading deletes for nested learning content.
 export class ModuleService {
   async getAllModules(): Promise<IModule[]> {
+    // Reads every module when no course filter is supplied.
     return Module.find().populate('course_id').sort({ order: 1 });
   }
 
   async getModulesByCourseId(courseId: string): Promise<IModule[]> {
+    // Reads modules for one course in learning order.
     if (!mongoose.isValidObjectId(courseId)) {
       throw new Error('Invalid course id');
     }
@@ -20,6 +23,7 @@ export class ModuleService {
   }
 
   async createModule(payload: ModulePayload): Promise<IModule> {
+    // Creates a module and auto-assigns the next order when none is supplied.
     const courseId = new mongoose.Types.ObjectId(payload.course_id);
     
     let order = payload.order;
@@ -42,6 +46,7 @@ export class ModuleService {
   }
 
   async updateModule(id: string, payload: Partial<ModulePayload>): Promise<IModule | null> {
+    // Updates module metadata while keeping validation enabled.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid module id');
     }
@@ -62,6 +67,7 @@ export class ModuleService {
   }
 
   async deleteModule(id: string): Promise<IModule | null> {
+    // Deletes the module and cascades chapter/question removal.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid module id');
     }
@@ -87,6 +93,7 @@ export class ModuleService {
   }
 
   async getModuleById(id: string): Promise<IModule | null> {
+    // Reads one module by id.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid module id');
     }

@@ -5,8 +5,10 @@ import { ApiResponse } from '../types';
 import { Question } from '../models/Question';
 import { QuestionProgress } from '../models/QuestionProgress';
 
+// Handles HTTP validation/response shaping for question CRUD and progress reads.
 export class QuestionController {
     async getAllQuestions(req: Request, res: Response): Promise<void> {
+        // Returns all questions or filters by module_id when the query is present.
         try {
             const { module_id } = req.query;
             
@@ -32,6 +34,7 @@ export class QuestionController {
     }
 
     async getQuestionById(req: Request, res: Response): Promise<void> {
+        // Fetches one normalized question by wrapper id.
         try {
             const { id } = req.params;
             const question = await questionService.getQuestionById(id);
@@ -57,6 +60,7 @@ export class QuestionController {
     }
 
     async createQuestion(req: Request, res: Response): Promise<void> {
+        // Chooses the correct question subtype creator based on request body type.
         try {
             const body = req.body as {
                 type: string;
@@ -171,6 +175,7 @@ export class QuestionController {
     }
 
     async deleteQuestion(req: Request, res: Response): Promise<void> {
+        // Deletes the wrapper, subtype record, and any attached Supabase image.
         try {
             const { id } = req.params;
 
@@ -198,6 +203,7 @@ export class QuestionController {
     }
 
     async updateQuestion(req: Request, res: Response): Promise<void> {
+        // Updates the subtype payload and removes replaced question images.
         try {
             const { id } = req.params;
 
@@ -256,6 +262,7 @@ export class QuestionController {
     }
 
     async getUserQuestionsProgress(req: Request, res: Response): Promise<void> {
+        // Returns completion status for questions in one module for one user.
         try {
             const { userId, moduleId } = req.params;
             const authReq = req as Request & { userId?: string; userRole?: 'student' | 'admin' };

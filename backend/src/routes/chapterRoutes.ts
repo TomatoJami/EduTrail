@@ -4,6 +4,7 @@ import { adminMiddleware, authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
+// Chapter routes expose content publicly and protect writes/progress with auth middleware.
 /**
  * @swagger
  * /chapters:
@@ -26,6 +27,7 @@ const router = Router();
  *                       items:
  *                         $ref: '#/components/schemas/Chapter'
  */
+// GET /chapters optionally filters chapters by module_id query.
 router.get('/', (req, res) => chapterController.getAllChapters(req, res));
 
 /**
@@ -56,6 +58,7 @@ router.get('/', (req, res) => chapterController.getAllChapters(req, res));
  *       404:
  *         description: Chapter not found
  */
+// GET /chapters/:id returns one chapter by id.
 router.get('/:id', (req, res) => chapterController.getChapterById(req, res));
 
 /**
@@ -86,6 +89,7 @@ router.get('/:id', (req, res) => chapterController.getChapterById(req, res));
  *                     data:
  *                       $ref: '#/components/schemas/Chapter'
  */
+// POST /chapters creates a chapter and is limited to admins.
 router.post('/', adminMiddleware, (req, res) => chapterController.createChapter(req, res));
 
 /**
@@ -113,6 +117,7 @@ router.post('/', adminMiddleware, (req, res) => chapterController.createChapter(
  *       200:
  *         description: Chapter updated
  */
+// PUT /chapters/:id updates a chapter and is limited to admins.
 router.put('/:id', adminMiddleware, (req, res) => chapterController.updateChapter(req, res));
 
 /**
@@ -134,6 +139,7 @@ router.put('/:id', adminMiddleware, (req, res) => chapterController.updateChapte
  *       200:
  *         description: Chapter deleted
  */
+// DELETE /chapters/:id removes a chapter and is limited to admins.
 router.delete('/:id', adminMiddleware, (req, res) => chapterController.deleteChapter(req, res));
 
 /**
@@ -158,6 +164,7 @@ router.delete('/:id', adminMiddleware, (req, res) => chapterController.deleteCha
  *       200:
  *         description: User chapters progress
  */
+// GET /chapters/user/:userId/modules/:moduleId/chapters returns learner chapter progress.
 router.get('/user/:userId/modules/:moduleId/chapters', authMiddleware, (req, res) => chapterController.getUserChaptersProgress(req, res));
 
 export default router;

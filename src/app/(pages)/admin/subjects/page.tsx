@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ImageUploader } from "@/components/ImageUploader";
 
@@ -68,6 +67,7 @@ export default function AdminSubjectsPage() {
     setError("");
 
     try {
+      // Load subjects and courses together so the admin view can show course counts.
       const [subjectsRes, coursesRes] = await Promise.all([fetch("/api/subjects"), fetch("/api/courses")]);
 
       if (!subjectsRes.ok) {
@@ -127,6 +127,7 @@ export default function AdminSubjectsPage() {
     setError("");
 
     try {
+      // Create the subject through the admin API proxy.
       const response = await fetch("/api/subjects", {
         method: "POST",
         headers: {

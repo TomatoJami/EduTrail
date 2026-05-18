@@ -1,5 +1,5 @@
 // backend/src/models/QuestionProgress.ts
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IQuestionProgress extends Document {
   user_id: mongoose.Types.ObjectId;

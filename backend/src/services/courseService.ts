@@ -20,12 +20,15 @@ export interface CoursePayload {
   subject_id: string;
 }
 
+// Owns course persistence and related cleanup that must happen outside controllers.
 export class CourseService {
   async getAllCourses(): Promise<ICourse[]> {
+    // Reads courses with subject data so API consumers receive display-ready records.
     return Course.find().populate('subject_id').sort({ createdAt: -1 });
   }
 
   async createCourse(payload: CoursePayload): Promise<ICourse> {
+    // Persists a new course document from validated controller input.
     const course = new Course({
       ...payload,
       subject_id: new mongoose.Types.ObjectId(payload.subject_id),
@@ -36,6 +39,7 @@ export class CourseService {
   }
 
   async updateCourse(id: string, payload: Partial<CoursePayload>): Promise<ICourse | null> {
+    // Updates course fields and deletes the previous image when it was replaced.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid course id');
     }
@@ -69,6 +73,7 @@ export class CourseService {
   }
 
   async deleteCourse(id: string): Promise<ICourse | null> {
+    // Removes a course, nested modules/chapters/questions, progress, and course images.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid course id');
     }
@@ -132,6 +137,7 @@ export class CourseService {
   }
 
   async getCourseById(id: string): Promise<ICourse | null> {
+    // Reads one course and populates its subject relation for detail pages.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid course id');
     }

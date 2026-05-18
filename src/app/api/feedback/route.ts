@@ -17,7 +17,9 @@ function getAuthHeaders(request: NextRequest) {
     headers["x-user-id"] = userId;
   }
 
-  if (token) {
+  if (authorization) {
+    headers.Authorization = authorization;
+  } else if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
@@ -53,8 +55,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
-  const authorization = request.headers.get("authorization");
-  const token = request.cookies.get("authToken")?.value;
 
     // Validate the user id provided by the authenticated frontend request.
     if (!userId || !mongoose.isValidObjectId(userId)) {

@@ -4,6 +4,7 @@ import { adminMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
 
+// Learners can submit feedback; adminMiddleware protects feedback review routes.
 /**
  * @swagger
  * /feedback:
@@ -33,6 +34,7 @@ const router = Router();
  *       201:
  *         description: Feedback created successfully
  */
+// POST /feedback stores learner feedback.
 router.post("/", (req, res) =>
   feedbackController.createFeedback(req, res)
 );
@@ -50,6 +52,7 @@ router.post("/", (req, res) =>
  *       200:
  *         description: List of feedback
  */
+// GET /feedback lists all feedback and is limited to admins.
 router.get("/", adminMiddleware, (req, res) =>
   feedbackController.getAllFeedback(req, res)
 );
@@ -75,6 +78,7 @@ router.get("/", adminMiddleware, (req, res) =>
  *       404:
  *         description: Feedback not found
  */
+// GET /feedback/:id returns one feedback item and is limited to admins.
 router.get("/:id", adminMiddleware, (req, res) =>
   feedbackController.getFeedbackById(req, res)
 );
@@ -99,6 +103,7 @@ router.get("/:id", adminMiddleware, (req, res) =>
  *       200:
  *         description: List of feedback by type
  */
+// GET /feedback/type/:feedbackType filters feedback and is limited to admins.
 router.get("/type/:feedbackType", adminMiddleware, (req, res) =>
   feedbackController.getFeedbackByType(req, res)
 );

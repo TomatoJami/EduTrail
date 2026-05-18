@@ -11,12 +11,14 @@ interface ImageUploaderProps {
 }
 
 export function ImageUploader({ onImageUpload, folder = 'subjects', className = '', userId }: ImageUploaderProps) {
+  // Keeps upload UI state local while delegating storage work to the API client.
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Validates the selected image and prepares a browser preview before upload.
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -42,6 +44,7 @@ export function ImageUploader({ onImageUpload, folder = 'subjects', className = 
   };
 
   const handleUpload = async () => {
+    // Sends the selected file to the backend upload pipeline.
     if (!fileInputRef.current?.files?.[0]) {
       setError('Please select an image');
       return;
@@ -57,6 +60,7 @@ export function ImageUploader({ onImageUpload, folder = 'subjects', className = 
         apiClient.setUserId(userId);
       }
 
+      // Upload through the API client so the backend controls storage paths and auth.
       const response = await apiClient.upload.image(file, folder);
 
       if (!response.success) {
@@ -78,6 +82,7 @@ export function ImageUploader({ onImageUpload, folder = 'subjects', className = 
   };
 
   const handleCancel = () => {
+    // Clears the current preview and file input without touching storage.
     setPreview(null);
     setError('');
     if (fileInputRef.current) {

@@ -49,6 +49,7 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
+      // Submit the reset token and new password through the auth proxy.
       const response = await fetch("/api/auth", {
         method: "POST",
         headers: {

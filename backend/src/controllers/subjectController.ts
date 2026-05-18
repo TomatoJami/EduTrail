@@ -2,8 +2,10 @@ import { Request, Response } from 'express';
 import { subjectService, SubjectPayload } from '../services/subjectService';
 import { ApiResponse } from '../types';
 
+// Handles HTTP validation/response shaping for subject CRUD requests.
 export class SubjectController {
   async getAllSubjects(req: Request, res: Response): Promise<void> {
+    // Returns subjects for public filters, onboarding, and admin lists.
     try {
       const subjects = await subjectService.getAllSubjects();
 
@@ -22,6 +24,7 @@ export class SubjectController {
   }
 
   async getSubjectById(req: Request, res: Response): Promise<void> {
+    // Resolves one subject by id and reports a 404 for missing records.
     try {
       const { id } = req.params;
       const subject = await subjectService.getSubjectById(id);
@@ -47,6 +50,7 @@ export class SubjectController {
   }
 
   async createSubject(req: Request, res: Response): Promise<void> {
+    // Validates required subject fields before creating the record.
     try {
       const body = req.body as {
         subject_name?: string;
@@ -91,6 +95,7 @@ export class SubjectController {
   }
 
   async updateSubject(req: Request, res: Response): Promise<void> {
+    // Applies subject edits and lets the service remove replaced images.
     try {
       const { id } = req.params;
       const body = req.body as {
@@ -138,6 +143,7 @@ export class SubjectController {
   }
 
   async deleteSubject(req: Request, res: Response): Promise<void> {
+    // Deletes the subject and triggers image cleanup in the service layer.
     try {
       const { id } = req.params;
 

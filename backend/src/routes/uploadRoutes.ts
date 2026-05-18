@@ -23,6 +23,7 @@ const upload = multer({
 
 const router = Router();
 
+// Upload routes accept multipart images and require admin access before storage writes.
 /**
  * @swagger
  * /upload:
@@ -66,6 +67,7 @@ const router = Router();
  *       403:
  *         description: Insufficient permissions
  */
+// POST /upload accepts one image file and stores it through Supabase.
 router.post('/', adminMiddleware, upload.single('image'), (req, res) =>
   uploadController.uploadImage(req, res)
 );

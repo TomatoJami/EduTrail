@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from "next/navigation";
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
@@ -19,30 +19,7 @@ export default function PreferencesPage() {
   const [error, setError] = useState('');
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
-      router.push("/login");
-      return;
-    }
-
-    const loadData = async () => {
-      try {
-        await fetchSubjects();
-        if (user?.id) {
-          await fetchUserPreferences();
-        }
-      } catch (err) {
-      } finally {
-        setIsInitialized(true);
-      }
-    };
-
-    loadData();
-    loadUser();
-  }, [router, user?.id, loadUser]);
-
-  const fetchSubjects = async () => {
+  const fetchSubjects = useCallback(async () => {
     try {
       const response = await fetch('/api/subjects');
       const data = await response.json();
@@ -53,9 +30,9 @@ export default function PreferencesPage() {
     } catch (err) {
       setError('Failed to load subjects');
     }
-  };
+  }, []);
 
-  const fetchUserPreferences = async () => {
+  const fetchUserPreferences = useCallback(async () => {
     try {
       const response = await fetch(`/api/users/${user?.id}`);
       const data = await response.json();
@@ -78,7 +55,29 @@ export default function PreferencesPage() {
       }
     } catch (err) {
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      router.push("/login");
+      return;
+    }
+
+    const loadData = async () => {
+      try {
+        await fetchSubjects();
+        if (user?.id) {
+          await fetchUserPreferences();
+        }
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+
+    loadData();
+    loadUser();
+  }, [router, user?.id, loadUser, fetchSubjects, fetchUserPreferences]);
 
   const handleSubjectChange = (subjectId: string) => {
     setSelectedSubjects((prev) =>

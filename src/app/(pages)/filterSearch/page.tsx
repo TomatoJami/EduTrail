@@ -28,7 +28,6 @@ function FilterSearchContent() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<string[]>([]);
-  const [savedCourses, setSavedCourses] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Check if there's a subject parameter in the URL
@@ -61,36 +60,14 @@ function FilterSearchContent() {
           setCourses(coursesData.data || []);
         }
         setIsInitialized(true);
-      } catch (err) {
+      } catch {
         setIsInitialized(true);
       }
     };
 
     fetchData();
 
-    // Load saved courses from localStorage
-    const saved = localStorage.getItem("savedCourses");
-    if (saved) {
-      try {
-        setSavedCourses(new Set(JSON.parse(saved)));
-      } catch {
-        setSavedCourses(new Set());
-      }
-    }
-  }, []);
-
-  const toggleSaveCourse = (courseId: string | undefined) => {
-    if (!courseId) return;
-
-    const newSaved = new Set(savedCourses);
-    if (newSaved.has(courseId)) {
-      newSaved.delete(courseId);
-    } else {
-      newSaved.add(courseId);
-    }
-    setSavedCourses(newSaved);
-    localStorage.setItem("savedCourses", JSON.stringify(Array.from(newSaved)));
-  };
+  }, [router]);
 
   const toggleSubjectFilter = (subjectId: string) => {
     setSelectedSubjects((prev) =>

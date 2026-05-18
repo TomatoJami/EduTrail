@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 function getAuthHeaders(request: NextRequest) {
+  // Preserve user and bearer context when proxying browser requests to the backend.
   const userId = request.headers.get('x-user-id');
   const authorization = request.headers.get('authorization');
   const token = request.cookies.get('authToken')?.value;
@@ -15,7 +16,9 @@ function getAuthHeaders(request: NextRequest) {
     headers['x-user-id'] = userId;
   }
 
-  if (token) {
+  if (authorization) {
+    headers.Authorization = authorization;
+  } else if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
@@ -26,6 +29,7 @@ export async function GET(request: NextRequest) {
   try {
     const headers = getAuthHeaders(request);
 
+    // Proxy course list retrieval to the backend API.
     const response = await fetch(`${API_URL}/courses`, {
       method: 'GET',
       headers,
@@ -48,8 +52,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get('x-user-id');
-  const authorization = request.headers.get('authorization');
-  const token = request.cookies.get('authToken')?.value;
 
     if (!userId || !mongoose.isValidObjectId(userId)) {
       return NextResponse.json(
@@ -61,6 +63,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const headers = getAuthHeaders(request);
 
+    // Proxy course creation after validating the authenticated user id.
     const response = await fetch(`${API_URL}/courses`, {
       method: 'POST',
       headers,
@@ -80,8 +83,6 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const userId = request.headers.get('x-user-id');
-  const authorization = request.headers.get('authorization');
-  const token = request.cookies.get('authToken')?.value;
 
     if (!userId || !mongoose.isValidObjectId(userId)) {
       return NextResponse.json(
@@ -101,6 +102,7 @@ export async function PUT(request: NextRequest) {
 
     const headers = getAuthHeaders(request);
 
+    // Proxy course updates to the backend service.
     const response = await fetch(`${API_URL}/courses/${body.id}`, {
       method: 'PUT',
       headers,
@@ -120,8 +122,6 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const userId = request.headers.get('x-user-id');
-  const authorization = request.headers.get('authorization');
-  const token = request.cookies.get('authToken')?.value;
 
     if (!userId || !mongoose.isValidObjectId(userId)) {
       return NextResponse.json(
@@ -141,6 +141,7 @@ export async function DELETE(request: NextRequest) {
 
     const headers = getAuthHeaders(request);
 
+    // Proxy deletion so backend cascades and image cleanup can run.
     const response = await fetch(`${API_URL}/courses/${body.id}`, {
       method: 'DELETE',
       headers,

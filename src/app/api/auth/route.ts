@@ -35,6 +35,7 @@ export async function POST(request: Request) {
           );
         }
 
+        // Forward signup to the backend and store the returned token in cookies.
         const response = await fetch(`${API_URL}/auth/signup`, {
           method: 'POST',
           headers: {
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
           );
         }
 
+        // Forward login to the backend; the browser receives user data without the raw token.
         const response = await fetch(`${API_URL}/auth/login`, {
           method: 'POST',
           headers: {
@@ -124,6 +126,7 @@ export async function POST(request: Request) {
         if (updatedEmail) updateData.email = updatedEmail;
         if (newPassword) updateData.password = newPassword;
 
+        // Forward profile updates to the backend user endpoint.
         const response = await fetch(`${API_URL}/users/${userId}`, {
           method: 'PUT',
           headers: {
@@ -144,6 +147,7 @@ export async function POST(request: Request) {
           );
         }
 
+        // Ask the backend to generate and email a password reset token.
         const response = await fetch(`${API_URL}/auth/forgot-password`, {
           method: 'POST',
           headers: {
@@ -165,6 +169,7 @@ export async function POST(request: Request) {
           );
         }
 
+        // Submit the reset token and replacement password to the backend.
         const response = await fetch(`${API_URL}/auth/reset-password`, {
           method: 'POST',
           headers: {
