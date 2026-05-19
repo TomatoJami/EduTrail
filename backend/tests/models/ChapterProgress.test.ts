@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChapterProgress } from '../../src/models/ChapterProgress';
 
+type IndexTuple = [Record<string, unknown>, Record<string, unknown>];
+
 describe('ChapterProgress Model', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -45,7 +47,7 @@ describe('ChapterProgress Model', () => {
   it('has a unique compound index on user_id and chapter_id', () => {
     const indexes = ChapterProgress.schema.indexes();
 
-    const hasUniqueCompound = indexes.some(([fields, options]) =>
+    const hasUniqueCompound = indexes.some(([fields, options]: IndexTuple) =>
       fields.user_id === 1 && fields.chapter_id === 1 && options?.unique
     );
 
