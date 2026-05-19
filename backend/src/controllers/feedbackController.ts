@@ -10,20 +10,26 @@ import { ApiResponse } from "../types";
 export class FeedbackController {
   /** Handles the create feedback request flow. */
   async createFeedback(req: Request, res: Response): Promise<void> {
-    // Accepts learner feedback and stores the user id supplied by the proxy.
+    // Accepts learner feedback and stores the user id from authenticated middleware.
     try {
-        
-        
+      const authReq = req as Request & { userId?: string };
       const body = req.body as {
         feedbackType?: "Error" | "Wish";
         data?: string;
-        user_id?: string;
       };
 
-      if (!body.feedbackType || !body.data || !body.user_id) {
+      if (!authReq.userId) {
+        res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        } as ApiResponse);
+        return;
+      }
+
+      if (!body.feedbackType || !body.data) {
         res.status(400).json({
           success: false,
-          message: "feedbackType, data and user_id are required",
+          message: "feedbackType and data are required",
         } as ApiResponse);
         return;
       }
@@ -36,7 +42,7 @@ export class FeedbackController {
         return;
       }
 
-      if (!mongoose.isValidObjectId(body.user_id)) {
+      if (!mongoose.isValidObjectId(authReq.userId)) {
         res.status(400).json({
           success: false,
           message: "Invalid user_id",
@@ -47,7 +53,7 @@ export class FeedbackController {
       const payload: FeedbackPayload = {
         feedbackType: body.feedbackType,
         data: body.data.trim(),
-        user_id: body.user_id,
+        user_id: authReq.userId,
       };
 
       const feedback = await feedbackService.createFeedback(payload);

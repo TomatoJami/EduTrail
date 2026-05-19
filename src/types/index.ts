@@ -86,11 +86,41 @@ export interface CourseProgress {
 /** Defines the TypeScript shape for question. */
 export interface Question {
   _id: string;
-  question: string;
+  type?: 'test' | 'short-answer' | 'fill-blank';
+  question?: string;
+  questionText?: string;
   question_img?: string;
-  options: string[];
-  correctAnswer: number;
+  options?: string[];
+  blanks?: Array<{
+    blankId: string;
+    caseSensitive?: boolean;
+    correctAnswers?: string[];
+  }>;
+  correctAnswer?: number;
+  correctAnswers?: string[];
+  caseSensitive?: boolean;
   explanation?: string;
+}
+
+/** Defines the TypeScript shape for quiz grading result. */
+export interface QuizGradeQuestionResult {
+  questionId: string;
+  isCorrect: boolean;
+  correctAnswer?: number;
+  correctAnswers?: string[];
+  blanks?: Array<{
+    blankId: string;
+    correctAnswers: string[];
+    caseSensitive?: boolean;
+  }>;
+  explanation?: string;
+}
+
+/** Defines the TypeScript shape for quiz grading response data. */
+export interface QuizGradeResult {
+  score: number;
+  total: number;
+  results: QuizGradeQuestionResult[];
 }
 
 /** Defines the TypeScript shape for chapter. */

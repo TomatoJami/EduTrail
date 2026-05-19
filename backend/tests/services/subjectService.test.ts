@@ -155,7 +155,7 @@ describe('SubjectService', () => {
       const result = await subjectService.updateSubject(subjectId, payload);
 
       expect(Subject.findByIdAndUpdate).toHaveBeenCalledWith(subjectId, payload, {
-        new: true,
+        returnDocument: 'after',
         runValidators: true,
       });
     });
@@ -248,6 +248,39 @@ describe('SubjectService', () => {
       await subjectService.deleteSubject(subjectId);
 
       expect(storageCleanupService.deleteSupabaseImages).toHaveBeenCalledWith('math.jpg');
+    });
+
+    it('should cleanup related course and chapter images on delete', async () => {
+      mockMongooseSession();
+      const subjectId = new mongoose.Types.ObjectId().toString();
+      const moduleId = new mongoose.Types.ObjectId();
+      const mockSubject = {
+        _id: subjectId,
+        subject_name: 'Math',
+        subject_img: 'https://example.supabase.co/storage/v1/object/public/images/subjects/math.jpg',
+      };
+      const courseImg = 'https://example.supabase.co/storage/v1/object/public/images/courses/algebra.jpg';
+      const chapterContent =
+        'Intro ![diagram](https://example.supabase.co/storage/v1/object/public/images/chapters/diagram.jpg)';
+
+      vi.mocked(Subject.findById).mockResolvedValue(mockSubject as any);
+      vi.mocked(Course.find).mockReturnValue(selectQuery([
+        { _id: 'course-1', course_img: courseImg },
+      ]) as any);
+      mockSubjectDeleteDependencies(mockSubject);
+      vi.mocked(Module.find).mockReturnValue(selectSessionQuery([{ _id: moduleId }]) as any);
+      vi.mocked(Chapter.find).mockReturnValue(selectSessionQuery([
+        { _id: new mongoose.Types.ObjectId(), content: chapterContent },
+      ]) as any);
+      vi.mocked(Question.find).mockReturnValue(selectSessionQuery([]) as any);
+
+      await subjectService.deleteSubject(subjectId);
+
+      expect(storageCleanupService.deleteSupabaseImages).toHaveBeenCalledWith(
+        mockSubject.subject_img,
+        courseImg,
+        chapterContent
+      );
     });
   });
 

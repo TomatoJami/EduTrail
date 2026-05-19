@@ -15,11 +15,15 @@ import { ChapterProgress } from '../models/ChapterProgress';
 import { QuestionProgress } from '../models/QuestionProgress';
 import { Feedback } from '../models/Feedback';
 
+/** Provides deterministic learner credentials for Playwright scenarios. */
 const E2E_STUDENT_EMAIL = process.env.E2E_USER_EMAIL || 'student@test.com';
 const E2E_STUDENT_PASSWORD = process.env.E2E_USER_PASSWORD || '12345678A!';
+
+/** Mirrors default admin envs, with test-only fallbacks for isolated E2E database seeding. */
 const E2E_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@test.com';
 const E2E_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || '12345678A!';
 
+/** Prevents the seed script from clearing a non-test database by accident. */
 function assertSafeDatabase() {
   const uri = process.env.MONGODB_URI || '';
   const allowReset = process.env.ALLOW_E2E_DB_RESET === 'true';
@@ -33,6 +37,7 @@ function assertSafeDatabase() {
   }
 }
 
+/** Clears every collection that the seeded journey depends on. */
 async function clearCollections() {
   await Promise.all([
     User.deleteMany({}),
@@ -51,6 +56,7 @@ async function clearCollections() {
   ]);
 }
 
+/** Creates a compact course catalog and progress fixtures for Playwright flows. */
 async function seed() {
   assertSafeDatabase();
   await connectDB();

@@ -13,6 +13,12 @@ const router = Router();
  *     tags:
  *       - Chapters
  *     summary: Get all chapters
+ *     parameters:
+ *       - in: query
+ *         name: module_id
+ *         schema:
+ *           type: string
+ *         description: Optional. Filter chapters by module ID
  *     responses:
  *       200:
  *         description: List of all chapters

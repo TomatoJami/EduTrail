@@ -1,27 +1,38 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 /** Centralizes the backend API base URL used by request helpers. */
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-/** Proxies GET requests from the Next.js route to the backend API. */
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
+/** Builds auth headers for backend proxy requests. */
+function getAuthHeaders(request: NextRequest) {
   const userId = request.headers.get('x-user-id');
   const authorization = request.headers.get('authorization');
+  const token = request.cookies.get('authToken')?.value;
 
-  const headers: any = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
+
   if (userId) {
     headers['x-user-id'] = userId;
   }
 
   if (authorization) {
     headers.Authorization = authorization;
+  } else if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
+
+  return headers;
+}
+
+/** Proxies GET requests from the Next.js route to the backend API. */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const headers = getAuthHeaders(request);
 
   try {
     const response = await fetch(`${API_URL}/questions/${id}`, {
@@ -41,12 +52,11 @@ export async function GET(
 
 /** Proxies PUT requests from the Next.js route to the backend API. */
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   const userId = request.headers.get('x-user-id');
-  const authorization = request.headers.get('authorization');
   const body = await request.json();
 
   if (!userId) {
@@ -59,11 +69,7 @@ export async function PUT(
   try {
     const response = await fetch(`${API_URL}/questions/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': userId,
-        ...(authorization ? { Authorization: authorization } : {}),
-      },
+      headers: getAuthHeaders(request),
       body: JSON.stringify(body),
     });
 
@@ -79,12 +85,11 @@ export async function PUT(
 
 /** Proxies DELETE requests from the Next.js route to the backend API. */
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   const userId = request.headers.get('x-user-id');
-  const authorization = request.headers.get('authorization');
 
   if (!userId) {
     return NextResponse.json(
@@ -96,10 +101,7 @@ export async function DELETE(
   try {
     const response = await fetch(`${API_URL}/questions/${id}`, {
       method: 'DELETE',
-      headers: {
-        'x-user-id': userId,
-        ...(authorization ? { Authorization: authorization } : {}),
-      },
+      headers: getAuthHeaders(request),
     });
 
     const data = await response.json();

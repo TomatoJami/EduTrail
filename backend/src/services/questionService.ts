@@ -41,10 +41,47 @@ type UpdateQuestionPayload = Partial<
   CreateFillBlankPayload & { type: string }
 >;
 
+export interface GradeAnswerPayload {
+  questionId: string;
+  answer: unknown;
+}
+
+export interface GradeQuestionResult {
+  questionId: string;
+  isCorrect: boolean;
+  correctAnswer?: number;
+  correctAnswers?: string[];
+  blanks?: Array<{ blankId: string; correctAnswers: string[]; caseSensitive?: boolean }>;
+  explanation?: string;
+}
+
+export interface GradeQuizResult {
+  score: number;
+  total: number;
+  results: GradeQuestionResult[];
+}
+
+/** Removes answer keys from learner-facing question DTOs. */
+function stripAnswerFields(question: Record<string, any>, type: string) {
+  const sanitized = { ...question };
+
+  delete sanitized.correctAnswer;
+  delete sanitized.correctAnswers;
+
+  if (type === 'fill-blank' && Array.isArray(sanitized.blanks)) {
+    sanitized.blanks = sanitized.blanks.map((blank: Record<string, any>) => {
+      const { correctAnswers: _correctAnswers, ...publicBlank } = blank;
+      return publicBlank;
+    });
+  }
+
+  return sanitized;
+}
+
 // Owns question persistence across wrapper and type-specific question collections.
 export class QuestionService {
   /** Handles the get all questions request flow. */
-  async getAllQuestions(): Promise<any[]> {
+  async getAllQuestions(includeAnswers = false): Promise<any[]> {
     // Reads wrapper questions and expands each wrapper into its subtype data.
     const questions = await Question.find();
     
@@ -54,7 +91,7 @@ export class QuestionService {
       if (typeData) {
         const typeDataObj = typeData.toObject ? typeData.toObject() : typeData;
         result.push({
-          ...typeDataObj,
+          ...(includeAnswers ? typeDataObj : stripAnswerFields(typeDataObj, q.type)),
           _id: q._id.toString(),
           type: q.type,
         });
@@ -64,7 +101,7 @@ export class QuestionService {
   }
 
   /** Handles the get questions by module id request flow. */
-  async getQuestionsByModuleId(moduleId: string): Promise<any[]> {
+  async getQuestionsByModuleId(moduleId: string, includeAnswers = false): Promise<any[]> {
     // Reads questions for a module and lazily migrates old subtype-only records.
     if (!mongoose.isValidObjectId(moduleId)) {
       throw new Error('Invalid module id');
@@ -85,7 +122,7 @@ export class QuestionService {
       if (typeData) {
         const typeDataObj = typeData.toObject ? typeData.toObject() : typeData;
         result.push({
-          ...typeDataObj,
+          ...(includeAnswers ? typeDataObj : stripAnswerFields(typeDataObj, q.type)),
           _id: q._id.toString(),
           type: q.type,
         });
@@ -268,7 +305,7 @@ export class QuestionService {
   }
 
   /** Handles the get question by id request flow. */
-  async getQuestionById(id: string): Promise<any> {
+  async getQuestionById(id: string, includeAnswers = false): Promise<any> {
     // Reads one wrapper question and returns normalized subtype data.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid question id');
@@ -282,9 +319,80 @@ export class QuestionService {
     
     const typeDataObj = typeData.toObject ? typeData.toObject() : typeData;
     return {
-      ...typeDataObj,
+      ...(includeAnswers ? typeDataObj : stripAnswerFields(typeDataObj, question.type)),
       _id: question._id.toString(),
       type: question.type,
+    };
+  }
+
+  /** Grades submitted quiz answers without exposing answer keys before submission. */
+  async gradeQuizAnswers(answers: GradeAnswerPayload[]): Promise<GradeQuizResult> {
+    if (!Array.isArray(answers) || answers.length === 0) {
+      throw new Error('Answers are required');
+    }
+
+    const results: GradeQuestionResult[] = [];
+
+    for (const submitted of answers) {
+      if (!mongoose.isValidObjectId(submitted.questionId)) {
+        throw new Error('Invalid question id');
+      }
+
+      const question = await Question.findById(submitted.questionId);
+      if (!question) {
+        throw new Error('Question not found');
+      }
+
+      const typeData = await this.populateTypeData(question);
+      if (!typeData) {
+        throw new Error('Question data not found');
+      }
+
+      const data = typeData.toObject ? typeData.toObject() : typeData;
+      let result: GradeQuestionResult;
+
+      if (question.type === 'test') {
+        const isCorrect = submitted.answer === data.correctAnswer;
+        result = {
+          questionId: submitted.questionId,
+          isCorrect,
+          correctAnswer: data.correctAnswer,
+          explanation: data.explanation,
+        };
+      } else if (question.type === 'short-answer') {
+        const userAnswer = typeof submitted.answer === 'string' ? submitted.answer : '';
+        const isCorrect = data.correctAnswers.some((answer: string) =>
+          data.caseSensitive ? answer === userAnswer : answer.toLowerCase() === userAnswer.toLowerCase()
+        );
+        result = {
+          questionId: submitted.questionId,
+          isCorrect,
+          correctAnswers: data.correctAnswers,
+          explanation: data.explanation,
+        };
+      } else {
+        const userAnswers = Array.isArray(submitted.answer) ? submitted.answer : [];
+        const isCorrect = data.blanks.every((blank: any, index: number) => {
+          const userAnswer = typeof userAnswers[index] === 'string' ? userAnswers[index] : '';
+          return blank.correctAnswers.some((answer: string) =>
+            blank.caseSensitive ? answer === userAnswer : answer.toLowerCase() === userAnswer.toLowerCase()
+          );
+        });
+        result = {
+          questionId: submitted.questionId,
+          isCorrect,
+          blanks: data.blanks,
+          explanation: data.explanation,
+        };
+      }
+
+      results.push(result);
+    }
+
+    return {
+      score: results.filter((result) => result.isCorrect).length,
+      total: results.length,
+      results,
     };
   }
 
@@ -296,7 +404,7 @@ export class QuestionService {
     const questionObjectId = new mongoose.Types.ObjectId(id);
 
     const session = await mongoose.startSession();
-    let imagesToDelete: string[] = [];
+    const imagesToDelete: string[] = [];
 
     try {
       await session.withTransaction(async () => {
@@ -310,18 +418,18 @@ export class QuestionService {
 
         // Delete type-specific document within transaction
         if (question.type === 'test') {
-          await TestQuestion.findByIdAndDelete(question.typeId).session(session as any);
+          await TestQuestion.findByIdAndDelete(question.typeId).session(session);
         } else if (question.type === 'short-answer') {
-          await ShortAnswerQuestion.findByIdAndDelete(question.typeId).session(session as any);
+          await ShortAnswerQuestion.findByIdAndDelete(question.typeId).session(session);
         } else if (question.type === 'fill-blank') {
-          await FillInTheBlankQuestion.findByIdAndDelete(question.typeId).session(session as any);
+          await FillInTheBlankQuestion.findByIdAndDelete(question.typeId).session(session);
         }
 
         // Delete the wrapper question
-        await Question.findByIdAndDelete(questionObjectId).session(session as any);
+        await Question.findByIdAndDelete(questionObjectId).session(session);
       });
     } finally {
-      session.endSession();
+      await session.endSession();
     }
 
     if (imagesToDelete.length > 0) {
@@ -386,7 +494,7 @@ export class QuestionService {
     if (payload.explanation !== undefined) updateData.explanation = payload.explanation;
 
     const updatedQuestion = await TestQuestion.findByIdAndUpdate(id, updateData, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
 
@@ -416,7 +524,7 @@ export class QuestionService {
     if (payload.caseSensitive !== undefined) updateData.caseSensitive = payload.caseSensitive;
 
     const updatedQuestion = await ShortAnswerQuestion.findByIdAndUpdate(id, updateData, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
 
@@ -445,7 +553,7 @@ export class QuestionService {
     if (payload.explanation !== undefined) updateData.explanation = payload.explanation;
 
     const updatedQuestion = await FillInTheBlankQuestion.findByIdAndUpdate(id, updateData, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
 

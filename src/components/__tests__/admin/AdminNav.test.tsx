@@ -93,10 +93,6 @@ describe('AdminNav', () => {
 
       const links = container.querySelectorAll('a');
 
-      const hasActiveLink = Array.from(links).some((link) =>
-        link.className.includes('active') || link.className.includes('current')
-      );
-
       // At least check that links have proper structure
       expect(links.length).toBeGreaterThan(0);
     });

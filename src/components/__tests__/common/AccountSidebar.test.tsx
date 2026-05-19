@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccountSidebar } from '@/components/common/AccountSidebar';
 
+/** Captures router navigation attempts made by the account sidebar. */
 const push = vi.fn();
 
 vi.mock('next/navigation', () => ({

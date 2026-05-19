@@ -13,6 +13,12 @@ const router = Router();
  *     tags:
  *       - Modules
  *     summary: Get all modules
+ *     parameters:
+ *       - in: query
+ *         name: course_id
+ *         schema:
+ *           type: string
+ *         description: Optional. Filter modules by course ID
  *     responses:
  *       200:
  *         description: List of all modules

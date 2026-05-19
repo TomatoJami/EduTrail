@@ -384,7 +384,7 @@ export class ProgressController {
           is_completed,
         },
         {
-          new: true,
+          returnDocument: 'after',
           upsert: true,
           setDefaultsOnInsert: true,
         }
@@ -481,7 +481,7 @@ export class ProgressController {
           question_id: questionObjectId, 
           is_completed 
         },
-        { new: true, upsert: true }
+        { returnDocument: 'after', upsert: true }
       ).populate('question_id');
 
       res.status(200).json({

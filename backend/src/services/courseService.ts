@@ -130,30 +130,30 @@ export class CourseService {
 
           await Promise.all([
             chapterIds.length > 0
-              ? ChapterProgress.deleteMany({ chapter_id: { $in: chapterIds } }).session(session as any)
+              ? ChapterProgress.deleteMany({ chapter_id: { $in: chapterIds } }).session(session)
               : Promise.resolve(),
             questionIds.length > 0
-              ? QuestionProgress.deleteMany({ question_id: { $in: questionIds } }).session(session as any)
+              ? QuestionProgress.deleteMany({ question_id: { $in: questionIds } }).session(session)
               : Promise.resolve(),
-            TestQuestion.deleteMany({ module_id: { $in: moduleIds } }).session(session as any),
-            ShortAnswerQuestion.deleteMany({ module_id: { $in: moduleIds } }).session(session as any),
-            FillInTheBlankQuestion.deleteMany({ module_id: { $in: moduleIds } }).session(session as any),
-            Question.deleteMany({ module_id: { $in: moduleIds } }).session(session as any),
-            Chapter.deleteMany({ module_id: { $in: moduleIds } }).session(session as any),
-            Module.deleteMany({ course_id: courseObjectId }).session(session as any),
+            TestQuestion.deleteMany({ module_id: { $in: moduleIds } }).session(session),
+            ShortAnswerQuestion.deleteMany({ module_id: { $in: moduleIds } }).session(session),
+            FillInTheBlankQuestion.deleteMany({ module_id: { $in: moduleIds } }).session(session),
+            Question.deleteMany({ module_id: { $in: moduleIds } }).session(session),
+            Chapter.deleteMany({ module_id: { $in: moduleIds } }).session(session),
+            Module.deleteMany({ course_id: courseObjectId }).session(session),
           ]);
         }
 
         await Promise.all([
-          CourseProgress.deleteMany({ course_id: courseObjectId }).session(session as any),
-          Course.findByIdAndDelete(courseObjectId).session(session as any),
+          CourseProgress.deleteMany({ course_id: courseObjectId }).session(session),
+          Course.findByIdAndDelete(courseObjectId).session(session),
         ]);
 
         // store deleted course to return after commit
-        deletedCourse = course as ICourse;
+        deletedCourse = course;
       });
     } finally {
-      session.endSession();
+      await session.endSession();
     }
 
     // After transaction commit, perform external image deletions. Failures here are logged

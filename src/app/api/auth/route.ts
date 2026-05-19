@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 /** Centralizes the backend API base URL used by request helpers. */
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -17,8 +17,29 @@ interface AuthRequestBody {
   token?: string;
 }
 
+/** Builds backend auth headers from the cookie-managed session. */
+function getAuthHeaders(request: NextRequest, userId?: string) {
+  const authorization = request.headers.get('authorization');
+  const cookieToken = request.cookies.get('authToken')?.value;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (userId) {
+    headers['x-user-id'] = userId;
+  }
+
+  if (authorization) {
+    headers.Authorization = authorization;
+  } else if (cookieToken) {
+    headers.Authorization = `Bearer ${cookieToken}`;
+  }
+
+  return headers;
+}
+
 /** Proxies POST requests from the Next.js route to the backend API. */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as AuthRequestBody;
     const { action, email, password, name, token, newPassword } = body;
@@ -133,9 +154,7 @@ export async function POST(request: Request) {
         // Forward profile updates to the backend user endpoint.
         const response = await fetch(`${API_URL}/users/${userId}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: getAuthHeaders(request, userId),
           body: JSON.stringify(updateData),
         });
 

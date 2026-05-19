@@ -54,6 +54,37 @@ export async function authMiddleware(req: AuthRequest, res: Response, next: Next
   next();
 }
 
+/** Attaches auth context when a valid token exists, but allows anonymous reads. */
+export async function optionalAuthMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+  const token = getBearerToken(req);
+  const payload = token ? verifyAuthToken(token) : null;
+  const userId = payload?.sub;
+  const headerUserId = req.headers['x-user-id'] as string | undefined;
+
+  if (!userId) {
+    return next();
+  }
+
+  if (!mongoose.isValidObjectId(userId)) {
+    return next();
+  }
+
+  if (headerUserId && headerUserId !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden: token does not match requested user',
+    });
+  }
+
+  const user = await User.findById(userId).select('role');
+  if (user) {
+    req.userId = userId;
+    req.userRole = user.role;
+  }
+
+  next();
+}
+
 /** Keeps the admin middleware logic isolated and reusable. */
 export async function adminMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
   const token = getBearerToken(req);

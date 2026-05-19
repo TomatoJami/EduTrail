@@ -9,6 +9,7 @@ vi.mock('../../src/services/questionService', () => ({
     getAllQuestions: vi.fn(),
     getQuestionsByModuleId: vi.fn(),
     getQuestionById: vi.fn(),
+    gradeQuizAnswers: vi.fn(),
     createTestQuestion: vi.fn(),
     createShortAnswerQuestion: vi.fn(),
     createFillBlankQuestion: vi.fn(),

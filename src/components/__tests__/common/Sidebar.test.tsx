@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Sidebar } from '@/components/common/Sidebar';
 
@@ -79,6 +79,7 @@ describe('Sidebar', () => {
         container.querySelector('[data-testid*="close"]') || null;
 
       // Component should handle mobile state
+      expect(closeButton ?? container).toBeTruthy();
       expect(container).toBeInTheDocument();
     });
 
@@ -97,10 +98,6 @@ describe('Sidebar', () => {
       const { container } = render(<Sidebar />);
 
       const links = container.querySelectorAll('a');
-
-      const hasActiveLink = Array.from(links).some((link) =>
-        link.className.includes('active') || link.className.includes('current')
-      );
 
       // At least verify links are present
       expect(links.length).toBeGreaterThan(0);

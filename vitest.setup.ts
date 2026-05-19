@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 
 const createStorageMock = () => {
-  let store = new Map<string, string>();
+  const store = new Map<string, string>();
 
   return {
     get length() {

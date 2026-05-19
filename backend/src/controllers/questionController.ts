@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { questionService, CreateTestQuestionPayload, CreateShortAnswerPayload, CreateFillBlankPayload } from '../services/questionService';
+import { questionService, CreateTestQuestionPayload, CreateShortAnswerPayload, CreateFillBlankPayload, GradeAnswerPayload } from '../services/questionService';
 import { ApiResponse } from '../types';
 import { Question } from '../models/Question';
 import { QuestionProgress } from '../models/QuestionProgress';
@@ -12,12 +12,14 @@ export class QuestionController {
         // Returns all questions or filters by module_id when the query is present.
         try {
             const { module_id } = req.query;
+            const authReq = req as Request & { userRole?: 'student' | 'admin' };
+            const includeAnswers = authReq.userRole === 'admin';
             
             let questions;
             if (module_id && typeof module_id === 'string') {
-                questions = await questionService.getQuestionsByModuleId(module_id);
+                questions = await questionService.getQuestionsByModuleId(module_id, includeAnswers);
             } else {
-                questions = await questionService.getAllQuestions();
+                questions = await questionService.getAllQuestions(includeAnswers);
             }
             
             res.status(200).json({
@@ -39,7 +41,8 @@ export class QuestionController {
         // Fetches one normalized question by wrapper id.
         try {
             const { id } = req.params;
-            const question = await questionService.getQuestionById(id);
+            const authReq = req as Request & { userRole?: 'student' | 'admin' };
+            const question = await questionService.getQuestionById(id, authReq.userRole === 'admin');
             if (!question) {
                 res.status(404).json({
                     success: false,
@@ -172,6 +175,35 @@ export class QuestionController {
             res.status(500).json({
                 success: false,
                 message: 'Failed to create question',
+                error: error instanceof Error ? error.message : String(error),
+            } as ApiResponse);
+        }
+    }
+
+    /** Handles quiz grading without exposing answer keys on public question reads. */
+    async gradeQuiz(req: Request, res: Response): Promise<void> {
+        try {
+            const { answers } = req.body as { answers?: GradeAnswerPayload[] };
+
+            if (!Array.isArray(answers) || answers.length === 0) {
+                res.status(400).json({
+                    success: false,
+                    message: 'answers are required',
+                } as ApiResponse);
+                return;
+            }
+
+            const result = await questionService.gradeQuizAnswers(answers);
+
+            res.status(200).json({
+                success: true,
+                message: 'Quiz graded successfully',
+                data: result,
+            } as ApiResponse);
+        } catch (error) {
+            res.status(400).json({
+                success: false,
+                message: 'Failed to grade quiz',
                 error: error instanceof Error ? error.message : String(error),
             } as ApiResponse);
         }

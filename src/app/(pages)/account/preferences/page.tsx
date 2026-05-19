@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from "next/navigation";
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
@@ -19,6 +19,25 @@ export default function PreferencesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const hasUserEditedPreferences = useRef(false);
+
+  const getCurrentUserId = useCallback(() => {
+    if (user?.id) {
+      return user.id;
+    }
+
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        return null;
+      }
+
+      const parsedUser = JSON.parse(storedUser);
+      return typeof parsedUser?.id === 'string' ? parsedUser.id : null;
+    } catch {
+      return null;
+    }
+  }, [user?.id]);
 
   const fetchSubjects = useCallback(async () => {
     try {
@@ -35,10 +54,22 @@ export default function PreferencesPage() {
 
   const fetchUserPreferences = useCallback(async () => {
     try {
-      const response = await fetch(`/api/users/${user?.id}`);
+      const currentUserId = getCurrentUserId();
+      if (!currentUserId) {
+        return;
+      }
+
+      const response = await fetch(`/api/users/${currentUserId}`, {
+        headers: {
+          'x-user-id': currentUserId,
+        },
+      });
       const data = await response.json();
 
       if (data.success && data.data) {
+        if (hasUserEditedPreferences.current) {
+          return;
+        }
         
         if (data.data.preferredSubjects && Array.isArray(data.data.preferredSubjects)) {
           const subjectIds = data.data.preferredSubjects.map((subj: any) => {
@@ -56,7 +87,7 @@ export default function PreferencesPage() {
       }
     } catch (err) {
     }
-  }, [user?.id]);
+  }, [getCurrentUserId]);
 
   // Synchronizes browser state or side effects after render.
   useEffect(() => {
@@ -70,7 +101,7 @@ export default function PreferencesPage() {
     const loadData = async () => {
       try {
         await fetchSubjects();
-        if (user?.id) {
+        if (getCurrentUserId()) {
           await fetchUserPreferences();
         }
       } finally {
@@ -80,10 +111,11 @@ export default function PreferencesPage() {
 
     loadData();
     loadUser();
-  }, [router, user?.id, loadUser, fetchSubjects, fetchUserPreferences]);
+  }, [router, user?.id, loadUser, fetchSubjects, fetchUserPreferences, getCurrentUserId]);
 
   /** Renders the handle subject change interface. */
   const handleSubjectChange = (subjectId: string) => {
+    hasUserEditedPreferences.current = true;
     setSelectedSubjects((prev) =>
       prev.includes(subjectId)
         ? prev.filter((id) => id !== subjectId)
@@ -103,10 +135,17 @@ export default function PreferencesPage() {
     setSaveMessage(null);
 
     try {
-      const response = await fetch(`/api/users/${user?.id}/preferences`, {
+      const currentUserId = getCurrentUserId();
+      if (!currentUserId) {
+        setError('User not logged in');
+        return;
+      }
+
+      const response = await fetch(`/api/users/${currentUserId}/preferences`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-user-id': currentUserId,
         },
         body: JSON.stringify({
           preferredSubjects: selectedSubjects,
@@ -219,9 +258,10 @@ export default function PreferencesPage() {
                         <input
                         type="checkbox"
                         checked={ageGroup === group}
-                        onChange={() =>
-                            setAgeGroup(ageGroup === group ? '' : (group as '1-3' | '4-9' | '10-12'))
-                        }
+                        onChange={() => {
+                          hasUserEditedPreferences.current = true;
+                          setAgeGroup(ageGroup === group ? '' : (group as '1-3' | '4-9' | '10-12'));
+                        }}
                         className="w-5 h-5 text-indigo-600 border-gray-300 rounded cursor-pointer"
                         />
                         <span className="text-gray-700 font-medium">

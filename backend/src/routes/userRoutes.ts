@@ -73,7 +73,7 @@ router.post('/login', authRateLimiter, (req, res) => userController.login(req, r
 
 /**
  * @swagger
- * /forgot-password:
+ * /auth/forgot-password:
  *   post:
  *     tags:
  *       - Auth
@@ -93,7 +93,7 @@ router.post('/forgot-password', passwordResetRateLimiter, (req, res) => userCont
 
 /**
  * @swagger
- * /reset-password:
+ * /auth/reset-password:
  *   post:
  *     tags:
  *       - Auth

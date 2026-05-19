@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { feedbackController } from "../controllers/feedbackController";
-import { adminMiddleware } from "../middleware/authMiddleware";
+import { adminMiddleware, authMiddleware } from "../middleware/authMiddleware";
 
 /** Collects this module route handlers before they are mounted in Express. */
 const router = Router();
@@ -13,6 +13,8 @@ const router = Router();
  *     tags:
  *       - Feedback
  *     summary: Create feedback
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -22,21 +24,20 @@ const router = Router();
  *             required:
  *               - feedbackType
  *               - data
- *               - user_id
  *             properties:
  *               feedbackType:
  *                 type: string
  *                 enum: [Error, Wish]
  *               data:
  *                 type: string
- *               user_id:
- *                 type: string
  *     responses:
  *       201:
  *         description: Feedback created successfully
+ *       401:
+ *         description: Unauthorized
  */
 // POST /feedback stores learner feedback.
-router.post("/", (req, res) =>
+router.post("/", authMiddleware, (req, res) =>
   feedbackController.createFeedback(req, res)
 );
 

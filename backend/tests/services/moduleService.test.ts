@@ -189,7 +189,7 @@ describe('ModuleService', () => {
       const result = await moduleService.updateModule(moduleId, payload);
 
       expect(Module.findByIdAndUpdate).toHaveBeenCalledWith(moduleId, payload, {
-        new: true,
+        returnDocument: 'after',
         runValidators: true,
       });
     });

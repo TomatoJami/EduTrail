@@ -275,11 +275,36 @@ const options = {
         },
         Question: {
           type: 'object',
+          description: 'Normalized question DTO. Public reads omit answer keys; admin reads and grading results may include them.',
           properties: {
             _id: { type: 'string' },
             type: { type: 'string', enum: ['test', 'short-answer', 'fill-blank'] },
             typeId: { description: 'Type-specific question document' },
             module_id: { type: 'string' },
+            question: { type: 'string', description: 'Question text for test and short-answer questions' },
+            questionText: { type: 'string', description: 'Question text for fill-blank questions' },
+            question_img: { type: 'string' },
+            options: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Answer options for test questions',
+            },
+            correctAnswer: {
+              type: 'integer',
+              description: 'Admin/grade-only answer index for test questions',
+            },
+            correctAnswers: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Admin/grade-only accepted answers for short-answer questions',
+            },
+            blanks: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/FillBlank' },
+              description: 'Fill-blank definitions. Public reads omit each blank correctAnswers value.',
+            },
+            caseSensitive: { type: 'boolean' },
+            explanation: { type: 'string' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },
@@ -412,6 +437,62 @@ const options = {
             },
             caseSensitive: { type: 'boolean' },
             explanation: { type: 'string' },
+          },
+        },
+        QuizGradeInput: {
+          type: 'object',
+          required: ['answers'],
+          properties: {
+            answers: {
+              type: 'array',
+              minItems: 1,
+              items: {
+                type: 'object',
+                required: ['questionId', 'answer'],
+                properties: {
+                  questionId: { type: 'string', example: '665f1c2a9a83d28e2df08a13' },
+                  answer: {
+                    oneOf: [
+                      { type: 'integer', description: 'Selected option index for test questions' },
+                      { type: 'string', description: 'Submitted short answer' },
+                      {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Submitted fill-blank answers in blank order',
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+        QuizGradeQuestionResult: {
+          type: 'object',
+          properties: {
+            questionId: { type: 'string' },
+            isCorrect: { type: 'boolean' },
+            correctAnswer: { type: 'integer' },
+            correctAnswers: {
+              type: 'array',
+              items: { type: 'string' },
+            },
+            blanks: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/FillBlank' },
+            },
+            explanation: { type: 'string' },
+          },
+        },
+        QuizGradeResult: {
+          type: 'object',
+          properties: {
+            score: { type: 'integer' },
+            total: { type: 'integer' },
+            results: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/QuizGradeQuestionResult' },
+            },
           },
         },
         CourseProgress: {

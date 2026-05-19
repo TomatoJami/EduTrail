@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { questionController } from '../controllers/questionController';
-import { adminMiddleware, authMiddleware } from '../middleware/authMiddleware';
+import { adminMiddleware, authMiddleware, optionalAuthMiddleware } from '../middleware/authMiddleware';
 
 /** Collects this module route handlers before they are mounted in Express. */
 const router = Router();
@@ -35,7 +35,7 @@ const router = Router();
  *                         $ref: '#/components/schemas/Question'
  */
 // GET /questions optionally filters questions by module_id query.
-router.get('/', (req, res) => questionController.getAllQuestions(req, res));
+router.get('/', optionalAuthMiddleware, (req, res) => questionController.getAllQuestions(req, res));
 
 /**
  * @swagger
@@ -94,6 +94,42 @@ router.get('/user/:userId/modules/:moduleId/questions', authMiddleware, (req, re
 
 /**
  * @swagger
+ * /questions/grade:
+ *   post:
+ *     tags:
+ *       - Questions
+ *     summary: Grade submitted quiz answers
+ *     description: Authenticated learner endpoint that returns grading results after submission; public question reads do not expose answer keys.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/QuizGradeInput'
+ *     responses:
+ *       200:
+ *         description: Quiz graded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/QuizGradeResult'
+ *       400:
+ *         description: Invalid answer payload
+ *       401:
+ *         description: Unauthorized
+ */
+// POST /questions/grade grades learner answers without exposing keys in public reads.
+router.post('/grade', authMiddleware, (req, res) => questionController.gradeQuiz(req, res));
+
+/**
+ * @swagger
  * /questions/{id}:
  *   get:
  *     tags:
@@ -122,7 +158,7 @@ router.get('/user/:userId/modules/:moduleId/questions', authMiddleware, (req, re
  *         description: Question not found
  */
 // GET /questions/:id returns one normalized question by id.
-router.get('/:id', (req, res) => questionController.getQuestionById(req, res));
+router.get('/:id', optionalAuthMiddleware, (req, res) => questionController.getQuestionById(req, res));
 
 /**
  * @swagger

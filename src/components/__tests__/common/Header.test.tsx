@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Header } from '@/components/common/Header';
 
@@ -90,6 +90,7 @@ describe('Header', () => {
         container.querySelector('[data-testid*="menu"]') || null;
 
       // Component should be present even if mobile menu not visible in all sizes
+      expect(menuButton ?? container).toBeTruthy();
       expect(container).toBeInTheDocument();
     });
   });

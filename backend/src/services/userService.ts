@@ -13,9 +13,16 @@ function getErrorMessage(error: unknown) {
 
 /** Retrieves default admin credentials data. */
 export function getDefaultAdminCredentials() {
+  const email = process.env.DEFAULT_ADMIN_EMAIL?.trim();
+  const password = process.env.DEFAULT_ADMIN_PASSWORD;
+
+  if (!email || !password) {
+    throw new Error('DEFAULT_ADMIN_EMAIL and DEFAULT_ADMIN_PASSWORD must be set');
+  }
+
   return {
-    email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@edutrail.local',
-    password: process.env.DEFAULT_ADMIN_PASSWORD || '12345678A!',
+    email,
+    password,
   };
 }
 
@@ -161,7 +168,7 @@ export class UserService {
 
     try {
       await session.withTransaction(async () => {
-        const user = await User.findById(id).session(session as any);
+        const user = await User.findById(id).session(session);
         if (!user) {
           deletedUser = null;
           return;
@@ -169,16 +176,16 @@ export class UserService {
 
         // Remove all learning progress owned by this user before deleting the account.
         await Promise.all([
-          CourseProgress.deleteMany({ user_id: user._id }).session(session as any),
-          ChapterProgress.deleteMany({ user_id: user._id }).session(session as any),
-          QuestionProgress.deleteMany({ user_id: user._id }).session(session as any),
+          CourseProgress.deleteMany({ user_id: user._id }).session(session),
+          ChapterProgress.deleteMany({ user_id: user._id }).session(session),
+          QuestionProgress.deleteMany({ user_id: user._id }).session(session),
         ]);
 
-        await User.findByIdAndDelete(user._id).session(session as any);
+        await User.findByIdAndDelete(user._id).session(session);
         deletedUser = user;
       });
     } finally {
-      session.endSession();
+      await session.endSession();
     }
 
     return deletedUser;

@@ -222,6 +222,58 @@ describe('QuestionService', () => {
       expect(result.length).toBeGreaterThanOrEqual(0);
     });
 
+    it('should hide answer keys for learner-facing module questions', async () => {
+      const moduleId = new mongoose.Types.ObjectId().toString();
+      const mockQuestions = [
+        { _id: 'q-1', type: 'test', typeId: 'test-1' },
+      ];
+
+      vi.mocked(Question.find).mockReturnValue({
+        sort: vi.fn().mockResolvedValue(mockQuestions),
+      } as any);
+      vi.mocked(TestQuestion.findById).mockResolvedValue({
+        toObject: () => ({
+          question: 'What is 2+2?',
+          options: ['3', '4'],
+          correctAnswer: 1,
+          explanation: 'The sum is 4',
+        }),
+      } as any);
+
+      const result = await questionService.getQuestionsByModuleId(moduleId);
+
+      expect(result[0]).toMatchObject({
+        _id: 'q-1',
+        type: 'test',
+        question: 'What is 2+2?',
+        options: ['3', '4'],
+        explanation: 'The sum is 4',
+      });
+      expect(result[0]).not.toHaveProperty('correctAnswer');
+    });
+
+    it('should keep answer keys for admin module questions', async () => {
+      const moduleId = new mongoose.Types.ObjectId().toString();
+      const mockQuestions = [
+        { _id: 'q-1', type: 'test', typeId: 'test-1' },
+      ];
+
+      vi.mocked(Question.find).mockReturnValue({
+        sort: vi.fn().mockResolvedValue(mockQuestions),
+      } as any);
+      vi.mocked(TestQuestion.findById).mockResolvedValue({
+        toObject: () => ({
+          question: 'What is 2+2?',
+          options: ['3', '4'],
+          correctAnswer: 1,
+        }),
+      } as any);
+
+      const result = await questionService.getQuestionsByModuleId(moduleId, true);
+
+      expect(result[0]).toHaveProperty('correctAnswer', 1);
+    });
+
     it('should throw error for invalid module id', async () => {
       await expect(questionService.getQuestionsByModuleId('invalid-id')).rejects.toThrow(
         'Invalid module id'
@@ -241,6 +293,41 @@ describe('QuestionService', () => {
       const result = await questionService.getQuestionsByModuleId(moduleId);
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('gradeQuizAnswers', () => {
+    it('should grade submitted test answers server-side', async () => {
+      const questionId = new mongoose.Types.ObjectId().toString();
+
+      vi.mocked(Question.findById).mockResolvedValue({
+        _id: questionId,
+        type: 'test',
+        typeId: 'test-1',
+      } as any);
+      vi.mocked(TestQuestion.findById).mockResolvedValue({
+        toObject: () => ({
+          correctAnswer: 1,
+          explanation: 'The sum is 4',
+        }),
+      } as any);
+
+      const result = await questionService.gradeQuizAnswers([
+        { questionId, answer: 1 },
+      ]);
+
+      expect(result).toEqual({
+        score: 1,
+        total: 1,
+        results: [
+          {
+            questionId,
+            isCorrect: true,
+            correctAnswer: 1,
+            explanation: 'The sum is 4',
+          },
+        ],
+      });
     });
   });
 

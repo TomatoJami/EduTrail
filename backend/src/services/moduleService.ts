@@ -64,7 +64,7 @@ export class ModuleService {
     }
 
     return Module.findByIdAndUpdate(id, nextPayload, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).populate('course_id');
   }
@@ -88,7 +88,7 @@ export class ModuleService {
         }
 
         const deleted = await Module.findByIdAndDelete(moduleObjectId).session(session).populate('course_id');
-        deletedModule = deleted as IModule | null;
+        deletedModule = deleted;
 
         if (deletedModule) {
           await Module.updateMany(
@@ -97,11 +97,11 @@ export class ModuleService {
               order: { $gt: deletedModule.order },
             },
             { $inc: { order: -1 } }
-          ).session(session as any);
+          ).session(session);
         }
       });
     } finally {
-      session.endSession();
+      await session.endSession();
     }
 
     return deletedModule;

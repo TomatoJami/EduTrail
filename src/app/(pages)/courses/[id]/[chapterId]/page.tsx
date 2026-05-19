@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/common/Header";
 import { MarkdownContent } from "@/components/MarkdownContent";
-import { Course, Module, UserProgress, Question } from "@/types";
+import { Course, Module, UserProgress, Question, QuizGradeQuestionResult, QuizGradeResult } from "@/types";
 
 /** Defines the TypeScript shape for nav item. */
 type NavItem = {
@@ -80,6 +80,13 @@ export default function ChapterPage() {
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, any>>({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
+  const [quizResult, setQuizResult] = useState<QuizGradeResult | null>(null);
+  const quizResultsByQuestionId = useMemo<Record<string, QuizGradeQuestionResult>>(() => {
+    if (!quizResult) return {};
+    return Object.fromEntries(
+      quizResult.results.map((result) => [result.questionId, result])
+    );
+  }, [quizResult]);
 
   // Synchronizes browser state or side effects after render.
   useEffect(() => {
@@ -93,6 +100,7 @@ export default function ChapterPage() {
       setQuizQuestions([]);
       setSelectedAnswers({});
       setIsQuizSubmitted(false);
+      setQuizResult(null);
       return;
     }
 
@@ -104,6 +112,7 @@ export default function ChapterPage() {
       setQuizQuestions(courseModule.questions);
       setSelectedAnswers({});
       setIsQuizSubmitted(false);
+      setQuizResult(null);
     }
   }, [chapterId, modules]);
 
@@ -336,9 +345,48 @@ export default function ChapterPage() {
     }));
   };
 
-  // Submit quiz - show results locally only
-  const handleSubmitQuiz = () => {
-    setIsQuizSubmitted(true);
+  // Submit quiz answers to the backend so answer keys stay server-side.
+  const handleSubmitQuiz = async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) {
+        router.push("/login");
+        return;
+      }
+
+      const user = JSON.parse(storedUser);
+      const userId = user._id || user.id || "";
+
+      const answers = quizQuestions.map((question) => {
+        const questionType = question.type || "test";
+        const answer = selectedAnswers[question._id] ?? (questionType === "fill-blank" ? [] : "");
+
+        return {
+          questionId: question._id,
+          answer,
+        };
+      });
+
+      const response = await fetch("/api/questions/grade", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": userId,
+        },
+        body: JSON.stringify({ answers }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || data.message || "Failed to submit quiz");
+      }
+
+      setQuizResult(data.data);
+      setIsQuizSubmitted(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to submit quiz");
+    }
   };
 
 
@@ -346,6 +394,7 @@ export default function ChapterPage() {
   const handleTryAgain = () => {
     setSelectedAnswers({});
     setIsQuizSubmitted(false);
+    setQuizResult(null);
   };
 
   // Flat navigation list
@@ -735,8 +784,9 @@ export default function ChapterPage() {
                                       {(question as any).options?.map((option: string, optIdx: number) => {
                                         const selectedIdx = selectedAnswers[question._id];
                                         const isSelected = selectedIdx === optIdx;
-                                        const isCorrectAnswer = optIdx === (question as any).correctAnswer;
-                                        const isCorrect = selectedIdx === (question as any).correctAnswer;
+                                        const result = quizResultsByQuestionId[question._id];
+                                        const isCorrectAnswer = result?.correctAnswer === optIdx;
+                                        const isCorrect = result?.isCorrect === true;
 
                                         let buttonClass = "w-full text-left rounded-lg border-2 p-3 transition break-words";
 
@@ -787,9 +837,9 @@ export default function ChapterPage() {
                                       })}
                                     </div>
 
-                                    {isQuizSubmitted && (question as any).explanation && (
+                                    {isQuizSubmitted && quizResultsByQuestionId[question._id]?.explanation && (
                                       <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900 break-words">
-                                        <strong>Explanation:</strong> {(question as any).explanation}
+                                        <strong>Explanation:</strong> {quizResultsByQuestionId[question._id].explanation}
                                       </div>
                                     )}
                                   </>
@@ -825,31 +875,25 @@ export default function ChapterPage() {
 
                                     {isQuizSubmitted && (
                                       <div className={`mt-4 rounded-lg p-3 text-sm break-words ${
-                                        (question as any).correctAnswers.some((ans: string) =>
-                                          (question as any).caseSensitive
-                                            ? ans === selectedAnswers[question._id]
-                                            : ans.toLowerCase() === (selectedAnswers[question._id] || '').toLowerCase()
-                                        )
+                                        quizResultsByQuestionId[question._id]?.isCorrect
                                           ? 'bg-emerald-50 text-emerald-900'
                                           : 'bg-red-50 text-red-900'
                                       }`}>
-                                        {(question as any).correctAnswers.some((ans: string) =>
-                                          (question as any).caseSensitive
-                                            ? ans === selectedAnswers[question._id]
-                                            : ans.toLowerCase() === (selectedAnswers[question._id] || '').toLowerCase()
-                                        ) ? (
+                                        {quizResultsByQuestionId[question._id]?.isCorrect ? (
                                           <div>
                                             <strong className="text-emerald-600">✓ Correct!</strong>
-                                            {(question as any).explanation && (
-                                              <p className="mt-2 break-words">{(question as any).explanation}</p>
+                                            {quizResultsByQuestionId[question._id]?.explanation && (
+                                              <p className="mt-2 break-words">{quizResultsByQuestionId[question._id].explanation}</p>
                                             )}
                                           </div>
                                         ) : (
                                           <div>
                                             <strong className="text-red-600">✗ Incorrect</strong>
-                                            <p className="mt-2 break-words">Correct answer(s): {(question as any).correctAnswers.join(', ')}</p>
-                                            {(question as any).explanation && (
-                                              <p className="mt-2 break-words">{(question as any).explanation}</p>
+                                            <p className="mt-2 break-words">
+                                              Correct answer(s): {(quizResultsByQuestionId[question._id]?.correctAnswers || []).join(', ')}
+                                            </p>
+                                            {quizResultsByQuestionId[question._id]?.explanation && (
+                                              <p className="mt-2 break-words">{quizResultsByQuestionId[question._id].explanation}</p>
                                             )}
                                           </div>
                                         )}
@@ -899,10 +943,11 @@ export default function ChapterPage() {
 
                                     {isQuizSubmitted && (
                                       <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900 break-words">
-                                        {(question as any).blanks?.map((blank: any, blankIdx: number) => {
+                                        {(question as any).blanks?.map((_blank: any, blankIdx: number) => {
                                           const userAnswer = selectedAnswers[question._id]?.[blankIdx] || '';
-                                          const isCorrect = blank.correctAnswers.some((ans: string) =>
-                                            blank.caseSensitive
+                                          const gradeBlank = quizResultsByQuestionId[question._id]?.blanks?.[blankIdx];
+                                          const isCorrect = gradeBlank?.correctAnswers.some((ans: string) =>
+                                            gradeBlank.caseSensitive
                                               ? ans === userAnswer
                                               : ans.toLowerCase() === userAnswer.toLowerCase()
                                           );
@@ -913,13 +958,13 @@ export default function ChapterPage() {
                                               {isCorrect ? (
                                                 <span className="text-emerald-600">✓</span>
                                               ) : (
-                                                <span className="text-red-600">✗ (correct: {blank.correctAnswers.join(', ')})</span>
+                                                <span className="text-red-600">✗ (correct: {(gradeBlank?.correctAnswers || []).join(', ')})</span>
                                               )}
                                             </div>
                                           );
                                         })}
-                                        {(question as any).explanation && (
-                                          <p className="mt-3 border-t border-blue-200 pt-2 break-words">{(question as any).explanation}</p>
+                                        {quizResultsByQuestionId[question._id]?.explanation && (
+                                          <p className="mt-3 border-t border-blue-200 pt-2 break-words">{quizResultsByQuestionId[question._id].explanation}</p>
                                         )}
                                       </div>
                                     )}
@@ -946,40 +991,8 @@ export default function ChapterPage() {
 
                   {/* Results Summary */}
                   {isQuizSubmitted && (() => {
-                    let correctCount = 0;
-
-                    quizQuestions.forEach((q) => {
-                      const questionType = (q as any).type || 'test';
-                      const userAnswer = selectedAnswers[q._id];
-
-                      if (questionType === 'test') {
-                        if (userAnswer === (q as any).correctAnswer) {
-                          correctCount++;
-                        }
-                      } else if (questionType === 'short-answer') {
-                        if ((q as any).correctAnswers.some((ans: string) =>
-                          (q as any).caseSensitive
-                            ? ans === userAnswer
-                            : ans.toLowerCase() === (userAnswer || '').toLowerCase()
-                        )) {
-                          correctCount++;
-                        }
-                      } else if (questionType === 'fill-blank') {
-                        const allCorrect = (q as any).blanks?.every((blank: any, idx: number) => {
-                          const blankAnswer = userAnswer?.[idx] || '';
-                          return blank.correctAnswers.some((ans: string) =>
-                            blank.caseSensitive
-                              ? ans === blankAnswer
-                              : ans.toLowerCase() === blankAnswer.toLowerCase()
-                          );
-                        });
-                        if (allCorrect) {
-                          correctCount++;
-                        }
-                      }
-                    });
-
-                    const totalCount = quizQuestions.length;
+                    const correctCount = quizResult?.score ?? 0;
+                    const totalCount = quizResult?.total ?? quizQuestions.length;
 
                     // Returns the JSX layout for this render state.
                     return (

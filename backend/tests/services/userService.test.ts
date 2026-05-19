@@ -9,6 +9,8 @@ describe('UserService', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
+    vi.stubEnv('DEFAULT_ADMIN_EMAIL', 'admin@example.com');
+    vi.stubEnv('DEFAULT_ADMIN_PASSWORD', 'Admin123!');
   });
 
   it('finds users by email only', async () => {
@@ -50,5 +52,13 @@ describe('UserService', () => {
     expect(result.user.name).toBe('Administrator');
     expect(result.user.role).toBe('admin');
     expect(result.user.password).toBe(defaultAdmin.password);
+  });
+
+  it('requires default admin environment variables', () => {
+    vi.unstubAllEnvs();
+
+    expect(() => getDefaultAdminCredentials()).toThrow(
+      'DEFAULT_ADMIN_EMAIL and DEFAULT_ADMIN_PASSWORD must be set'
+    );
   });
 });

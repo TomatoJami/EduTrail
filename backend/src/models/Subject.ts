@@ -29,8 +29,6 @@ const SubjectSchema = new Schema<ISubject>(
   }
 );
 
-SubjectSchema.index({ subject_name: 1 }, { unique: true });
-
 const SubjectModel: Model<ISubject> =
   (mongoose.models.Subject as Model<ISubject>) || mongoose.model<ISubject>('Subject', SubjectSchema);
 

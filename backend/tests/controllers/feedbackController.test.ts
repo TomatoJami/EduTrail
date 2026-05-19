@@ -28,9 +28,9 @@ describe('FeedbackController', () => {
       body: {
         feedbackType: 'Other',
         data: 'Something',
-        user_id: userId,
       },
-    } as Request, res);
+      userId,
+    } as unknown as Request, res);
 
     expect(feedbackService.createFeedback).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
@@ -49,9 +49,9 @@ describe('FeedbackController', () => {
       body: {
         feedbackType: 'Wish',
         data: '  Please add more courses  ',
-        user_id: userId,
       },
-    } as Request, res);
+      userId,
+    } as unknown as Request, res);
 
     expect(feedbackService.createFeedback).toHaveBeenCalledWith({
       feedbackType: 'Wish',

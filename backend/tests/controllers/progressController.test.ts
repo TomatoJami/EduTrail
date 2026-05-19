@@ -49,7 +49,7 @@ describe('ProgressController', () => {
     expect(ChapterProgress.findOneAndUpdate).toHaveBeenCalledWith(
       expect.objectContaining({}),
       expect.objectContaining({ is_completed: true }),
-      { new: true, upsert: true, setDefaultsOnInsert: true }
+      { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
     );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({

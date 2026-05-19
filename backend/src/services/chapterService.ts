@@ -71,7 +71,7 @@ export class ChapterService {
     }
 
     const updatedChapter = await Chapter.findByIdAndUpdate(id, nextPayload, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).populate('module_id');
 
@@ -91,7 +91,7 @@ export class ChapterService {
 
     const session = await mongoose.startSession();
     let deletedChapter: IChapter | null = null;
-    let imagesToDelete: string[] = [];
+    const imagesToDelete: string[] = [];
 
     try {
       await session.withTransaction(async () => {
@@ -106,7 +106,7 @@ export class ChapterService {
 
         // delete chapter and reorder remaining chapters within transaction
         const deleted = await Chapter.findByIdAndDelete(chapterObjectId).session(session).populate('module_id');
-        deletedChapter = deleted as IChapter | null;
+        deletedChapter = deleted;
 
         if (deletedChapter) {
           await Chapter.updateMany(
@@ -115,11 +115,11 @@ export class ChapterService {
               order: { $gt: deletedChapter.order },
             },
             { $inc: { order: -1 } }
-          ).session(session as any);
+          ).session(session);
         }
       });
     } finally {
-      session.endSession();
+      await session.endSession();
     }
 
     if (deletedChapter) {

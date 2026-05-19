@@ -85,11 +85,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build the backend payload and attach the user id server-side.
+    // Build the backend payload; the backend derives the user id from auth.
     const payload = {
       feedbackType: body.feedbackType,
       data: body.data.trim(),
-      user_id: userId,
     };
 
     const headers = getAuthHeaders(request);
