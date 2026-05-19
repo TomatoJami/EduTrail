@@ -4,12 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 
+/** Renders the forgot password page interface. */
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  /** Renders the handle submit interface. */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -43,6 +45,7 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  // Returns the JSX layout for this render state.
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">

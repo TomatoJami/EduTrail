@@ -10,8 +10,10 @@ import { CourseCard } from "@/components/CourseCard";
 import { Course, Subject, CourseProgress } from "@/types";
 import { CourseSearch } from '@/components/common/CourseSearch';
 
+/** Renders the courses per page interface. */
 const COURSES_PER_PAGE = 6;
 
+/** Renders the courses interface. */
 export default function Courses() {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
@@ -25,7 +27,9 @@ export default function Courses() {
   const [courseProgressMap, setCourseProgressMap] = useState<Record<string, CourseProgress>>({});
   const [isProgressLoaded, setIsProgressLoaded] = useState(false);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
+    /** Renders the fetch data interface. */
     const fetchData = async () => {
       try {
         // Check authentication first
@@ -74,7 +78,9 @@ export default function Courses() {
     fetchData();
   }, [router]);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
+    /** Renders the fetch all course progress interface. */
     const fetchAllCourseProgress = async () => {
       if (!userId) {
         setCourseProgressMap({});
@@ -181,16 +187,19 @@ export default function Courses() {
 
   const hasMoreCourses = displayedCoursesCount < filteredCourses.length;
 
+  /** Renders the handle load more interface. */
   const handleLoadMore = () => {
     setDisplayedCoursesCount(prev => prev + COURSES_PER_PAGE);
   };
 
+  /** Renders the handle subject filter interface. */
   const handleSubjectFilter = (subjectId: string | null) => {
     setSelectedSubject(subjectId);
     setDisplayedCoursesCount(COURSES_PER_PAGE);
   };
 
   if (!isInitialized) {
+		// Returns the JSX layout for this render state.
 		return (
 			<main className="flex-1">
 				<section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen flex items-center justify-center">
@@ -200,6 +209,7 @@ export default function Courses() {
 		);
 	}
 
+  // Returns the JSX layout for this render state.
   return (
     <>
         <main className="flex-1">

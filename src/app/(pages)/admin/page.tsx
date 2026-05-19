@@ -23,7 +23,9 @@ const sections = [
   },
 ];
 
+/** Renders the admin home page interface. */
 export default function AdminHomePage() {
+  // Returns the JSX layout for this render state.
   return (
     <section className="grid gap-4 sm:grid-cols-2">
       {sections.map((section) => (

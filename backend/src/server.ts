@@ -15,6 +15,7 @@ dns.setServers(['1.1.1.1', '1.0.0.1', '8.8.8.8', '8.8.4.4']);
 import connectDB from './config/database';
 import { userService } from './services/userService';
 
+/** Chooses the HTTP port for the backend server. */
 const PORT = process.env.PORT || 5000;
 
 // Start server

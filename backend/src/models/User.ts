@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import crypto from 'crypto';
 
+/** Defines the TypeScript shape for user. */
 export interface IUser extends Document {
   email: string;
   password: string;

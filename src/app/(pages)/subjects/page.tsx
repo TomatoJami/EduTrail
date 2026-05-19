@@ -8,13 +8,16 @@ import { Sidebar } from "@/components/common/Sidebar";
 import { useState, useEffect } from "react";
 import { Subject } from "@/types";
 
+/** Renders the subjects interface. */
 export default function Subjects() {
   const router = useRouter();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState("");
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
+    /** Renders the fetch data interface. */
     const fetchData = async () => {
       try {
         const storedUser = localStorage.getItem("user");
@@ -42,6 +45,7 @@ export default function Subjects() {
   }, [router]);
 
   	if (!isInitialized) {
+		// Returns the JSX layout for this render state.
 		return (
 			<main className="flex-1">
 				<section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen flex items-center justify-center">
@@ -52,6 +56,7 @@ export default function Subjects() {
 	}
 
 	if (error) {
+		// Returns the JSX layout for this render state.
 		return (
 			<main className="flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
 				<div className="text-center">
@@ -64,6 +69,7 @@ export default function Subjects() {
 		);
 	}
 
+  // Returns the JSX layout for this render state.
   return (
     <>
         <Header />

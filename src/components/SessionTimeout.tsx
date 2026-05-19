@@ -3,11 +3,16 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+/** Renders the inactivity limit ms interface. */
 const INACTIVITY_LIMIT_MS = 60 * 60 * 1000;
+/** Renders the last activity key interface. */
 const LAST_ACTIVITY_KEY = "authLastActivity";
+/** Renders the auth token key interface. */
 const AUTH_TOKEN_KEY = "authToken";
+/** Renders the auth expires at key interface. */
 const AUTH_EXPIRES_AT_KEY = "authExpiresAt";
 
+/** Keeps the public paths logic isolated and reusable. */
 const publicPaths = new Set([
   "/",
   "/login",
@@ -15,16 +20,19 @@ const publicPaths = new Set([
   "/forgot-password",
 ]);
 
+/** Keeps the has active user logic isolated and reusable. */
 function hasActiveUser() {
   return Boolean(localStorage.getItem("user"));
 }
 
+/** Keeps the mark activity logic isolated and reusable. */
 function markActivity() {
   if (hasActiveUser()) {
     localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
   }
 }
 
+/** Keeps the clear session logic isolated and reusable. */
 function clearSession() {
   localStorage.removeItem("user");
   localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -38,11 +46,14 @@ function clearSession() {
   window.dispatchEvent(new Event("auth-state-changed"));
 }
 
+/** Renders the session timeout interface. */
 export function SessionTimeout() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
+    /** Keeps the expire session logic isolated and reusable. */
     const expireSession = () => {
       if (!hasActiveUser()) {
         localStorage.removeItem(LAST_ACTIVITY_KEY);
@@ -81,10 +92,12 @@ export function SessionTimeout() {
       }
     };
 
+    /** Handles activity user interaction. */
     const handleActivity = () => {
       markActivity();
     };
 
+    /** Handles auth state changed user interaction. */
     const handleAuthStateChanged = () => {
       if (hasActiveUser()) {
         markActivity();

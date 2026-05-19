@@ -4,10 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Course } from '@/types';
 
+/** Defines the TypeScript shape for props. */
 interface Props {
   courses: Course[];
 }
 
+/** Renders the course search interface. */
 export const CourseSearch = ({ courses }: Props) => {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -18,6 +20,7 @@ export const CourseSearch = ({ courses }: Props) => {
 
   const showDropdown = isFocused && query;
 
+  // Returns the JSX layout for this render state.
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 mb-8">
       <div className="relative w-full">

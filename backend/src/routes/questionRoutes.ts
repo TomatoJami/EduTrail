@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { questionController } from '../controllers/questionController';
 import { adminMiddleware, authMiddleware } from '../middleware/authMiddleware';
 
+/** Collects this module route handlers before they are mounted in Express. */
 const router = Router();
 
 // Question routes expose reads publicly and protect writes/progress with auth middleware.

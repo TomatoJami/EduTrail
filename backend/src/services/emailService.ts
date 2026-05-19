@@ -23,6 +23,7 @@ const transporter = isConfigured
     })
   : null;
 
+/** Keeps the send password reset email logic isolated and reusable. */
 export async function sendPasswordResetEmail(email: string, resetToken: string) {
   // Builds the frontend reset URL and sends it via the configured SMTP transport.
   // Send the reset link only after the controller has created a valid reset token.

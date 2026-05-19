@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 
+/** Defines the TypeScript shape for user. */
 export interface User {
   id: string;
   email: string;
@@ -9,6 +10,7 @@ export interface User {
   role: 'student' | 'admin';
 }
 
+/** Keeps the save auth session logic isolated and reusable. */
 function saveAuthSession(data: any) {
   // Stores only safe user/session metadata in browser storage.
   const { token: _token, expiresAt, ...userData } = data || {};
@@ -21,6 +23,7 @@ function saveAuthSession(data: any) {
   window.dispatchEvent(new Event('auth-state-changed'));
 }
 
+/** Keeps the clear auth session logic isolated and reusable. */
 function clearAuthSession() {
   // Removes local auth state and asks the backend proxy to clear auth cookies.
   localStorage.removeItem('user');
@@ -36,6 +39,7 @@ function clearAuthSession() {
   window.dispatchEvent(new Event('auth-state-changed'));
 }
 
+/** Defines the TypeScript shape for use auth return. */
 interface UseAuthReturn {
   user: User | null;
   isLoading: boolean;
@@ -48,6 +52,7 @@ interface UseAuthReturn {
   loadUser: () => Promise<void>;
 }
 
+/** Keeps the use auth logic isolated and reusable. */
 export const useAuth = (): UseAuthReturn => {
   // Centralizes auth state and profile actions for client components.
   const [user, setUser] = useState<User | null>(null);
@@ -104,7 +109,6 @@ export const useAuth = (): UseAuthReturn => {
   }, [normalizeUser]);
 
   const signup = useCallback(async (email: string, password: string, name: string) => {
-    // Creates a user account and stores the normalized session on success.
     setIsLoading(true);
     setError(null);
     try {

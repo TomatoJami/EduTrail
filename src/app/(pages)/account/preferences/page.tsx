@@ -8,6 +8,7 @@ import { AccountSidebar } from '@/components/common/AccountSidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { SubjectPreference } from '@/types';
 
+/** Renders the preferences page interface. */
 export default function PreferencesPage() {
   const { user, loadUser } = useAuth();
   const router = useRouter();
@@ -57,6 +58,7 @@ export default function PreferencesPage() {
     }
   }, [user?.id]);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser) {
@@ -64,6 +66,7 @@ export default function PreferencesPage() {
       return;
     }
 
+    /** Renders the load data interface. */
     const loadData = async () => {
       try {
         await fetchSubjects();
@@ -79,6 +82,7 @@ export default function PreferencesPage() {
     loadUser();
   }, [router, user?.id, loadUser, fetchSubjects, fetchUserPreferences]);
 
+  /** Renders the handle subject change interface. */
   const handleSubjectChange = (subjectId: string) => {
     setSelectedSubjects((prev) =>
       prev.includes(subjectId)
@@ -87,6 +91,7 @@ export default function PreferencesPage() {
     );
   };
 
+  /** Renders the handle save preferences interface. */
   const handleSavePreferences = async () => {
     if (!ageGroup) {
       setError('Please select an age group');
@@ -126,6 +131,7 @@ export default function PreferencesPage() {
 
 
   if (!isInitialized) {
+		// Returns the JSX layout for this render state.
 		return (
 			<main className="flex-1 bg-white">
 				<section className="min-h-screen flex items-center justify-center">
@@ -135,6 +141,7 @@ export default function PreferencesPage() {
 		);
 	}
 
+  // Returns the JSX layout for this render state.
   return (
     <>
       <Header />

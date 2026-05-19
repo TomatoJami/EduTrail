@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { apiClient } from '@/utils/apiClient';
 
+/** Defines the TypeScript shape for image uploader props. */
 interface ImageUploaderProps {
   onImageUpload: (imageUrl: string) => void;
   folder?: 'subjects' | 'courses' | 'questions' | 'chapters';
@@ -10,6 +11,7 @@ interface ImageUploaderProps {
   userId?: string;
 }
 
+/** Renders the image uploader interface. */
 export function ImageUploader({ onImageUpload, folder = 'subjects', className = '', userId }: ImageUploaderProps) {
   // Keeps upload UI state local while delegating storage work to the API client.
   const [preview, setPreview] = useState<string | null>(null);
@@ -17,8 +19,8 @@ export function ImageUploader({ onImageUpload, folder = 'subjects', className = 
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /** Handles file select user interaction. */
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // Validates the selected image and prepares a browser preview before upload.
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -43,6 +45,7 @@ export function ImageUploader({ onImageUpload, folder = 'subjects', className = 
     reader.readAsDataURL(file);
   };
 
+  /** Handles upload user interaction. */
   const handleUpload = async () => {
     // Sends the selected file to the backend upload pipeline.
     if (!fileInputRef.current?.files?.[0]) {
@@ -81,6 +84,7 @@ export function ImageUploader({ onImageUpload, folder = 'subjects', className = 
     }
   };
 
+  /** Handles cancel user interaction. */
   const handleCancel = () => {
     // Clears the current preview and file input without touching storage.
     setPreview(null);
@@ -90,6 +94,7 @@ export function ImageUploader({ onImageUpload, folder = 'subjects', className = 
     }
   };
 
+  // Returns the JSX layout for this render state.
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="rounded-lg border border-dashed border-slate-300 p-4 text-center">

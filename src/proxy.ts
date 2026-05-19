@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+/** Keeps the proxy logic isolated and reusable. */
 export function proxy(request: NextRequest) {
   if (!request.nextUrl.pathname.startsWith("/api/")) {
     return NextResponse.next();

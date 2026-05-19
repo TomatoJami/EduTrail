@@ -6,8 +6,10 @@ import { Footer } from "@/components/common/Footer";
 import { Header } from "@/components/common/Header";
 import { Sidebar } from "@/components/common/Sidebar";
 
+/** Defines the TypeScript shape for feedback type. */
 type FeedbackType = "Error" | "Wish";
 
+/** Renders the feedback page interface. */
 export default function FeedbackPage() {
   const [feedbackType, setFeedbackType] = useState<FeedbackType>("Error");
   const [text, setText] = useState("");
@@ -18,6 +20,7 @@ export default function FeedbackPage() {
 
   const router = useRouter();
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
 
@@ -29,6 +32,7 @@ export default function FeedbackPage() {
     setIsInitialized(true);
   }, [router]);
 
+  /** Renders the handle submit interface. */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -86,6 +90,7 @@ export default function FeedbackPage() {
     return null;
   }
 
+  // Returns the JSX layout for this render state.
   return (
     <>
       <Header />

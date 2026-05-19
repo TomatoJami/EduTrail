@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 import { CourseCardProps } from "@/types";
 
 
+/** Renders the bookmark icon interface. */
 function BookmarkIcon() {
+  // Returns the JSX layout for this render state.
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
       <path
@@ -20,6 +22,7 @@ function BookmarkIcon() {
   );
 }
 
+/** Renders the course card interface. */
 export function CourseCard({
   course,
   userId,
@@ -35,10 +38,12 @@ export function CourseCard({
   const [isLoading, setIsLoading] = useState(false);
   const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     setIsBookmarked(courseProgress?.is_bookmarked || false);
   }, [courseProgress]);
 
+  /** Handles start course user interaction. */
   const handleStartCourse = async (e: React.MouseEvent) => {
     e.preventDefault();
 
@@ -68,11 +73,13 @@ export function CourseCard({
     }
   };
 
+  /** Handles continue course user interaction. */
   const handleContinueCourse = (e: React.MouseEvent) => {
     e.preventDefault();
     router.push(`/courses/${course._id}`);
   };
 
+  /** Handles bookmark user interaction. */
   const handleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault();
 
@@ -111,6 +118,7 @@ export function CourseCard({
     }
   };
 
+  // Returns the JSX layout for this render state.
   return (
     <Link href={`/courses/${course._id}`}>
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full cursor-pointer">

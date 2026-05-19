@@ -3,11 +3,13 @@ import mongoose from 'mongoose';
 import { User } from '../models/User';
 import { verifyAuthToken } from '../services/jwtService';
 
+/** Defines the TypeScript shape for auth request. */
 export interface AuthRequest extends Request {
   userId?: string;
   userRole?: 'student' | 'admin';
 }
 
+/** Retrieves bearer token data. */
 function getBearerToken(req: Request) {
   const authorization = req.headers.authorization;
   if (!authorization?.startsWith('Bearer ')) {
@@ -17,6 +19,7 @@ function getBearerToken(req: Request) {
   return authorization.slice('Bearer '.length).trim();
 }
 
+/** Keeps the auth middleware logic isolated and reusable. */
 export async function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
   const token = getBearerToken(req);
   const payload = token ? verifyAuthToken(token) : null;
@@ -51,6 +54,7 @@ export async function authMiddleware(req: AuthRequest, res: Response, next: Next
   next();
 }
 
+/** Keeps the admin middleware logic isolated and reusable. */
 export async function adminMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
   const token = getBearerToken(req);
   const payload = token ? verifyAuthToken(token) : null;
@@ -92,10 +96,12 @@ export async function adminMiddleware(req: AuthRequest, res: Response, next: Nex
   next();
 }
 
+/** Keeps the logging middleware logic isolated and reusable. */
 export function loggingMiddleware(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+/** Keeps the error handler logic isolated and reusable. */
 export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
 
   const status = err.status || 500;

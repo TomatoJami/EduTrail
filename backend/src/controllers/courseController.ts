@@ -4,8 +4,10 @@ import { courseService, CoursePayload } from '../services/courseService';
 import { ApiResponse, CourseAgeGroup } from '../types';
 import { COURSE_TEXT_LIMIT } from '../models/Course';
 
+/** Keeps the allowed age groups logic isolated and reusable. */
 const allowedAgeGroups = ['1-3', '4-9', '10-12'] as const;
 
+/** Normalizes goals data before validation. */
 function normalizeGoals(goals?: unknown): string[] {
   if (!Array.isArray(goals)) {
     return [];
@@ -17,6 +19,7 @@ function normalizeGoals(goals?: unknown): string[] {
     .filter(Boolean);
 }
 
+/** Keeps the find text limit error logic isolated and reusable. */
 function findTextLimitError(fields: Record<string, string | undefined>, goals: string[]): string | null {
   for (const [label, value] of Object.entries(fields)) {
     if (value && value.length > COURSE_TEXT_LIMIT) {
@@ -31,8 +34,9 @@ function findTextLimitError(fields: Record<string, string | undefined>, goals: s
   return null;
 }
 
-// Handles HTTP validation/response shaping for course CRUD requests.
+/** Groups course controller operations behind one class. */
 export class CourseController {
+  /** Handles the get all courses request flow. */
   async getAllCourses(req: Request, res: Response): Promise<void> {
     // Returns the full course catalog for public course lists and admin tables.
     try {
@@ -52,6 +56,7 @@ export class CourseController {
     }
   }
 
+  /** Handles the get course by id request flow. */
   async getCourseById(req: Request, res: Response): Promise<void> {
     // Looks up a single course by route id and returns 404 when it does not exist.
     try {
@@ -80,8 +85,8 @@ export class CourseController {
     }
   }
 
+  /** Handles the create course request flow. */
   async createCourse(req: Request, res: Response): Promise<void> {
-    // Validates admin course input before passing the payload to the service layer.
     try {
       const body = req.body as {
         title?: string;
@@ -153,8 +158,8 @@ export class CourseController {
     }
   }
 
+  /** Handles the update course request flow. */
   async updateCourse(req: Request, res: Response): Promise<void> {
-    // Validates editable course fields and persists the update through CourseService.
     try {
       const { id } = req.params;
       const body = req.body as {
@@ -235,8 +240,8 @@ export class CourseController {
     }
   }
 
+  /** Handles the delete course request flow. */
   async deleteCourse(req: Request, res: Response): Promise<void> {
-    // Deletes a course and lets the service cascade nested data and image cleanup.
     try {
       const { id } = req.params;
 

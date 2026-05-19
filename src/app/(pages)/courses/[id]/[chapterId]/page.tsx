@@ -7,6 +7,7 @@ import { Header } from "@/components/common/Header";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { Course, Module, UserProgress, Question } from "@/types";
 
+/** Defines the TypeScript shape for nav item. */
 type NavItem = {
   id: string;
   title: string;
@@ -16,19 +17,24 @@ type NavItem = {
   questionIds?: string[];
 };
 
+/** Renders the check icon interface. */
 function CheckIcon({ done }: { done: boolean }) {
   if (done) {
+    // Returns the JSX layout for this render state.
     return (
       <span className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white text-[10px]"></span>
     );
   }
 
+  // Returns the JSX layout for this render state.
   return (
     <span className="mt-0.5 h-4 w-4 rounded-full border border-slate-300 bg-white" />
   );
 }
 
+/** Renders the chevron icon interface. */
 function ChevronIcon({ open }: { open: boolean }) {
+  // Returns the JSX layout for this render state.
   return (
     <svg
       viewBox="0 0 20 20"
@@ -42,6 +48,7 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
+/** Renders the chapter page interface. */
 export default function ChapterPage() {
   const params = useParams();
   const router = useRouter();
@@ -52,7 +59,9 @@ export default function ChapterPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
   const [userProgress, setUserProgress] = useState<UserProgress>({
+    // Renders the chapters UI.
     chapters: {},
+    // Renders the questions UI.
     questions: {},
   });
 
@@ -72,6 +81,7 @@ export default function ChapterPage() {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, any>>({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     setShouldComplete(true);
     setShouldCompleteQuiz(true);
@@ -97,12 +107,14 @@ export default function ChapterPage() {
     }
   }, [chapterId, modules]);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     if (!courseId) return;
 
     // Create abort controller for this request
     const abortController = new AbortController();
 
+    /** Renders the fetch data interface. */
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -262,6 +274,7 @@ export default function ChapterPage() {
       }
     }, [loading, courseProgress, router]);
 
+    /** Renders the handle next click interface. */
     const handleNextClick = async () => {
       const chapterKey = String(chapterId);
       const isCompleted = !!userProgress.chapters[chapterKey];
@@ -299,6 +312,7 @@ export default function ChapterPage() {
 
           setUserProgress((prev) => ({
             ...prev,
+            // Renders the chapters UI.
             chapters: {
               ...prev.chapters,
               [chapterKey]: true
@@ -328,6 +342,7 @@ export default function ChapterPage() {
   };
 
 
+  /** Renders the handle try again interface. */
   const handleTryAgain = () => {
     setSelectedAnswers({});
     setIsQuizSubmitted(false);
@@ -473,6 +488,7 @@ export default function ChapterPage() {
 
 
   if (loading) {
+    // Returns the JSX layout for this render state.
     return (
 		<main className="flex-1">
 			<section className="bg-white min-h-screen flex items-center justify-center">
@@ -483,6 +499,7 @@ export default function ChapterPage() {
   }
 
   if (error || !course) {
+    // Returns the JSX layout for this render state.
     return (
       <main className="flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
         <div className="text-center px-4">
@@ -513,6 +530,7 @@ export default function ChapterPage() {
     );
   }
 
+  // Returns the JSX layout for this render state.
   return (
     <>
       <Header />
@@ -579,6 +597,7 @@ export default function ChapterPage() {
                             const chapterKey = String(chapter._id);
                             const isDone = Boolean(userProgress.chapters?.[chapterKey]);
 
+                            // Returns the JSX layout for this render state.
                             return (
                             <Link
                                 key={chapter._id}
@@ -603,6 +622,7 @@ export default function ChapterPage() {
                               (q) => userProgress.questions?.[q._id] === true
                             );
                             
+                            // Returns the JSX layout for this render state.
                             return (
                               <Link
                                 href={`/courses/${courseId}/${quizId}`}
@@ -686,6 +706,7 @@ export default function ChapterPage() {
                       quizQuestions.map((question, idx) => {
                         const questionType = (question as any).type || 'test';
 
+                        // Returns the JSX layout for this render state.
                         return (
                           <div
                             key={question._id}
@@ -735,6 +756,7 @@ export default function ChapterPage() {
                                           }
                                         }
 
+                                        // Returns the JSX layout for this render state.
                                         return (
                                           <button
                                             key={optIdx}
@@ -884,6 +906,7 @@ export default function ChapterPage() {
                                               ? ans === userAnswer
                                               : ans.toLowerCase() === userAnswer.toLowerCase()
                                           );
+                                          // Returns the JSX layout for this render state.
                                           return (
                                             <div key={blankIdx} className="mb-2 break-words">
                                               <strong>Blank {blankIdx + 1}:</strong> {userAnswer || '(not answered)'}{' '}
@@ -958,6 +981,7 @@ export default function ChapterPage() {
 
                     const totalCount = quizQuestions.length;
 
+                    // Returns the JSX layout for this render state.
                     return (
                       <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-6">
                         <h3 className="text-xl font-semibold text-gray-900 break-words">
@@ -1096,6 +1120,7 @@ export default function ChapterPage() {
 
                               setUserProgress((prev) => ({
                                 ...prev,
+                                // Renders the questions UI.
                                 questions: {
                                   ...prev.questions,
                                   ...Object.fromEntries(
@@ -1150,6 +1175,7 @@ export default function ChapterPage() {
                             // Mark finish page as completed
                             setUserProgress((prev) => ({
                               ...prev,
+                              // Renders the chapters UI.
                               chapters: {
                                 ...prev.chapters,
                                 ["finish"]: true,

@@ -10,15 +10,18 @@ const adminSections = [
   { href: "/admin/feedback", label: "Feedback" },
 ];
 
+/** Renders the admin nav interface. */
 export function AdminNav() {
   const pathname = usePathname();
 
+  // Returns the JSX layout for this render state.
   return (
     <nav className="mb-8 rounded-xl border border-slate-200 bg-white p-2 shadow-sm" aria-label="Admin sections">
       <ul className="flex flex-wrap gap-2">
         {adminSections.map((section) => {
           const isActive = pathname === section.href;
 
+          // Returns the JSX layout for this render state.
           return (
             <li key={section.href}>
               <Link

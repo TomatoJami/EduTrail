@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+/** Defines the TypeScript shape for itest question. */
 export interface ITestQuestion extends Document {
   module_id: mongoose.Types.ObjectId;
   question: string;

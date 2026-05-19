@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+/** Defines the TypeScript shape for user item. */
 type UserItem = {
   _id: string;
   email: string;
@@ -9,11 +10,13 @@ type UserItem = {
   role: string;
 };
 
+/** Defines the TypeScript shape for stored user. */
 type StoredUser = {
   id?: string;
   _id?: string;
 };
 
+/** Renders the get user id interface. */
 const getUserId = (): string | null => {
   if (typeof window === "undefined") {
     return null;
@@ -32,6 +35,7 @@ const getUserId = (): string | null => {
   }
 };
 
+/** Renders the admin users page interface. */
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
@@ -39,10 +43,12 @@ export default function AdminUsersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     loadData();
   }, []);
 
+  /** Renders the load data interface. */
   const loadData = async () => {
     setLoading(true);
     setError("");
@@ -80,6 +86,7 @@ export default function AdminUsersPage() {
     }
   };
 
+  /** Renders the handle update interface. */
   const handleUpdate = async () => {
     if (!editingUser) return;
 
@@ -135,6 +142,7 @@ export default function AdminUsersPage() {
     }
   };
 
+  /** Renders the handle delete interface. */
   const handleDelete = async (userId: string) => {
     if (!confirm("Are you sure you want to delete this user?")) {
       return;
@@ -174,6 +182,7 @@ export default function AdminUsersPage() {
     }
   };
 
+  // Returns the JSX layout for this render state.
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="mb-6 text-xl font-semibold text-slate-900">Users Management</h2>

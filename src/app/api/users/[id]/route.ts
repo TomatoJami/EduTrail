@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+/** Centralizes the backend API base URL used by request helpers. */
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+/** Builds auth headers for backend proxy requests. */
 function getAuthHeaders(request: NextRequest) {
   const userId = request.headers.get('x-user-id');
   const authorization = request.headers.get('authorization');
@@ -23,6 +25,7 @@ function getAuthHeaders(request: NextRequest) {
   return headers;
 }
 
+/** Proxies PUT requests from the Next.js route to the backend API. */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -55,6 +58,7 @@ export async function PUT(
   }
 }
 
+/** Proxies GET requests from the Next.js route to the backend API. */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -85,6 +89,7 @@ export async function GET(
   }
 }
 
+/** Proxies DELETE requests from the Next.js route to the backend API. */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

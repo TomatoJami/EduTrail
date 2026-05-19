@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { moduleController } from '../controllers/moduleController';
 import { adminMiddleware } from '../middleware/authMiddleware';
 
+/** Collects this module route handlers before they are mounted in Express. */
 const router = Router();
 
 // Module routes are read publicly but require admin access for create/update/delete.

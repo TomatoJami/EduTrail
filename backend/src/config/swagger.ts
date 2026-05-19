@@ -1,5 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 
+/** Keeps the options logic isolated and reusable. */
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -30,6 +31,7 @@ const options = {
           description: 'Paste the JWT from POST /auth/login. Swagger will send it as Authorization: Bearer <token>.',
         },
       },
+      // Defines the MongoDB schema for schemas.
       schemas: {
         ApiResponse: {
           type: 'object',

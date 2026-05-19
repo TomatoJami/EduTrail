@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+/** Defines the TypeScript shape for chapter. */
 export interface IChapter extends Document {
   title: string;
   content: string;

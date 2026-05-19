@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { chapterController } from '../controllers/chapterController';
 import { adminMiddleware, authMiddleware } from '../middleware/authMiddleware';
 
+/** Collects this module route handlers before they are mounted in Express. */
 const router = Router();
 
 // Chapter routes expose content publicly and protect writes/progress with auth middleware.

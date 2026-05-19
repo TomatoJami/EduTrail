@@ -1,7 +1,9 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+/** Defines the TypeScript shape for question type. */
 export type QuestionType = 'test' | 'short-answer' | 'fill-blank';
 
+/** Defines the TypeScript shape for question. */
 export interface IQuestion extends Document {
   module_id: mongoose.Types.ObjectId;
   type: QuestionType;

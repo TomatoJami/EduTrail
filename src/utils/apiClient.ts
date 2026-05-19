@@ -1,13 +1,15 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { ApiResponse } from '@/types';
 
+/** Centralizes the backend API base URL used by request helpers. */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+/** Groups api client operations behind one class. */
 class ApiClient {
   private client: AxiosInstance;
 
+  /** Initializes this class with its shared dependencies. */
   constructor() {
-    // Creates a shared Axios instance with the backend base URL.
     // Centralized backend client for browser-side helpers that call the API directly.
     this.client = axios.create({
       baseURL: API_BASE_URL,
@@ -68,6 +70,7 @@ class ApiClient {
       }
     },
 
+    // Retrieves user data.
     getUser: async (id: string) => {
       try {
         const response = await this.client.get(`/auth/${id}`);
@@ -77,6 +80,7 @@ class ApiClient {
       }
     },
 
+    // Retrieves all users data.
     getAllUsers: async () => {
       try {
         const response = await this.client.get('/auth');
@@ -91,6 +95,7 @@ class ApiClient {
    * Courses endpoints
    */
   courses = {
+    // Retrieves all data.
     getAll: async () => {
       try {
         // Load the public course list from the backend.
@@ -101,6 +106,7 @@ class ApiClient {
       }
     },
 
+    // Retrieves by id data.
     getById: async (id: string) => {
       try {
         const response = await this.client.get(`/courses/${id}`);
@@ -110,6 +116,7 @@ class ApiClient {
       }
     },
 
+    // Creates a new record.
     create: async (data: any) => {
       try {
         const response = await this.client.post('/courses', data);
@@ -119,6 +126,7 @@ class ApiClient {
       }
     },
 
+    // Updates an existing record.
     update: async (id: string, data: any) => {
       try {
         const response = await this.client.put(`/courses/${id}`, data);
@@ -128,6 +136,7 @@ class ApiClient {
       }
     },
 
+    // Deletes an existing record.
     delete: async (id: string) => {
       try {
         const response = await this.client.delete(`/courses/${id}`);
@@ -142,6 +151,7 @@ class ApiClient {
    * Subjects endpoints
    */
   subjects = {
+    // Retrieves all data.
     getAll: async () => {
       try {
         // Load subjects from the backend for course filtering and admin forms.
@@ -152,6 +162,7 @@ class ApiClient {
       }
     },
 
+    // Retrieves by id data.
     getById: async (id: string) => {
       try {
         const response = await this.client.get(`/subjects/${id}`);
@@ -161,6 +172,7 @@ class ApiClient {
       }
     },
 
+    // Creates a new record.
     create: async (data: any) => {
       try {
         const response = await this.client.post('/subjects', data);
@@ -170,6 +182,7 @@ class ApiClient {
       }
     },
 
+    // Updates an existing record.
     update: async (id: string, data: any) => {
       try {
         const response = await this.client.put(`/subjects/${id}`, data);
@@ -179,6 +192,7 @@ class ApiClient {
       }
     },
 
+    // Deletes an existing record.
     delete: async (id: string) => {
       try {
         const response = await this.client.delete(`/subjects/${id}`);

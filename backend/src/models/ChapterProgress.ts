@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+/** Defines the TypeScript shape for chapter progress. */
 export interface IChapterProgress extends Document {
   user_id: mongoose.Types.ObjectId;
   chapter_id: mongoose.Types.ObjectId;

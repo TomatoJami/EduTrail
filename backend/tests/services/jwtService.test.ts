@@ -50,7 +50,7 @@ describe('jwtService', () => {
       role: 'student',
     });
 
-    vi.setSystemTime(new Date('2026-01-01T02:00:00.000Z'));
+    vi.setSystemTime(new Date('2026-01-01T07:00:00.000Z'));
 
     expect(verifyAuthToken(token)).toBeNull();
   });

@@ -5,6 +5,7 @@ import { adminMiddleware } from '../middleware/authMiddleware';
 
 // Multer memory storage configuration
 const storage = multer.memoryStorage();
+/** Keeps the upload logic isolated and reusable. */
 const upload = multer({
   storage,
   limits: {
@@ -21,6 +22,7 @@ const upload = multer({
   },
 });
 
+/** Collects this module route handlers before they are mounted in Express. */
 const router = Router();
 
 // Upload routes accept multipart images and require admin access before storage writes.

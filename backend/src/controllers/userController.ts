@@ -4,11 +4,16 @@ import { sendPasswordResetEmail } from '../services/emailService';
 import { createAuthToken } from '../services/jwtService';
 import { SignupPayload, ApiResponse, AuthResponse } from '../types';
 
+/** Keeps the max login attempts logic isolated and reusable. */
 const MAX_LOGIN_ATTEMPTS = 5;
+/** Keeps the login lock minutes logic isolated and reusable. */
 const LOGIN_LOCK_MINUTES = 15;
+/** Keeps the login error message logic isolated and reusable. */
 const LOGIN_ERROR_MESSAGE = 'Email or Password is incorrect';
+/** Keeps the login limit error message logic isolated and reusable. */
 const LOGIN_LIMIT_ERROR_MESSAGE = 'Login attempt limit exceeded. Please try again later.';
 
+/** Validates password strength input. */
 function validatePasswordStrength(password: string): string | null {
   if (password.length < 8) {
     return 'Password must be at least 8 characters long';
@@ -28,15 +33,16 @@ function validatePasswordStrength(password: string): string | null {
   return null;
 }
 
+/** Keeps the can access user logic isolated and reusable. */
 function canAccessUser(req: Request, userId: string) {
   const authReq = req as Request & { userId?: string; userRole?: 'student' | 'admin' };
   return authReq.userRole === 'admin' || authReq.userId === userId;
 }
 
-// Handles auth, profile, preferences, and admin user HTTP workflows.
+/** Groups user controller operations behind one class. */
 export class UserController {
+  /** Handles the signup request flow. */
   async signup(req: Request, res: Response): Promise<void> {
-    // Creates a student account after validating email and password strength.
     try {
       const body = req.body as {
         email?: string;
@@ -44,6 +50,7 @@ export class UserController {
         name?: string;
       };
 
+      /** Keeps the is valid email logic isolated and reusable. */
       const isValidEmail = (email: string) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
       };
@@ -148,6 +155,7 @@ export class UserController {
     }
   }
 
+  /** Handles the login request flow. */
   async login(req: Request, res: Response): Promise<void> {
     // Authenticates by email/password and returns a short-lived auth token.
     try {
@@ -247,8 +255,8 @@ export class UserController {
     }
   }
 
+  /** Handles the forgot password request flow. */
   async forgotPassword(req: Request, res: Response): Promise<void> {
-    // Creates a reset token and sends the reset email without revealing account existence.
     try {
       const body = req.body as { email?: string };
 
@@ -285,8 +293,8 @@ export class UserController {
     }
   }
 
+  /** Handles the reset password request flow. */
   async resetPassword(req: Request, res: Response): Promise<void> {
-    // Validates the reset token and replaces the stored password hash.
     try {
       const body = req.body as {
         token?: string;
@@ -333,6 +341,7 @@ export class UserController {
     }
   }
 
+  /** Handles the get user request flow. */
   async getUser(req: Request, res: Response): Promise<void> {
     // Returns the requested profile only when the caller owns it or is admin.
     try {
@@ -369,6 +378,7 @@ export class UserController {
     }
   }
 
+  /** Handles the get all users request flow. */
   async getAllUsers(req: Request, res: Response): Promise<void> {
     // Lists users for the admin panel with passwords excluded by the service/model.
     try {
@@ -388,8 +398,8 @@ export class UserController {
     }
   }
 
+  /** Handles the update user request flow. */
   async updateUser(req: Request, res: Response): Promise<void> {
-    // Updates allowed profile fields and restricts role changes to admins.
     try {
       const { id } = req.params;
       const authReq = req as Request & { userId?: string; userRole?: 'student' | 'admin' };
@@ -482,8 +492,8 @@ export class UserController {
     }
   }
 
+  /** Handles the delete user request flow. */
   async deleteUser(req: Request, res: Response): Promise<void> {
-    // Deletes a user and lets the service remove their progress records.
     try {
       const { id } = req.params;
 
@@ -524,6 +534,7 @@ export class UserController {
     }
   }
 
+  /** Handles the add to wishlist request flow. */
   async addToWishlist(req: Request, res: Response): Promise<void> {
     // Adds a subject to the user's wishlist after ownership checks.
     try {
@@ -571,6 +582,7 @@ export class UserController {
     }
   }
 
+  /** Handles the remove from wishlist request flow. */
   async removeFromWishlist(req: Request, res: Response): Promise<void> {
     // Removes a subject from the user's wishlist after ownership checks.
     try {
@@ -618,6 +630,7 @@ export class UserController {
     }
   }
 
+  /** Handles the get wishlist request flow. */
   async getWishlist(req: Request, res: Response): Promise<void> {
     // Reads the user's wishlist subjects for account pages.
     try {
@@ -664,6 +677,7 @@ export class UserController {
     }
   }
 
+  /** Handles the save preferences request flow. */
   async savePreferences(req: Request, res: Response): Promise<void> {
     // Saves onboarding preferences and marks onboarding complete.
     try {
@@ -736,6 +750,7 @@ export class UserController {
     }
   }
 
+  /** Handles the skip preferences request flow. */
   async skipPreferences(req: Request, res: Response): Promise<void> {
     // Marks onboarding complete without storing preferred subjects.
     try {

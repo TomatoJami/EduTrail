@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+/** Defines the TypeScript shape for subject. */
 export interface ISubject extends Document {
   subject_name: string;
   subject_img: string;

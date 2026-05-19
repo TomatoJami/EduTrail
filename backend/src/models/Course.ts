@@ -1,8 +1,11 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+/** Defines the TypeScript shape for course age group. */
 export type CourseAgeGroup = '1-3' | '4-9' | '10-12';
+/** Keeps the course text limit logic isolated and reusable. */
 export const COURSE_TEXT_LIMIT = 120;
 
+/** Defines the TypeScript shape for course. */
 export interface ICourse extends Document {
   title: string;
   description: string;

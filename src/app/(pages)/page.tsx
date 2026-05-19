@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/common/Sidebar";
 import { CourseCard } from "@/components/CourseCard";
 import { Course, CourseProgress } from "@/types";
 
+/** Renders the home interface. */
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -22,7 +23,9 @@ export default function Home() {
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [isProgressLoaded, setIsProgressLoaded] = useState(false);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
+    /** Renders the sync auth state interface. */
     const syncAuthState = () => {
       const storedUser = localStorage.getItem("user");
 
@@ -47,6 +50,7 @@ export default function Home() {
       }
     };
 
+    /** Renders the fetch courses interface. */
     const fetchCourses = async () => {
       try {
         setIsLoadingCourses(true);
@@ -66,6 +70,7 @@ export default function Home() {
       }
     };
 
+    /** Renders the initialize interface. */
     const initialize = async () => {
       syncAuthState();
       await fetchCourses();
@@ -83,7 +88,9 @@ export default function Home() {
     };
   }, []);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
+    /** Renders the fetch all course progress interface. */
     const fetchAllCourseProgress = async () => {
       if (!userId) {
         setCourseProgressMap({});
@@ -136,6 +143,7 @@ export default function Home() {
     fetchAllCourseProgress();
   }, [userId, courses]);
 
+  /** Renders the get filtered courses interface. */
   const getFilteredCourses = () => {
     if (activeTab === "In Progress") {
       return courses.filter(
@@ -166,12 +174,14 @@ export default function Home() {
 
   const filteredCourses = getFilteredCourses();
 
+  /** Renders the handle bookmark change interface. */
   const handleBookmarkChange = (
     courseId: string,
     isBookmarked: boolean
   ) => {
     setCourseProgressMap((prev) => ({
       ...prev,
+      // Renders the [course id] UI.
       [courseId]: {
         ...prev[courseId],
         is_bookmarked: isBookmarked,
@@ -179,6 +189,7 @@ export default function Home() {
     }));
   };
 
+  // Returns the JSX layout for this render state.
   return (
     <>
       <main className="flex-1">

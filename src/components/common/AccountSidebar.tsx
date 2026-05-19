@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 
+/** Renders the account sidebar interface. */
 export function AccountSidebar() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Returns the JSX layout for this render state.
   return (
     <aside className="w-full border-b border-gray-200 bg-white md:w-56 md:shrink-0 md:border-b-0 md:border-r">
       <div className="h-full px-4 py-5 flex flex-col">

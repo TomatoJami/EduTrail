@@ -3,8 +3,9 @@ import mongoose from 'mongoose';
 import { moduleService, ModulePayload } from '../services/moduleService';
 import { ApiResponse } from '../types';
 
-// Handles HTTP validation/response shaping for course module requests.
+/** Groups module controller operations behind one class. */
 export class ModuleController {
+    /** Handles the get all modules request flow. */
     async getAllModules(req: Request, res: Response): Promise<void> {
         // Returns all modules or only modules for the requested course_id query.
         try {
@@ -31,6 +32,7 @@ export class ModuleController {
         }
     }
 
+    /** Handles the get module by id request flow. */
     async getModuleById(req: Request, res: Response): Promise<void> {
         // Fetches one module by id for detail views and admin editing.
         try {
@@ -57,8 +59,8 @@ export class ModuleController {
         }
     }
 
+    /** Handles the create module request flow. */
     async createModule(req: Request, res: Response): Promise<void> {
-        // Validates module input and creates it under a course.
         try {
             const body = req.body as {
                 title?: string;
@@ -103,8 +105,8 @@ export class ModuleController {
         }
     }
 
+    /** Handles the update module request flow. */
     async updateModule(req: Request, res: Response): Promise<void> {
-        // Updates module title/order while preserving its course ownership.
         try {
             const { id } = req.params;
             const body = req.body as {
@@ -150,8 +152,8 @@ export class ModuleController {
         }
     }
 
+    /** Handles the delete module request flow. */
     async deleteModule(req: Request, res: Response): Promise<void> {
-        // Deletes a module and delegates nested cleanup to ModuleService.
         try {
             const { id } = req.params;
         

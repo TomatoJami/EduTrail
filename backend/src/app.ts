@@ -21,6 +21,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 
 const app: Express = express();
+/** Chooses the frontend origin accepted by CORS. */
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
 
 // Middleware

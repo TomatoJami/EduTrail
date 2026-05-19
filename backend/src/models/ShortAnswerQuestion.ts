@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+/** Defines the TypeScript shape for ishort answer question. */
 export interface IShortAnswerQuestion extends Document {
   module_id: mongoose.Types.ObjectId;
   question: string;

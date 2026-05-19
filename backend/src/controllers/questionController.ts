@@ -5,8 +5,9 @@ import { ApiResponse } from '../types';
 import { Question } from '../models/Question';
 import { QuestionProgress } from '../models/QuestionProgress';
 
-// Handles HTTP validation/response shaping for question CRUD and progress reads.
+/** Groups question controller operations behind one class. */
 export class QuestionController {
+    /** Handles the get all questions request flow. */
     async getAllQuestions(req: Request, res: Response): Promise<void> {
         // Returns all questions or filters by module_id when the query is present.
         try {
@@ -33,6 +34,7 @@ export class QuestionController {
         }
     }
 
+    /** Handles the get question by id request flow. */
     async getQuestionById(req: Request, res: Response): Promise<void> {
         // Fetches one normalized question by wrapper id.
         try {
@@ -59,6 +61,7 @@ export class QuestionController {
         }
     }
 
+    /** Handles the create question request flow. */
     async createQuestion(req: Request, res: Response): Promise<void> {
         // Chooses the correct question subtype creator based on request body type.
         try {
@@ -174,8 +177,8 @@ export class QuestionController {
         }
     }
 
+    /** Handles the delete question request flow. */
     async deleteQuestion(req: Request, res: Response): Promise<void> {
-        // Deletes the wrapper, subtype record, and any attached Supabase image.
         try {
             const { id } = req.params;
 
@@ -202,8 +205,8 @@ export class QuestionController {
         }
     }
 
+    /** Handles the update question request flow. */
     async updateQuestion(req: Request, res: Response): Promise<void> {
-        // Updates the subtype payload and removes replaced question images.
         try {
             const { id } = req.params;
 
@@ -261,6 +264,7 @@ export class QuestionController {
         }
     }
 
+    /** Handles the get user questions progress request flow. */
     async getUserQuestionsProgress(req: Request, res: Response): Promise<void> {
         // Returns completion status for questions in one module for one user.
         try {

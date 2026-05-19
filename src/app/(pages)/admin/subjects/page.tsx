@@ -3,22 +3,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { ImageUploader } from "@/components/ImageUploader";
 
+/** Defines the TypeScript shape for subject item. */
 type SubjectItem = {
   _id: string;
   subject_name: string;
   subject_img: string;
 };
 
+/** Defines the TypeScript shape for course item. */
 type CourseItem = {
   _id: string;
   subject_id: string | { _id: string };
 };
 
+/** Defines the TypeScript shape for stored user. */
 type StoredUser = {
   id?: string;
   _id?: string;
 };
 
+/** Renders the get user id interface. */
 const getUserId = (): string | null => {
   if (typeof window === "undefined") {
     return null;
@@ -37,6 +41,7 @@ const getUserId = (): string | null => {
   }
 };
 
+/** Renders the admin subjects page interface. */
 export default function AdminSubjectsPage() {
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [courses, setCourses] = useState<CourseItem[]>([]);
@@ -62,6 +67,7 @@ export default function AdminSubjectsPage() {
     return counts;
   }, [courses]);
 
+  /** Renders the load data interface. */
   const loadData = async () => {
     setLoading(true);
     setError("");
@@ -102,10 +108,12 @@ export default function AdminSubjectsPage() {
     }
   };
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     void loadData();
   }, []);
 
+  /** Renders the handle create interface. */
   const handleCreate = async () => {
     if (!newSubjectName.trim()) {
       setError("Subject name is required");
@@ -157,6 +165,7 @@ export default function AdminSubjectsPage() {
     }
   };
 
+  /** Renders the handle delete interface. */
   const handleDelete = async (subject: SubjectItem) => {
     const userId = getUserId();
     if (!userId) {
@@ -201,6 +210,7 @@ export default function AdminSubjectsPage() {
     }
   };
 
+  /** Renders the handle update interface. */
   const handleUpdate = async () => {
     if (!editingSubject) {
       return;
@@ -245,6 +255,7 @@ export default function AdminSubjectsPage() {
   };
 
   if (isCreatingNew) {
+    // Returns the JSX layout for this render state.
     return (
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="mb-6 text-xl font-semibold text-slate-900">Create New Subject</h2>
@@ -341,6 +352,7 @@ export default function AdminSubjectsPage() {
     );
   }
 
+  // Returns the JSX layout for this render state.
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -372,6 +384,7 @@ export default function AdminSubjectsPage() {
             const count = courseCountBySubject[subject._id] || 0;
             const isEditing = editingSubject?._id === subject._id;
 
+            // Returns the JSX layout for this render state.
             return (
               <article key={subject._id} className="rounded-lg border border-slate-200 p-4">
                 {!isEditing ? (

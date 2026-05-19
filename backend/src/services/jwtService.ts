@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 
+/** Defines the TypeScript shape for jwt payload. */
 export interface JwtPayload {
   sub: string;
   email: string;
@@ -8,8 +9,10 @@ export interface JwtPayload {
   exp: number;
 }
 
-const TOKEN_TTL_SECONDS = 60 * 60;
+/** Sets the JWT lifetime in seconds. */
+const TOKEN_TTL_SECONDS = 6 * 60 * 60;
 
+/** Keeps the base64 url encode logic isolated and reusable. */
 function base64UrlEncode(input: string | Buffer) {
   return Buffer.from(input)
     .toString('base64')
@@ -18,6 +21,7 @@ function base64UrlEncode(input: string | Buffer) {
     .replace(/\//g, '_');
 }
 
+/** Retrieves jwt secret data. */
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
   if (!secret || secret.length < 32) {
@@ -31,6 +35,7 @@ function getJwtSecret() {
   return secret;
 }
 
+/** Creates auth token. */
 export function createAuthToken(user: { id: string; email: string; role: 'student' | 'admin' }) {
   // Encodes only the user id, email, role, and expiry into the token payload.
   // Build a short-lived JWT that the frontend stores as an HTTP-only cookie.
@@ -63,12 +68,14 @@ export function createAuthToken(user: { id: string; email: string; role: 'studen
   };
 }
 
+/** Keeps the base64 url decode logic isolated and reusable. */
 function base64UrlDecode(input: string) {
   const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
   const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
   return Buffer.from(padded, 'base64').toString('utf8');
 }
 
+/** Keeps the verify auth token logic isolated and reusable. */
 export function verifyAuthToken(token: string): JwtPayload | null {
   // Rejects malformed, tampered, or expired tokens before middleware trusts them.
   // Verify signature and expiration before middleware trusts the request user.

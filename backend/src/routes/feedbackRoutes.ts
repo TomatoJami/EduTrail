@@ -2,6 +2,7 @@ import { Router } from "express";
 import { feedbackController } from "../controllers/feedbackController";
 import { adminMiddleware } from "../middleware/authMiddleware";
 
+/** Collects this module route handlers before they are mounted in Express. */
 const router = Router();
 
 // Learners can submit feedback; adminMiddleware protects feedback review routes.

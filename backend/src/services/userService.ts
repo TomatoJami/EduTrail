@@ -6,10 +6,12 @@ import { ChapterProgress } from '../models/ChapterProgress';
 import { QuestionProgress } from '../models/QuestionProgress';
 import { SignupPayload, User as UserType } from '../types';
 
+/** Retrieves error message data. */
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+/** Retrieves default admin credentials data. */
 export function getDefaultAdminCredentials() {
   return {
     email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@edutrail.local',
@@ -19,8 +21,8 @@ export function getDefaultAdminCredentials() {
 
 // Owns user persistence, default admin creation, preferences, and account cleanup.
 export class UserService {
+  /** Handles the create user request flow. */
   async createUser(payload: SignupPayload): Promise<IUser> {
-    // Creates a user document; model middleware hashes the password on save.
     try {
       const user = new User({
         email: payload.email,
@@ -35,8 +37,8 @@ export class UserService {
     }
   }
 
+  /** Handles the get user by email request flow. */
   async getUserByEmail(email: string): Promise<IUser | null> {
-    // Loads login-sensitive fields that are normally excluded from user queries.
     try {
       const normalizedEmail = email.trim().toLowerCase();
       const user = await User.findOne({ email: normalizedEmail }).select('+password +loginAttempts +lockUntil');
@@ -47,8 +49,8 @@ export class UserService {
     }
   }
 
+  /** Handles the ensure default admin user request flow. */
   async ensureDefaultAdminUser(): Promise<{ user: IUser; created: boolean }> {
-    // Creates the configured admin account once when it is missing.
     const defaultAdmin = getDefaultAdminCredentials();
     const existingAdmin = await User.findOne({ email: defaultAdmin.email });
 
@@ -68,6 +70,7 @@ export class UserService {
     return { user: admin, created: true };
   }
 
+  /** Handles the create password reset token request flow. */
   async createPasswordResetToken(email: string): Promise<{ resetToken: string } | null> {
     // Stores a hashed reset token and returns the raw token for email delivery.
     try {
@@ -90,8 +93,8 @@ export class UserService {
     }
   }
 
+  /** Handles the reset password request flow. */
   async resetPassword(resetToken: string, newPassword: string): Promise<IUser | null> {
-    // Validates the hashed reset token and replaces the user's password.
     try {
       const resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
@@ -117,6 +120,7 @@ export class UserService {
     }
   }
 
+  /** Handles the get user by id request flow. */
   async getUserById(id: string): Promise<IUser | null> {
     // Reads one user by id for profile and auth refresh requests.
     try {
@@ -127,6 +131,7 @@ export class UserService {
     }
   }
 
+  /** Handles the update user request flow. */
   async updateUser(id: string, updates: Partial<UserType>): Promise<IUser | null> {
     // Applies profile updates and lets the model hash a changed password.
     try {
@@ -149,8 +154,8 @@ export class UserService {
     }
   }
 
+  /** Handles the delete user request flow. */
   async deleteUser(id: string): Promise<IUser | null> {
-    // Deletes the user and all progress documents owned by that account.
     try {
       const user = await User.findById(id);
       if (!user) {
@@ -171,6 +176,7 @@ export class UserService {
     }
   }
 
+  /** Handles the get all users request flow. */
   async getAllUsers(): Promise<IUser[]> {
     // Lists users while excluding password fields.
     try {
@@ -181,6 +187,7 @@ export class UserService {
     }
   }
 
+  /** Handles the add to wishlist request flow. */
   async addToWishlist(userId: string, subjectId: string): Promise<IUser | null> {
     // Adds one subject ObjectId to the user's wishlist when it is not already present.
     try {
@@ -204,6 +211,7 @@ export class UserService {
     }
   }
 
+  /** Handles the remove from wishlist request flow. */
   async removeFromWishlist(userId: string, subjectId: string): Promise<IUser | null> {
     // Removes one subject ObjectId from the user's wishlist.
     try {
@@ -226,6 +234,7 @@ export class UserService {
     }
   }
 
+  /** Handles the get wishlist request flow. */
   async getWishlist(userId: string): Promise<IUser | null> {
     // Reads the user with wishlist subjects populated.
     try {
@@ -236,6 +245,7 @@ export class UserService {
     }
   }
 
+  /** Handles the save preferences request flow. */
   async savePreferences(userId: string, preferredSubjects: string[], ageGroup: '1-3' | '4-9' | '10-12'): Promise<IUser | null> {
     // Converts selected subject ids and stores onboarding preferences.
     try {
@@ -256,6 +266,7 @@ export class UserService {
     }
   }
 
+  /** Handles the skip preferences request flow. */
   async skipPreferences(userId: string): Promise<IUser | null> {
     // Marks onboarding complete without adding preferred subjects.
     try {

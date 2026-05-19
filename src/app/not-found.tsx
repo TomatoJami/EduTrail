@@ -1,6 +1,8 @@
 import Link from "next/link";
 
+/** Renders the not found interface. */
 export default function NotFound() {
+  // Returns the JSX layout for this render state.
   return (
     <main className="flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
       <div className="text-center px-4">

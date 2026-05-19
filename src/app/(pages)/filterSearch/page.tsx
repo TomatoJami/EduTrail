@@ -10,7 +10,9 @@ import { Sidebar } from "@/components/common/Sidebar";
 import { Course, Subject } from "@/types";
 import { CourseSearch } from "@/components/common/CourseSearch";
 
+/** Renders the filter search loading interface. */
 function FilterSearchLoading() {
+  // Returns the JSX layout for this render state.
   return (
     <main className="flex-1">
       <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen flex items-center justify-center">
@@ -20,6 +22,7 @@ function FilterSearchLoading() {
   );
 }
 
+/** Renders the filter search content interface. */
 function FilterSearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,6 +32,7 @@ function FilterSearchContent() {
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<string[]>([]);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     // Check if there's a subject parameter in the URL
     const subjectParam = searchParams.get("subject");
@@ -37,7 +41,9 @@ function FilterSearchContent() {
     }
   }, [searchParams]);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
+    /** Renders the fetch data interface. */
     const fetchData = async () => {
       try {
         const storedUser = localStorage.getItem("user");
@@ -69,6 +75,7 @@ function FilterSearchContent() {
 
   }, [router]);
 
+  /** Renders the toggle subject filter interface. */
   const toggleSubjectFilter = (subjectId: string) => {
     setSelectedSubjects((prev) =>
       prev.includes(subjectId)
@@ -77,6 +84,7 @@ function FilterSearchContent() {
     );
   };
 
+  /** Renders the toggle age group filter interface. */
   const toggleAgeGroupFilter = (ageGroup: string) => {
     setSelectedAgeGroup((prev) =>
       prev.includes(ageGroup)
@@ -116,7 +124,7 @@ function FilterSearchContent() {
             </div>
             <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-slate-700">
-                Ages {course.ageGroup}
+                Grades {course.ageGroup}
             </span>
             </div>
         </div>
@@ -146,9 +154,11 @@ function FilterSearchContent() {
   );
 
   if (!isInitialized) {
+    // Returns the JSX layout for this render state.
     return <FilterSearchLoading />;
     }
 
+  // Returns the JSX layout for this render state.
   return (
     <>
         <Header />
@@ -217,7 +227,7 @@ function FilterSearchContent() {
                             {/* Age Group Filter */}
                             <div className="mb-8">
                                 <h4 className="text-base font-semibold text-slate-900 mb-3 uppercase">
-                                Age Group
+                                Grades Group
                                 </h4>
                                 <div className="space-y-2">
                                 {["1-3", "4-9", "10-12"].map((ageGroup) => (
@@ -234,7 +244,7 @@ function FilterSearchContent() {
                                         className="w-5 h-5 rounded border-slate-300 text-indigo-600"
                                     />
                                     <span className="text-base text-slate-700">
-                                        Ages {ageGroup}
+                                        Grades {ageGroup}
                                     </span>
                                     </label>
                                 ))}
@@ -274,7 +284,9 @@ function FilterSearchContent() {
   );
 }
 
+/** Renders the filter search interface. */
 export default function FilterSearch() {
+  // Returns the JSX layout for this render state.
   return (
     <Suspense fallback={<FilterSearchLoading />}>
       <FilterSearchContent />

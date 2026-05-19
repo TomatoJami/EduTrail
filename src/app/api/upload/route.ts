@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
+/** Centralizes the backend API base URL used by request helpers. */
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+/** Proxies POST requests from the Next.js route to the backend API. */
 export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");

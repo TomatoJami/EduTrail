@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+/** Defines the TypeScript shape for feedback user. */
 type FeedbackUser = {
   _id?: string;
   name?: string;
   email?: string;
 };
 
+/** Defines the TypeScript shape for feedback item. */
 type FeedbackItem = {
   _id: string;
   feedbackType: "Error" | "Wish";
@@ -16,13 +18,16 @@ type FeedbackItem = {
   createdAt?: string;
 };
 
+/** Defines the TypeScript shape for filter type. */
 type FilterType = "all" | "Error" | "Wish";
 
+/** Defines the TypeScript shape for stored user. */
 type StoredUser = {
   id?: string;
   _id?: string;
 };
 
+/** Renders the get user id interface. */
 const getUserId = (): string | null => {
   if (typeof window === "undefined") {
     return null;
@@ -41,6 +46,7 @@ const getUserId = (): string | null => {
   }
 };
 
+/** Renders the format date interface. */
 const formatDate = (value?: string) => {
   if (!value) {
     return "Unknown date";
@@ -60,6 +66,7 @@ const formatDate = (value?: string) => {
   }).format(date);
 };
 
+/** Renders the get user field interface. */
 const getUserField = (user: string | FeedbackUser, field: keyof FeedbackUser) => {
   if (typeof user === "string") {
     return "Unknown";
@@ -68,16 +75,19 @@ const getUserField = (user: string | FeedbackUser, field: keyof FeedbackUser) =>
   return user[field] || "Unknown";
 };
 
+/** Renders the admin feedback page interface. */
 export default function AdminFeedbackPage() {
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     loadData();
   }, []);
 
+  /** Renders the load data interface. */
   const loadData = async () => {
     setLoading(true);
     setError("");
@@ -119,6 +129,7 @@ export default function AdminFeedbackPage() {
     return feedback.filter((item) => item.feedbackType === filter);
   }, [feedback, filter]);
 
+  // Returns the JSX layout for this render state.
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">

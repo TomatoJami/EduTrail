@@ -8,13 +8,15 @@ import { Chapter } from '../models/Chapter';
 import { Question } from '../models/Question';
 import { ApiResponse } from '../types';
 
+/** Retrieves authenticated user id data. */
 function getAuthenticatedUserId(req: Request) {
   return (req as Request & { userId?: string }).userId || (req.headers['x-user-id'] as string);
 }
 
-// Handles learner progress endpoints and translates progress records into API responses.
+/** Groups progress controller operations behind one class. */
 export class ProgressController {
 
+  /** Handles the get courses by user request flow. */
   async getCoursesByUser(req: Request, res: Response): Promise<void> {
     // Lists all course progress records for the authenticated user.
     try {
@@ -46,6 +48,7 @@ export class ProgressController {
     }
   }
 
+  /** Handles the get course progress request flow. */
   async getCourseProgress(req: Request, res: Response): Promise<void> {
     // Builds a course progress map from chapter and question completion records.
     try {
@@ -140,8 +143,8 @@ export class ProgressController {
     }
   }
 
+  /** Handles the bookmark course request flow. */
   async bookmarkCourse(req: Request, res: Response): Promise<void> {
-    // Toggles the bookmark flag on the user's course progress record.
     try {
       const { courseId } = req.params;
       const userId = getAuthenticatedUserId(req);
@@ -197,8 +200,8 @@ export class ProgressController {
     }
   }
 
+  /** Handles the start course request flow. */
   async startCourse(req: Request, res: Response): Promise<void> {
-    // Creates or updates a course progress record with in_progress status.
     try {
       const { courseId } = req.params;
       const userId = getAuthenticatedUserId(req);
@@ -254,6 +257,7 @@ export class ProgressController {
     }
   }
 
+  /** Handles the update course status request flow. */
   async updateCourseStatus(req: Request, res: Response): Promise<void> {
     // Marks a course completed only after all chapters/questions are complete.
     try {
@@ -341,6 +345,7 @@ export class ProgressController {
     }
   }
 
+  /** Handles the update chapter progress request flow. */
   async updateChapterProgress(req: Request, res: Response): Promise<void> {
     // Upserts one chapter completion state for the authenticated user.
     try {
@@ -399,6 +404,7 @@ export class ProgressController {
     }
   }
 
+  /** Handles the get chapter progress request flow. */
   async getChapterProgress(req: Request, res: Response): Promise<void> {
     // Reads one chapter progress record for the authenticated user.
     try {
@@ -440,6 +446,7 @@ export class ProgressController {
     }
   }
 
+  /** Handles the update question status request flow. */
   async updateQuestionStatus(req: Request, res: Response): Promise<void> {
     // Upserts one question completion state for the authenticated user.
     try {
@@ -490,6 +497,7 @@ export class ProgressController {
     }
   }
 
+  /** Handles the get question progress request flow. */
   async getQuestionProgress(req: Request, res: Response): Promise<void> {
     // Reads one question progress record for the authenticated user.
     try {
@@ -534,6 +542,7 @@ export class ProgressController {
     }
   }
 
+  /** Handles the get module question statuses request flow. */
   async getModuleQuestionStatuses(req: Request, res: Response): Promise<void> {
     // Returns all question progress records scoped to a module.
     try {

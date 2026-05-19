@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Module, IModule } from '../models/Module';
 
+/** Defines the TypeScript shape for module payload. */
 export interface ModulePayload {
   title: string;
   order?: number;
@@ -9,11 +10,13 @@ export interface ModulePayload {
 
 // Owns module persistence and cascading deletes for nested learning content.
 export class ModuleService {
+  /** Handles the get all modules request flow. */
   async getAllModules(): Promise<IModule[]> {
     // Reads every module when no course filter is supplied.
     return Module.find().populate('course_id').sort({ order: 1 });
   }
 
+  /** Handles the get modules by course id request flow. */
   async getModulesByCourseId(courseId: string): Promise<IModule[]> {
     // Reads modules for one course in learning order.
     if (!mongoose.isValidObjectId(courseId)) {
@@ -22,8 +25,8 @@ export class ModuleService {
     return Module.find({ course_id: courseId }).populate('course_id').sort({ order: 1 });
   }
 
+  /** Handles the create module request flow. */
   async createModule(payload: ModulePayload): Promise<IModule> {
-    // Creates a module and auto-assigns the next order when none is supplied.
     const courseId = new mongoose.Types.ObjectId(payload.course_id);
     
     let order = payload.order;
@@ -45,8 +48,8 @@ export class ModuleService {
     return module.populate('course_id');
   }
 
+  /** Handles the update module request flow. */
   async updateModule(id: string, payload: Partial<ModulePayload>): Promise<IModule | null> {
-    // Updates module metadata while keeping validation enabled.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid module id');
     }
@@ -66,8 +69,8 @@ export class ModuleService {
     }).populate('course_id');
   }
 
+  /** Handles the delete module request flow. */
   async deleteModule(id: string): Promise<IModule | null> {
-    // Deletes the module and cascades chapter/question removal.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid module id');
     }
@@ -92,6 +95,7 @@ export class ModuleService {
     return deletedModule;
   }
 
+  /** Handles the get module by id request flow. */
   async getModuleById(id: string): Promise<IModule | null> {
     // Reads one module by id.
     if (!mongoose.isValidObjectId(id)) {

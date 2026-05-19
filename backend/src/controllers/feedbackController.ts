@@ -6,8 +6,9 @@ import {
 } from "../services/feedbackService";
 import { ApiResponse } from "../types";
 
-// Handles feedback submission and admin feedback retrieval endpoints.
+/** Groups feedback controller operations behind one class. */
 export class FeedbackController {
+  /** Handles the create feedback request flow. */
   async createFeedback(req: Request, res: Response): Promise<void> {
     // Accepts learner feedback and stores the user id supplied by the proxy.
     try {
@@ -65,6 +66,7 @@ export class FeedbackController {
     }
   }
 
+  /** Handles the get all feedback request flow. */
   async getAllFeedback(req: Request, res: Response): Promise<void> {
     // Returns feedback entries for the admin review page.
     try {
@@ -84,6 +86,7 @@ export class FeedbackController {
     }
   }
 
+  /** Handles the get feedback by id request flow. */
   async getFeedbackById(req: Request, res: Response): Promise<void> {
     // Fetches one feedback item by id for admin detail views.
     try {
@@ -113,6 +116,7 @@ export class FeedbackController {
     }
   }
 
+  /** Handles the get feedback by type request flow. */
   async getFeedbackByType(req: Request, res: Response): Promise<void> {
     // Filters feedback by type for admin triage.
     try {

@@ -11,6 +11,7 @@ import { QuestionProgress } from '../models/QuestionProgress';
 import { CourseProgress } from '../models/CourseProgress';
 import { deleteRemovedSupabaseImages, deleteSupabaseImages } from './storageCleanupService';
 
+/** Defines the TypeScript shape for course payload. */
 export interface CoursePayload {
   title: string;
   description: string;
@@ -22,11 +23,13 @@ export interface CoursePayload {
 
 // Owns course persistence and related cleanup that must happen outside controllers.
 export class CourseService {
+  /** Handles the get all courses request flow. */
   async getAllCourses(): Promise<ICourse[]> {
     // Reads courses with subject data so API consumers receive display-ready records.
     return Course.find().populate('subject_id').sort({ createdAt: -1 });
   }
 
+  /** Handles the create course request flow. */
   async createCourse(payload: CoursePayload): Promise<ICourse> {
     // Persists a new course document from validated controller input.
     const course = new Course({
@@ -38,8 +41,8 @@ export class CourseService {
     return course.populate('subject_id');
   }
 
+  /** Handles the update course request flow. */
   async updateCourse(id: string, payload: Partial<CoursePayload>): Promise<ICourse | null> {
-    // Updates course fields and deletes the previous image when it was replaced.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid course id');
     }
@@ -72,6 +75,7 @@ export class CourseService {
     return updatedCourse;
   }
 
+  /** Handles the delete course request flow. */
   async deleteCourse(id: string): Promise<ICourse | null> {
     // Removes a course, nested modules/chapters/questions, progress, and course images.
     if (!mongoose.isValidObjectId(id)) {
@@ -136,6 +140,7 @@ export class CourseService {
     return course;
   }
 
+  /** Handles the get course by id request flow. */
   async getCourseById(id: string): Promise<ICourse | null> {
     // Reads one course and populates its subject relation for detail pages.
     if (!mongoose.isValidObjectId(id)) {

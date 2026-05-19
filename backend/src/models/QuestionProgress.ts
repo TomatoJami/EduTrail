@@ -1,6 +1,7 @@
 // backend/src/models/QuestionProgress.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
+/** Defines the TypeScript shape for question progress. */
 export interface IQuestionProgress extends Document {
   user_id: mongoose.Types.ObjectId;
   question_id: mongoose.Types.ObjectId;

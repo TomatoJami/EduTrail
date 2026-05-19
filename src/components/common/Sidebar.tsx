@@ -9,6 +9,7 @@ const menuItems = [
   {
     href: "/",
     label: "My Progress",
+    // Renders the icon UI.
     icon: {
       default: "/progress.png",
       active: "/progress_picked.png",
@@ -19,6 +20,7 @@ const menuItems = [
   {
     href: "/courses",
     label: "Search Courses",
+    // Renders the icon UI.
     icon: {
       default: "/courses.png",
       active: "/courses_picked.png",
@@ -28,12 +30,15 @@ const menuItems = [
   },
 ] as const;
 
+/** Renders the sidebar interface. */
 export function Sidebar() {
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
+    /** Keeps the check admin logic isolated and reusable. */
     const checkAdmin = () => {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
@@ -56,6 +61,7 @@ export function Sidebar() {
     };
   }, []);
 
+  // Returns the JSX layout for this render state.
   return (
     <aside className="w-full border-b border-gray-200 bg-white md:w-56 md:shrink-0 md:border-b-0 md:border-r">
       <div className="h-full px-4 py-5 flex flex-col">
@@ -69,6 +75,7 @@ export function Sidebar() {
           const iconSrc: typeof item.icon.default | typeof item.icon.active | typeof item.icon.hover = 
             isActive ? item.icon.active : isHovered ? item.icon.hover : item.icon.default;
 
+          // Returns the JSX layout for this render state.
           return (
             <Link
               key={item.href}

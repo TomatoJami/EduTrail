@@ -19,11 +19,13 @@ export const metadata: Metadata = {
     "Learn the courses you need without any hassle. Track your progress, build your skills, and achieve your learning goals.",
 };
 
+/** Renders the root layout interface. */
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Returns the JSX layout for this render state.
   return (
     <html
       lang="en"

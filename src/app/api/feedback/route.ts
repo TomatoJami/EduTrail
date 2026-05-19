@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 
+/** Centralizes the backend API base URL used by request helpers. */
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+/** Builds auth headers for backend proxy requests. */
 function getAuthHeaders(request: NextRequest) {
   const userId = request.headers.get("x-user-id");
   const authorization = request.headers.get("authorization");
@@ -26,6 +28,7 @@ function getAuthHeaders(request: NextRequest) {
   return headers;
 }
 
+/** Proxies GET requests from the Next.js route to the backend API. */
 export async function GET(request: NextRequest) {
   try {
     const headers = getAuthHeaders(request);
@@ -52,6 +55,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/** Proxies POST requests from the Next.js route to the backend API. */
 export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");

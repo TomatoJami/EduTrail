@@ -1,13 +1,16 @@
 import mongoose from 'mongoose';
 
+/** Chooses the MongoDB connection string for the backend. */
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/edutrail';
 
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable');
 }
 
+/** Keeps the cached logic isolated and reusable. */
 const cached = (global as any).mongoose || { conn: null, promise: null };
 
+/** Keeps the connect db logic isolated and reusable. */
 async function connectDB() {
   if (cached.conn) {
     return cached.conn;

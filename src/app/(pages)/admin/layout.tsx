@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AdminNav } from "@/components/admin/AdminNav";
 
+/** Defines the TypeScript shape for auth user. */
 type AuthUser = {
   id?: string;
   _id?: string;
   role?: "student" | "admin";
 };
 
+/** Renders the get stored user interface. */
 function getStoredUser(): AuthUser | null {
   if (typeof window === "undefined") {
     return null;
@@ -28,10 +30,12 @@ function getStoredUser(): AuthUser | null {
   }
 }
 
+/** Renders the admin layout interface. */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     const user = getStoredUser();
     if (!user || user.role !== "admin") {
@@ -43,9 +47,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [router]);
 
   if (isCheckingAccess) {
+    // Returns the JSX layout for this render state.
     return <section className="min-h-screen bg-slate-100" />;
   }
 
+  // Returns the JSX layout for this render state.
   return (
     <main className="min-h-screen bg-slate-100 py-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

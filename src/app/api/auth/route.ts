@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 
+/** Centralizes the backend API base URL used by request helpers. */
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+/** Defines the TypeScript shape for auth action. */
 type AuthAction = 'signup' | 'login' | 'update' | 'forgot-password' | 'reset-password' | 'logout';
 
+/** Defines the TypeScript shape for auth request body. */
 interface AuthRequestBody {
   action?: AuthAction;
   email?: string;
@@ -14,6 +17,7 @@ interface AuthRequestBody {
   token?: string;
 }
 
+/** Proxies POST requests from the Next.js route to the backend API. */
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as AuthRequestBody;

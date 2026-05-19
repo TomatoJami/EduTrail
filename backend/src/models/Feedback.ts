@@ -1,7 +1,9 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+/** Defines the TypeScript shape for feedback type. */
 export type FeedbackType = 'Error' | 'Wish';
 
+/** Defines the TypeScript shape for feedback. */
 export interface IFeedback extends Document {
   feedbackType: FeedbackType;
   data: string;

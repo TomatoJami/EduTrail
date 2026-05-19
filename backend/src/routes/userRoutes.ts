@@ -3,6 +3,7 @@ import { userController } from '../controllers/userController';
 import { adminMiddleware, authMiddleware } from '../middleware/authMiddleware';
 import { authRateLimiter, passwordResetRateLimiter } from '../middleware/rateLimitMiddleware';
 
+/** Collects this module route handlers before they are mounted in Express. */
 const router = Router();
 
 // Auth routes are rate-limited; profile/admin routes below are protected per handler.

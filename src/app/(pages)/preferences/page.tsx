@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SubjectPreference, NewUserData } from '@/types';
 
+/** Renders the preferences page interface. */
 export default function PreferencesPage() {
   const router = useRouter();
   const [userData, setUserData] = useState<NewUserData | null>(null);
@@ -16,6 +17,7 @@ export default function PreferencesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     // Check if user is newly registered
     const newUserData = sessionStorage.getItem('newUserData');
@@ -37,6 +39,7 @@ export default function PreferencesPage() {
     fetchSubjects();
   }, [router]);
 
+  /** Renders the fetch subjects interface. */
   const fetchSubjects = async () => {
     try {
       // Load available subjects so the learner can choose onboarding preferences.
@@ -53,6 +56,7 @@ export default function PreferencesPage() {
     }
   };
 
+  /** Renders the handle subject change interface. */
   const handleSubjectChange = (subjectId: string) => {
     setSelectedSubjects((prev) =>
       prev.includes(subjectId)
@@ -61,6 +65,7 @@ export default function PreferencesPage() {
     );
   };
 
+  /** Renders the handle save preferences interface. */
   const handleSavePreferences = async () => {
     if (!ageGroup) {
       setError('Please select an age group');
@@ -99,6 +104,7 @@ export default function PreferencesPage() {
     }
   };
 
+  /** Renders the handle skip interface. */
   const handleSkip = async () => {
     setSaving(true);
     setError('');
@@ -129,6 +135,7 @@ export default function PreferencesPage() {
   };
 
   if (loading) {
+    // Returns the JSX layout for this render state.
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
         <div className="text-center">
@@ -139,6 +146,7 @@ export default function PreferencesPage() {
     );
   }
 
+  // Returns the JSX layout for this render state.
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 px-4 py-12">
       <div className="max-w-3xl mx-auto">

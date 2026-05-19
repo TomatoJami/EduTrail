@@ -2,10 +2,10 @@ import { Request, Response } from 'express';
 import { supabaseService } from '../services/supabaseService';
 import { ApiResponse } from '../types';
 
-// Handles image upload requests before delegating storage writes to Supabase.
+/** Groups upload controller operations behind one class. */
 export class UploadController {
+  /** Handles the upload image request flow. */
   async uploadImage(req: Request, res: Response): Promise<void> {
-    // Validates the multipart file and uploads it into the requested Supabase folder.
     try {
       // Ensure a file was sent before validating image metadata.
       if (!req.file) {

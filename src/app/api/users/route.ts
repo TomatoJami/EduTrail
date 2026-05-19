@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+/** Proxies GET requests from the Next.js route to the backend API. */
 export async function GET(request: NextRequest) {
   try {
     const userId = request.headers.get('x-user-id');

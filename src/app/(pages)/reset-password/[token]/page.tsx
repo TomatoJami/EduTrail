@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { validatePassword } from "@/utils/helpers";
 
+/** Renders the get password requirements interface. */
 const getPasswordRequirements = (password: string) => [
   { label: "8+ characters", met: password.length >= 8 },
   { label: "1 letter", met: /[A-Za-z]/.test(password) },
@@ -14,6 +15,7 @@ const getPasswordRequirements = (password: string) => [
   { label: "1 special character", met: /[^A-Za-z0-9]/.test(password) },
 ];
 
+/** Renders the reset password page interface. */
 export default function ResetPasswordPage() {
   const params = useParams<{ token: string }>();
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  /** Renders the handle submit interface. */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -79,6 +82,7 @@ export default function ResetPasswordPage() {
     }
   };
 
+  // Returns the JSX layout for this render state.
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">

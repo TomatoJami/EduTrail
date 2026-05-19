@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { ImageUploader } from "@/components/ImageUploader";
 
+/** Defines the TypeScript shape for subject. */
 type Subject = {
   _id: string;
   subject_name: string;
 };
 
+/** Defines the TypeScript shape for course item. */
 type CourseItem = {
   _id: string;
   title: string;
@@ -18,6 +20,7 @@ type CourseItem = {
   goals?: string[];
 };
 
+/** Defines the TypeScript shape for module. */
 type Module = {
   _id: string;
   title: string;
@@ -25,6 +28,7 @@ type Module = {
   course_id: string;
 };
 
+/** Defines the TypeScript shape for chapter. */
 type Chapter = {
   _id: string;
   title: string;
@@ -33,12 +37,14 @@ type Chapter = {
   module_id: string;
 };
 
+/** Defines the TypeScript shape for fill blank. */
 type FillBlank = {
   blankId: string;
   correctAnswers: string[];
   caseSensitive?: boolean;
 };
 
+/** Defines the TypeScript shape for question. */
 type Question = {
   _id: string;
   question?: string;
@@ -54,8 +60,10 @@ type Question = {
   caseSensitive?: boolean;
 };
 
+/** Defines the TypeScript shape for question type. */
 type QuestionType = "test" | "short-answer" | "fill-blank";
 
+/** Defines the TypeScript shape for question create payload. */
 type QuestionCreatePayload =
   | {
       type: "test";
@@ -84,21 +92,26 @@ type QuestionCreatePayload =
       module_id: string;
     };
 
+/** Defines the TypeScript shape for stored user. */
 type StoredUser = {
   id?: string;
   _id?: string;
 };
 
+/** Renders the course text limit interface. */
 const COURSE_TEXT_LIMIT = 120;
 
+/** Renders the truncate text interface. */
 const truncateText = (value: string, limit = COURSE_TEXT_LIMIT) => {
   if (!value || value.length <= limit) return value;
   return `${value.slice(0, limit).trimEnd()}...`;
 };
 
+/** Renders the normalize goals interface. */
 const normalizeGoals = (goals: string[]) =>
   goals.map((goal) => goal.trim()).filter(Boolean);
 
+/** Renders the find course text limit error interface. */
 const findCourseTextLimitError = (title: string, description: string, goals: string[]) => {
   if (title.trim().length > COURSE_TEXT_LIMIT) {
     return `Course title cannot exceed ${COURSE_TEXT_LIMIT} characters`;
@@ -115,16 +128,19 @@ const findCourseTextLimitError = (title: string, description: string, goals: str
   return null;
 };
 
+/** Renders the get entity id interface. */
 const getEntityId = (value: string | { _id?: string } | null | undefined): string => {
   if (!value) return "";
   return typeof value === "string" ? value : value._id || "";
 };
 
+/** Renders the normalize chapter interface. */
 const normalizeChapter = (chapter: Chapter): Chapter => ({
   ...chapter,
   module_id: getEntityId(chapter.module_id as unknown as string | { _id?: string }),
 });
 
+/** Renders the get user id interface. */
 const getUserId = (): string | null => {
   if (typeof window === "undefined") {
     return null;
@@ -139,6 +155,7 @@ const getUserId = (): string | null => {
   }
 };
 
+/** Renders the admin courses page interface. */
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -196,10 +213,12 @@ export default function AdminCoursesPage() {
     explanation: "",
   });
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     loadData();
   }, []);
 
+  /** Renders the load data interface. */
   const loadData = async () => {
     setLoading(true);
     setError("");
@@ -234,6 +253,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the load modules interface. */
   const loadModules = async (courseId: string) => {
     try {
       const userId = getUserId();
@@ -254,6 +274,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the load chapters interface. */
   const loadChapters = async (moduleId: string) => {
     try {
       const userId = getUserId();
@@ -275,6 +296,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the load questions interface. */
   const loadQuestions = async (moduleId: string) => {
     try {
       const userId = getUserId();
@@ -293,6 +315,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the load module content interface. */
   const loadModuleContent = async (moduleId: string) => {
     setLoadingModuleContent((prev) => ({ ...prev, [moduleId]: true }));
     try {
@@ -302,6 +325,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the handle course create interface. */
   const handleCourseCreate = async () => {
     if (!courseForm.title || !courseForm.description || !courseForm.subject_id) {
       setError("Please fill all required fields");
@@ -364,6 +388,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the handle course update interface. */
   const handleCourseUpdate = async () => {
     if (!editingCourse) return;
 
@@ -420,6 +445,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the handle course delete interface. */
   const handleCourseDelete = async (courseId: string) => {
     if (!confirm("Are you sure you want to delete this course and all its modules/chapters?")) return;
 
@@ -497,6 +523,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the handle module update interface. */
   const handleModuleUpdate = async () => {
     if (!editingModule) return;
 
@@ -536,6 +563,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the handle module delete interface. */
   const handleModuleDelete = async (moduleId: string, courseId: string) => {
     if (!confirm("Delete this module and all its chapters/questions?")) return;
 
@@ -608,6 +636,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the handle chapter update interface. */
   const handleChapterUpdate = async () => {
     if (!editingChapter) return;
 
@@ -650,6 +679,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the handle chapter delete interface. */
   const handleChapterDelete = async (chapterId: string, moduleId: string) => {
     if (!confirm("Delete this chapter?")) return;
 
@@ -779,6 +809,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the build question payload interface. */
   const buildQuestionPayload = (question: Question) => {
     if (question.type === "short-answer") {
       return {
@@ -812,6 +843,7 @@ export default function AdminCoursesPage() {
     };
   };
 
+  /** Renders the handle question update interface. */
   const handleQuestionUpdate = async () => {
     if (!editingQuestion) return;
 
@@ -865,6 +897,7 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the handle question delete interface. */
   const handleQuestionDelete = async (questionId: string, moduleId: string) => {
     if (!confirm("Delete this question?")) return;
 
@@ -894,18 +927,21 @@ export default function AdminCoursesPage() {
     }
   };
 
+  /** Renders the get question display interface. */
   const getQuestionDisplay = (q: Question) => {
     if (q.question) return q.question;
     if (q.questionText) return q.questionText;
     return "Question";
   };
 
+  /** Renders the get question type label interface. */
   const getQuestionTypeLabel = (type?: string) => {
     if (type === "short-answer") return "Short answer";
     if (type === "fill-blank") return "Fill in the blank";
     return "Multiple choice";
   };
 
+  /** Renders the start question edit interface. */
   const startQuestionEdit = (question: Question) => {
     setEditingQuestion({
       ...question,
@@ -920,6 +956,7 @@ export default function AdminCoursesPage() {
     });
   };
 
+  /** Renders the insert markdown image interface. */
   const insertMarkdownImage = (content: string, imageUrl: string, position?: number, alt = "Chapter image") => {
     const trimmedUrl = imageUrl.trim();
     if (!trimmedUrl) return content;
@@ -937,9 +974,11 @@ export default function AdminCoursesPage() {
     return `${before}\n\n${imageMarkdown}\n\n${after}`;
   };
 
+  /** Renders the render chapter image inserter interface. */
   const renderChapterImageInserter = (onInsert: (imageUrl: string) => void) => {
     const userId = getUserId() || undefined;
 
+    // Returns the JSX layout for this render state.
     return (
       <div className="space-y-2 rounded border border-slate-200 bg-white p-2">
         <p className="text-xs font-medium text-slate-700">Insert image into content</p>
@@ -965,9 +1004,11 @@ export default function AdminCoursesPage() {
     );
   };
 
+  /** Renders the render question image controls interface. */
   const renderQuestionImageControls = (value: string | undefined, onChange: (imageUrl: string) => void) => {
     const userId = getUserId() || undefined;
 
+    // Returns the JSX layout for this render state.
     return (
       <div className="space-y-2 rounded border border-slate-200 bg-white p-2">
         <input
@@ -1004,6 +1045,7 @@ export default function AdminCoursesPage() {
   };
 
   if (loading) {
+    // Returns the JSX layout for this render state.
     return (
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-center text-slate-600">Loading courses...</p>
@@ -1011,6 +1053,7 @@ export default function AdminCoursesPage() {
     );
   }
 
+  // Returns the JSX layout for this render state.
   return (
     <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { progressController } from '../controllers/progressController';
 import { authMiddleware } from '../middleware/authMiddleware';
 
+/** Collects this module route handlers before they are mounted in Express. */
 const router = Router();
 
 // Every progress endpoint requires an authenticated learner.

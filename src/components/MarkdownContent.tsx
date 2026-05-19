@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 
+/** Defines the TypeScript shape for block. */
 type Block =
   | { type: "heading"; level: 1 | 2 | 3; text: string }
   | { type: "image"; alt: string; src: string }
@@ -17,6 +18,7 @@ const headingClasses: Record<1 | 2 | 3, string> = {
   3: "mt-6 mb-2 text-xl font-semibold text-slate-900",
 };
 
+/** Keeps the safe href logic isolated and reusable. */
 function safeHref(href: string) {
   if (/^(https?:\/\/|mailto:|\/)/i.test(href)) {
     return href;
@@ -25,6 +27,7 @@ function safeHref(href: string) {
   return "#";
 }
 
+/** Keeps the render inline logic isolated and reusable. */
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const pattern = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))/g;
@@ -76,6 +79,7 @@ function renderInline(text: string): ReactNode[] {
   return nodes;
 }
 
+/** Keeps the parse markdown logic isolated and reusable. */
 function parseMarkdown(markdown: string): Block[] {
   const blocks: Block[] = [];
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
@@ -178,14 +182,17 @@ function parseMarkdown(markdown: string): Block[] {
   return blocks;
 }
 
+/** Renders the markdown content interface. */
 export function MarkdownContent({ content }: { content: string }) {
   const blocks = parseMarkdown(content || "No content available.");
 
+  // Returns the JSX layout for this render state.
   return (
     <article className="mt-8 max-w-none text-slate-700">
       {blocks.map((block, index) => {
         if (block.type === "heading") {
           const Heading = `h${block.level}` as const;
+          // Returns the JSX layout for this render state.
           return (
             <Heading key={index} className={headingClasses[block.level]}>
               {renderInline(block.text)}
@@ -194,6 +201,7 @@ export function MarkdownContent({ content }: { content: string }) {
         }
 
         if (block.type === "paragraph") {
+          // Returns the JSX layout for this render state.
           return (
             <p key={index} className="my-4 text-base leading-7 text-slate-700 break-words">
               {renderInline(block.text)}
@@ -202,6 +210,7 @@ export function MarkdownContent({ content }: { content: string }) {
         }
 
         if (block.type === "image") {
+          // Returns the JSX layout for this render state.
           return (
             <figure key={index} className="my-6">
               <img
@@ -217,6 +226,7 @@ export function MarkdownContent({ content }: { content: string }) {
         }
 
         if (block.type === "quote") {
+          // Returns the JSX layout for this render state.
           return (
             <blockquote key={index} className="my-5 border-l-4 border-indigo-200 bg-indigo-50 px-4 py-3 text-slate-700 break-words">
               {renderInline(block.text)}
@@ -225,6 +235,7 @@ export function MarkdownContent({ content }: { content: string }) {
         }
 
         if (block.type === "ul") {
+          // Returns the JSX layout for this render state.
           return (
             <ul key={index} className="my-4 list-disc space-y-2 pl-6 text-base leading-7">
               {block.items.map((item, itemIndex) => (
@@ -235,6 +246,7 @@ export function MarkdownContent({ content }: { content: string }) {
         }
 
         if (block.type === "ol") {
+          // Returns the JSX layout for this render state.
           return (
             <ol key={index} className="my-4 list-decimal space-y-2 pl-6 text-base leading-7">
               {block.items.map((item, itemIndex) => (
@@ -244,6 +256,7 @@ export function MarkdownContent({ content }: { content: string }) {
           );
         }
 
+        // Returns the JSX layout for this render state.
         return (
           <pre key={index} className="my-5 overflow-x-auto rounded-lg bg-slate-950 p-4 text-sm leading-6 text-slate-100">
             <code>{block.code}</code>

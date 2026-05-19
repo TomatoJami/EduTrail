@@ -7,6 +7,7 @@ import { Footer } from "@/components/common/Footer";
 import { AccountSidebar } from "@/components/common/AccountSidebar";
 import { useAuth } from "@/hooks/useAuth";
 
+/** Renders the account page interface. */
 export default function AccountPage() {
   const router = useRouter();
   const { user, isLoading, error, updateProfile, loadUser } = useAuth();
@@ -20,6 +21,7 @@ export default function AccountPage() {
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showPasswordInput, setShowPasswordInput] = useState(false);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser) {
@@ -30,6 +32,7 @@ export default function AccountPage() {
     loadUser();
   }, [router, loadUser]);
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
     if (user) {
       setFormData({
@@ -40,6 +43,7 @@ export default function AccountPage() {
     }
   }, [user]);
 
+  /** Renders the handle input change interface. */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -48,6 +52,7 @@ export default function AccountPage() {
     }));
   };
 
+  /** Renders the handle save interface. */
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -79,6 +84,7 @@ export default function AccountPage() {
   };
 
   if (!isInitialized) {
+		// Returns the JSX layout for this render state.
 		return (
 			<main className="flex-1 bg-white">
 				<section className="min-h-screen flex items-center justify-center">
@@ -88,6 +94,7 @@ export default function AccountPage() {
 		);
 	}
 
+  // Returns the JSX layout for this render state.
   return (
     <>
       <Header />

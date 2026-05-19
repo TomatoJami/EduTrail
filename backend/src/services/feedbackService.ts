@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Feedback, IFeedback, FeedbackType } from "../models/Feedback";
 
+/** Defines the TypeScript shape for feedback payload. */
 export interface FeedbackPayload {
   feedbackType: FeedbackType;
   data: string;
@@ -9,6 +10,7 @@ export interface FeedbackPayload {
 
 // Owns feedback persistence and query helpers for admin review screens.
 export class FeedbackService {
+  /** Handles the create feedback request flow. */
   async createFeedback(payload: FeedbackPayload): Promise<IFeedback> {
     // Stores one feedback entry from the public feedback form.
     if (!mongoose.isValidObjectId(payload.user_id)) {
@@ -26,6 +28,7 @@ export class FeedbackService {
     return feedback.populate("user_id");
   }
 
+  /** Handles the get all feedback request flow. */
   async getAllFeedback(): Promise<IFeedback[]> {
     // Reads feedback entries newest-first for admin review.
     return Feedback.find()
@@ -33,6 +36,7 @@ export class FeedbackService {
       .sort({ createdAt: -1 });
   }
 
+  /** Handles the get feedback by id request flow. */
   async getFeedbackById(id: string): Promise<IFeedback | null> {
     // Reads one feedback entry by id.
     if (!mongoose.isValidObjectId(id)) {
@@ -42,6 +46,7 @@ export class FeedbackService {
     return Feedback.findById(id).populate("user_id");
   }
 
+  /** Handles the get feedback by type request flow. */
   async getFeedbackByType(feedbackType: FeedbackType): Promise<IFeedback[]> {
     // Reads feedback entries filtered by category.
     if (!["Error", "Wish"].includes(feedbackType)) {

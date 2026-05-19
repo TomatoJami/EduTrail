@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { subjectController } from '../controllers/subjectController';
 import { adminMiddleware } from '../middleware/authMiddleware';
 
+/** Collects this module route handlers before they are mounted in Express. */
 const router = Router();
 
 // Public read routes expose subjects; mutating routes below require adminMiddleware.

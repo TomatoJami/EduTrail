@@ -6,11 +6,13 @@ export const formatDate = (date: Date): string => {
   return new Date(date).toLocaleDateString('ru-RU');
 };
 
+/** Validates email input. */
 export const validateEmail = (email: string): boolean => {
   const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
   return emailRegex.test(email);
 };
 
+/** Validates password input. */
 export const validatePassword = (password: string): { valid: boolean; message?: string } => {
   if (password.length < 8) {
     return { valid: false, message: 'Password must be at least 8 characters long' };
@@ -29,6 +31,7 @@ export const validatePassword = (password: string): { valid: boolean; message?: 
   }
   return { valid: true };
 };
+/** Keeps the generate error message logic isolated and reusable. */
 export const generateErrorMessage = (error: any): string => {
   if (error instanceof Error) {
     return error.message;

@@ -1,11 +1,13 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+/** Defines the TypeScript shape for iblanks data. */
 export interface IBlanksData {
   blankId: string;
   correctAnswers: string[];
   caseSensitive?: boolean;
 }
 
+/** Defines the TypeScript shape for ifill in the blank question. */
 export interface IFillInTheBlankQuestion extends Document {
   module_id: mongoose.Types.ObjectId;
   questionText: string;

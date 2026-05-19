@@ -5,6 +5,7 @@ import { ShortAnswerQuestion, IShortAnswerQuestion } from '../models/ShortAnswer
 import { FillInTheBlankQuestion, IFillInTheBlankQuestion } from '../models/FillInTheBlankQuestion';
 import { deleteRemovedSupabaseImages, deleteSupabaseImages } from './storageCleanupService';
 
+/** Defines the TypeScript shape for create test question payload. */
 export interface CreateTestQuestionPayload {
   question: string;
   question_img?: string;
@@ -14,6 +15,7 @@ export interface CreateTestQuestionPayload {
   module_id: string;
 }
 
+/** Defines the TypeScript shape for create short answer payload. */
 export interface CreateShortAnswerPayload {
   question: string;
   question_img?: string;
@@ -23,6 +25,7 @@ export interface CreateShortAnswerPayload {
   module_id: string;
 }
 
+/** Defines the TypeScript shape for create fill blank payload. */
 export interface CreateFillBlankPayload {
   questionText: string;
   question_img?: string;
@@ -31,6 +34,7 @@ export interface CreateFillBlankPayload {
   module_id: string;
 }
 
+/** Defines the TypeScript shape for update question payload. */
 type UpdateQuestionPayload = Partial<
   CreateTestQuestionPayload &
   CreateShortAnswerPayload &
@@ -39,6 +43,7 @@ type UpdateQuestionPayload = Partial<
 
 // Owns question persistence across wrapper and type-specific question collections.
 export class QuestionService {
+  /** Handles the get all questions request flow. */
   async getAllQuestions(): Promise<any[]> {
     // Reads wrapper questions and expands each wrapper into its subtype data.
     const questions = await Question.find();
@@ -58,6 +63,7 @@ export class QuestionService {
     return result;
   }
 
+  /** Handles the get questions by module id request flow. */
   async getQuestionsByModuleId(moduleId: string): Promise<any[]> {
     // Reads questions for a module and lazily migrates old subtype-only records.
     if (!mongoose.isValidObjectId(moduleId)) {
@@ -88,6 +94,7 @@ export class QuestionService {
     return result;
   }
 
+  /** Handles the migrate questions for module request flow. */
   private async migrateQuestionsForModule(moduleId: string): Promise<void> {
     try {
       
@@ -139,6 +146,7 @@ export class QuestionService {
     }
   }
 
+  /** Handles the populate type data request flow. */
   private async populateTypeData(question: any): Promise<any> {
     try {
       if (question.type === 'test') {
@@ -158,7 +166,6 @@ export class QuestionService {
 
   // Test Question methods
   async createTestQuestion(payload: CreateTestQuestionPayload): Promise<any> {
-    // Creates a multiple-choice subtype record and its wrapper Question.
     if (!mongoose.isValidObjectId(payload.module_id)) {
       throw new Error('Invalid module id');
     }
@@ -190,7 +197,6 @@ export class QuestionService {
 
   // Short Answer Question methods
   async createShortAnswerQuestion(payload: CreateShortAnswerPayload): Promise<any> {
-    // Creates a short-answer subtype record and its wrapper Question.
     if (!mongoose.isValidObjectId(payload.module_id)) {
       throw new Error('Invalid module id');
     }
@@ -222,7 +228,6 @@ export class QuestionService {
 
   // Fill in the blank Question methods
   async createFillBlankQuestion(payload: CreateFillBlankPayload): Promise<any> {
-    // Creates a fill-in-the-blank subtype record and its wrapper Question.
     if (!mongoose.isValidObjectId(payload.module_id)) {
       throw new Error('Invalid module id');
     }
@@ -251,6 +256,7 @@ export class QuestionService {
     };
   }
 
+  /** Handles the get question by id request flow. */
   async getQuestionById(id: string): Promise<any> {
     // Reads one wrapper question and returns normalized subtype data.
     if (!mongoose.isValidObjectId(id)) {
@@ -271,8 +277,8 @@ export class QuestionService {
     };
   }
 
+  /** Handles the delete question request flow. */
   async deleteQuestion(id: string): Promise<void> {
-    // Deletes subtype and wrapper records, then removes the referenced image.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid question id');
     }
@@ -299,6 +305,7 @@ export class QuestionService {
     await deleteSupabaseImages(typeData?.question_img);
   }
 
+  /** Handles the update question request flow. */
   async updateQuestion(id: string, payload: UpdateQuestionPayload): Promise<Record<string, unknown> | null> {
     // Routes an update payload to the correct subtype updater.
     if (!mongoose.isValidObjectId(id)) {
@@ -332,8 +339,8 @@ export class QuestionService {
     };
   }
 
+  /** Handles the update test question request flow. */
   async updateTestQuestion(id: string, payload: Partial<CreateTestQuestionPayload>): Promise<ITestQuestion | null> {
-    // Updates a multiple-choice question and cleans up replaced images.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid question id');
     }
@@ -362,8 +369,8 @@ export class QuestionService {
     return updatedQuestion;
   }
 
+  /** Handles the update short answer question request flow. */
   async updateShortAnswerQuestion(id: string, payload: Partial<CreateShortAnswerPayload>): Promise<IShortAnswerQuestion | null> {
-    // Updates a short-answer question and cleans up replaced images.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid question id');
     }
@@ -392,8 +399,8 @@ export class QuestionService {
     return updatedQuestion;
   }
 
+  /** Handles the update fill blank question request flow. */
   async updateFillBlankQuestion(id: string, payload: Partial<CreateFillBlankPayload>): Promise<IFillInTheBlankQuestion | null> {
-    // Updates a fill-in-the-blank question and cleans up replaced images.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid question id');
     }

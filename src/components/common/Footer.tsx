@@ -4,7 +4,9 @@ import Image from "next/image";
 // src/components/common/Footer.tsx
 import Link from "next/link";
 
+/** Renders the footer interface. */
 export function Footer() {
+  // Returns the JSX layout for this render state.
   return (
     <footer className="bg-slate-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

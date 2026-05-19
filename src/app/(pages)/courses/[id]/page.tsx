@@ -10,7 +10,9 @@ import { Course, Module, UserProgress } from "@/types";
 
 const pageContainer = "mx-auto max-w-5xl px-4 sm:px-6 lg:px-8";
 
+/** Renders the bookmark icon interface. */
 function BookmarkIcon() {
+	// Returns the JSX layout for this render state.
 	return (
 		<svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
 			<path
@@ -24,15 +26,20 @@ function BookmarkIcon() {
 	);
 }
 
+/** Renders the lesson icon interface. */
 function LessonIcon({ status }: { status: string }) {
 	if (status === "done") {
+		// Returns the JSX layout for this render state.
 		return <span className="mt-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500" />;
 	}
 
+	// Returns the JSX layout for this render state.
 	return <span className="mt-0.5 h-3.5 w-3.5 rounded-full border border-slate-400 bg-white" />;
 }
 
+/** Renders the feature icon interface. */
 function FeatureIcon({ type }: { type: "folder" | "quiz" }) {
+	// Returns the JSX layout for this render state.
 	return type === "folder" ? (
 		<svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
 			<path
@@ -56,7 +63,9 @@ function FeatureIcon({ type }: { type: "folder" | "quiz" }) {
 	);
 }
 
+/** Renders the stat pill interface. */
 function StatPill({ icon, label }: { icon: "folder" | "quiz"; label: string }) {
+	// Returns the JSX layout for this render state.
 	return (
 		<div className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm">
 			<span className="text-indigo-500">
@@ -67,6 +76,7 @@ function StatPill({ icon, label }: { icon: "folder" | "quiz"; label: string }) {
 	);
 }
 
+/** Renders the course detail page interface. */
 export default function CourseDetailPage() {
 	const params = useParams();
 	const router = useRouter();
@@ -74,7 +84,9 @@ export default function CourseDetailPage() {
 	const [course, setCourse] = useState<Course | null>(null);
 	const [modules, setModules] = useState<Module[]>([]);
 		const [userProgress, setUserProgress] = useState<UserProgress>({
+		// Renders the chapters UI.
 		chapters: {},
+		// Renders the questions UI.
 		questions: {},
 	});
 	const [isInitialized, setIsInitialized] = useState(false);
@@ -83,9 +95,11 @@ export default function CourseDetailPage() {
 	const [isBookmarked, setIsBookmarked] = useState(false);
 	const [courseProgress, setCourseProgress] = useState<any>(null);
 
+	// Synchronizes browser state or side effects after render.
 	useEffect(() => {
 		if (!courseId) return;
 
+		/** Renders the fetch course data interface. */
 		const fetchCourseData = async () => {
 			try {
 				const storedUser = localStorage.getItem("user");
@@ -198,6 +212,7 @@ export default function CourseDetailPage() {
 	}, [courseId, router]);
 
 	if (!isInitialized) {
+		// Returns the JSX layout for this render state.
 		return (
 			<main className="flex-1">
 				<section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 min-h-screen flex items-center justify-center">
@@ -208,6 +223,7 @@ export default function CourseDetailPage() {
 	}
 
 	if (error || !course) {
+		// Returns the JSX layout for this render state.
 		return (
 			<main className="flex-1 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 flex items-center justify-center">
 				<div className="text-center px-4">
@@ -238,9 +254,11 @@ export default function CourseDetailPage() {
 		);
 	}
 
+	/** Renders the is chapter done interface. */
 	const isChapterDone = (id: string) =>
 		Boolean(userProgress.chapters?.[String(id)]);
 
+		/** Renders the is quiz done interface. */
 		const isQuizDone = (module: Module) =>
 		module.questions.length > 0 &&
 		module.questions.filter(q => q).every(q =>
@@ -255,6 +273,7 @@ export default function CourseDetailPage() {
 		return null;
 	};
 
+	/** Renders the get first uncompleted step interface. */
 	const getFirstUncompletedStep = () => {
 		for (const courseModule of modules) {
 			// 1. chapters
@@ -281,6 +300,7 @@ export default function CourseDetailPage() {
 		return firstChapter ? { type: "chapter", id: firstChapter } : null;
 	};
 
+	/** Renders the handle start course interface. */
 	const handleStartCourse = async () => {
 		try {
 			setIsLoading(true);
@@ -336,6 +356,7 @@ export default function CourseDetailPage() {
 		}
 	};
 
+	/** Renders the handle bookmark interface. */
 	const handleBookmark = async () => {
 		try {
 			const storedUser = localStorage.getItem('user');
@@ -401,6 +422,7 @@ export default function CourseDetailPage() {
 	const totalItems = totalChapters + totalQuizzes + 1;
 	const completedItems = completedChapters + completedQuizzes + (isFinishCompleted ? 1 : 0);
 
+	// Returns the JSX layout for this render state.
 	return (
 		<>	
 			<main className="flex-1">

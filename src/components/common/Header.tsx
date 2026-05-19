@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+/** Renders the header interface. */
 export function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [userProfile, setUserProfile] = useState<{ name: string; email: string } | null>(null);
@@ -16,7 +17,9 @@ export function Header() {
   const isChapterPage = pathname.split("/").length === 4 && pathname.startsWith("/courses/"); 
   const isAccountPage = pathname === "/account" || pathname === "/account/preferences";
 
+  // Synchronizes browser state or side effects after render.
   useEffect(() => {
+    /** Keeps the sync auth state logic isolated and reusable. */
     const syncAuthState = () => {
       const storedUser = localStorage.getItem("user");
 
@@ -39,12 +42,14 @@ export function Header() {
       }
     };
 
+    /** Handles click outside user interaction. */
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMenuOpen(false);
       }
     };
 
+    /** Handles escape key user interaction. */
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsMenuOpen(false);
@@ -65,6 +70,7 @@ export function Header() {
     };
   }, []);
 
+  /** Handles logout user interaction. */
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("authToken");
@@ -80,16 +86,19 @@ export function Header() {
     router.push("/");
   };
 
+  /** Handles settings click user interaction. */
   const handleSettingsClick = () => {
     setIsMenuOpen(false);
     router.push("/account");
   };
 
+    /** Handles feedback click user interaction. */
     const handleFeedbackClick = () => {
     setIsMenuOpen(false);
     router.push("/feedback");
   };
 
+  // Returns the JSX layout for this render state.
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
       <div className="w-full px-4 sm:px-6 lg:px-8">

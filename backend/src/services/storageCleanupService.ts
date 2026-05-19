@@ -1,8 +1,11 @@
 import { supabaseService } from './supabaseService';
 
+/** Keeps the supabase public images path logic isolated and reusable. */
 const SUPABASE_PUBLIC_IMAGES_PATH = '/object/public/images/';
+/** Keeps the markdown image regex logic isolated and reusable. */
 const MARKDOWN_IMAGE_REGEX = /!\[[^\]]*]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 
+/** Keeps the extract supabase image urls logic isolated and reusable. */
 export function extractSupabaseImageUrls(value?: string | null): string[] {
   if (!value) {
     return [];
@@ -25,6 +28,7 @@ export function extractSupabaseImageUrls(value?: string | null): string[] {
   return [...urls];
 }
 
+/** Deletes supabase images. */
 export async function deleteSupabaseImages(...values: Array<string | null | undefined>): Promise<void> {
   // Collect direct URLs and Markdown image URLs, then delete each unique Supabase image.
   const imageUrls = [...new Set(values.flatMap((value) => extractSupabaseImageUrls(value)))];
@@ -32,6 +36,7 @@ export async function deleteSupabaseImages(...values: Array<string | null | unde
   await Promise.all(imageUrls.map((imageUrl) => supabaseService.deleteImage(imageUrl)));
 }
 
+/** Deletes removed supabase images. */
 export async function deleteRemovedSupabaseImages(
   previousValue?: string | null,
   nextValue?: string | null

@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+/** Defines the TypeScript shape for module. */
 export interface IModule extends Document {
   title: string;
   order: number;

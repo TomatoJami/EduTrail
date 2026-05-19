@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { Chapter, IChapter } from '../models/Chapter';
 import { deleteRemovedSupabaseImages, deleteSupabaseImages } from './storageCleanupService';
 
+/** Defines the TypeScript shape for chapter payload. */
 export interface ChapterPayload {
   title: string;
   content: string;
@@ -11,11 +12,13 @@ export interface ChapterPayload {
 
 // Owns chapter persistence and Supabase image cleanup for chapter content.
 export class ChapterService {
+  /** Handles the get all chapters request flow. */
   async getAllChapters(): Promise<IChapter[]> {
     // Reads every chapter when no module filter is supplied.
     return Chapter.find().populate('module_id').sort({ order: 1 });
   }
 
+  /** Handles the get chapters by module id request flow. */
   async getChaptersByModuleId(moduleId: string): Promise<IChapter[]> {
     // Reads chapters for one module in learning order.
     if (!mongoose.isValidObjectId(moduleId)) {
@@ -24,8 +27,8 @@ export class ChapterService {
     return Chapter.find({ module_id: moduleId }).populate('module_id').sort({ order: 1 });
   }
 
+  /** Handles the create chapter request flow. */
   async createChapter(payload: ChapterPayload): Promise<IChapter> {
-    // Creates a chapter and auto-assigns the next order when none is supplied.
     const moduleId = new mongoose.Types.ObjectId(payload.module_id);
     
     let order = payload.order;
@@ -47,8 +50,8 @@ export class ChapterService {
     return chapter.populate('module_id');
   }
 
+  /** Handles the update chapter request flow. */
   async updateChapter(id: string, payload: Partial<ChapterPayload>): Promise<IChapter | null> {
-    // Updates chapter text and removes Supabase images no longer referenced.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid chapter id');
     }
@@ -79,8 +82,8 @@ export class ChapterService {
     return updatedChapter;
   }
 
+  /** Handles the delete chapter request flow. */
   async deleteChapter(id: string): Promise<IChapter | null> {
-    // Deletes a chapter and all images referenced by its content.
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid chapter id');
     }
@@ -106,6 +109,7 @@ export class ChapterService {
     return deletedChapter;
   }
 
+  /** Handles the get chapter by id request flow. */
   async getChapterById(id: string): Promise<IChapter | null> {
     // Reads one chapter by id.
     if (!mongoose.isValidObjectId(id)) {
