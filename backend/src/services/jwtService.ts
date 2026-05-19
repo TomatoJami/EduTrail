@@ -105,7 +105,8 @@ export function verifyAuthToken(token: string): JwtPayload | null {
     }
 
     return payload;
-  } catch {
+  } catch (err) {
+    console.warn('Failed to verify auth token', err);
     return null;
   }
 }

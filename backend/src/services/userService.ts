@@ -156,24 +156,32 @@ export class UserService {
 
   /** Handles the delete user request flow. */
   async deleteUser(id: string): Promise<IUser | null> {
+    const session = await mongoose.startSession();
+    let deletedUser: IUser | null = null;
+
     try {
-      const user = await User.findById(id);
-      if (!user) {
-        return null;
-      }
+      await session.withTransaction(async () => {
+        const user = await User.findById(id).session(session as any);
+        if (!user) {
+          deletedUser = null;
+          return;
+        }
 
-      // Remove all learning progress owned by this user before deleting the account.
-      await Promise.all([
-        CourseProgress.deleteMany({ user_id: user._id }),
-        ChapterProgress.deleteMany({ user_id: user._id }),
-        QuestionProgress.deleteMany({ user_id: user._id }),
-      ]);
+        // Remove all learning progress owned by this user before deleting the account.
+        await Promise.all([
+          CourseProgress.deleteMany({ user_id: user._id }).session(session as any),
+          ChapterProgress.deleteMany({ user_id: user._id }).session(session as any),
+          QuestionProgress.deleteMany({ user_id: user._id }).session(session as any),
+        ]);
 
-      await User.findByIdAndDelete(user._id);
-      return user;
-    } catch (error) {
-      throw new Error(`Failed to delete user: ${getErrorMessage(error)}`);
+        await User.findByIdAndDelete(user._id).session(session as any);
+        deletedUser = user;
+      });
+    } finally {
+      session.endSession();
     }
+
+    return deletedUser;
   }
 
   /** Handles the get all users request flow. */

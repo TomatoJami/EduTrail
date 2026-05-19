@@ -74,22 +74,34 @@ export class ModuleService {
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid module id');
     }
+    const moduleObjectId = new mongoose.Types.ObjectId(id);
 
-    const moduleToDelete = await Module.findById(id);
-    if (!moduleToDelete) {
-      return null;
-    }
+    const session = await mongoose.startSession();
+    let deletedModule: IModule | null = null;
 
-    const deletedModule = await Module.findByIdAndDelete(id).populate('course_id');
+    try {
+      await session.withTransaction(async () => {
+        const moduleToDelete = await Module.findById(moduleObjectId).session(session);
+        if (!moduleToDelete) {
+          deletedModule = null;
+          return;
+        }
 
-    if (deletedModule) {
-      await Module.updateMany(
-        {
-          course_id: deletedModule.course_id,
-          order: { $gt: deletedModule.order },
-        },
-        { $inc: { order: -1 } }
-      );
+        const deleted = await Module.findByIdAndDelete(moduleObjectId).session(session).populate('course_id');
+        deletedModule = deleted as IModule | null;
+
+        if (deletedModule) {
+          await Module.updateMany(
+            {
+              course_id: deletedModule.course_id,
+              order: { $gt: deletedModule.order },
+            },
+            { $inc: { order: -1 } }
+          ).session(session as any);
+        }
+      });
+    } finally {
+      session.endSession();
     }
 
     return deletedModule;

@@ -108,7 +108,8 @@ UserSchema.methods.comparePassword = function (password: string): Promise<boolea
     const [salt, hash] = this.password.split('$');
     const testHash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
     return Promise.resolve(hash === testHash);
-  } catch {
+  } catch (err) {
+    console.error('comparePassword failed', err);
     return Promise.resolve(false);
   }
 };

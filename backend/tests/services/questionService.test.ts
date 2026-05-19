@@ -13,6 +13,20 @@ vi.mock('../../src/models/ShortAnswerQuestion');
 vi.mock('../../src/models/FillInTheBlankQuestion');
 vi.mock('../../src/services/storageCleanupService');
 
+const mockMongooseSession = () => {
+  const session = {
+    withTransaction: vi.fn(async (callback: () => Promise<void>) => callback()),
+    endSession: vi.fn(),
+  };
+
+  vi.spyOn(mongoose, 'startSession').mockResolvedValue(session as any);
+  return session;
+};
+
+const sessionQuery = <T,>(value: T) => ({
+  session: vi.fn().mockResolvedValue(value),
+});
+
 describe('QuestionService', () => {
   let questionService: QuestionService;
 
@@ -220,6 +234,9 @@ describe('QuestionService', () => {
       vi.mocked(Question.find).mockReturnValue({
         sort: vi.fn().mockResolvedValue([]),
       } as any);
+      vi.mocked(TestQuestion.find).mockResolvedValue([] as any);
+      vi.mocked(ShortAnswerQuestion.find).mockResolvedValue([] as any);
+      vi.mocked(FillInTheBlankQuestion.find).mockResolvedValue([] as any);
 
       const result = await questionService.getQuestionsByModuleId(moduleId);
 
@@ -229,6 +246,7 @@ describe('QuestionService', () => {
 
   describe('deleteQuestion', () => {
     it('should delete a test question and its wrapper', async () => {
+      mockMongooseSession();
       const questionId = new mongoose.Types.ObjectId().toString();
       const mockQuestion = {
         _id: questionId,
@@ -236,14 +254,15 @@ describe('QuestionService', () => {
         typeId: 'test-1',
       };
 
-      vi.mocked(Question.findById).mockResolvedValue(mockQuestion as any);
-      vi.mocked(TestQuestion.findByIdAndDelete).mockResolvedValue({} as any);
-      vi.mocked(Question.findByIdAndDelete).mockResolvedValue(mockQuestion as any);
+      vi.mocked(Question.findById).mockReturnValue(sessionQuery(mockQuestion) as any);
+      vi.mocked(TestQuestion.findById).mockResolvedValue({ question_img: '' } as any);
+      vi.mocked(TestQuestion.findByIdAndDelete).mockReturnValue(sessionQuery({}) as any);
+      vi.mocked(Question.findByIdAndDelete).mockReturnValue(sessionQuery(mockQuestion) as any);
 
-      const result = await questionService.deleteQuestion(questionId);
+      await questionService.deleteQuestion(questionId);
 
-      expect(Question.findById).toHaveBeenCalledWith(questionId);
-      expect(Question.findByIdAndDelete).toHaveBeenCalledWith(questionId);
+      expect(Question.findById).toHaveBeenCalledWith(new mongoose.Types.ObjectId(questionId));
+      expect(Question.findByIdAndDelete).toHaveBeenCalledWith(new mongoose.Types.ObjectId(questionId));
     });
 
     it('should throw error for invalid question id', async () => {
@@ -253,8 +272,9 @@ describe('QuestionService', () => {
     });
 
     it('should return null when question not found', async () => {
+      mockMongooseSession();
       const questionId = new mongoose.Types.ObjectId().toString();
-      vi.mocked(Question.findById).mockResolvedValue(null);
+      vi.mocked(Question.findById).mockReturnValue(sessionQuery(null) as any);
 
       await expect(questionService.deleteQuestion(questionId)).rejects.toThrow(
         'Question not found'
@@ -262,6 +282,7 @@ describe('QuestionService', () => {
     });
 
     it('should cleanup question images on delete', async () => {
+      mockMongooseSession();
       const questionId = new mongoose.Types.ObjectId().toString();
       const mockQuestion = {
         _id: questionId,
@@ -269,11 +290,12 @@ describe('QuestionService', () => {
         typeId: 'test-1',
       };
 
-      vi.mocked(Question.findById).mockResolvedValue(mockQuestion as any);
-      vi.mocked(TestQuestion.findByIdAndDelete).mockResolvedValue({
+      vi.mocked(Question.findById).mockReturnValue(sessionQuery(mockQuestion) as any);
+      vi.mocked(TestQuestion.findById).mockResolvedValue({
         question_img: 'question.jpg',
       } as any);
-      vi.mocked(Question.findByIdAndDelete).mockResolvedValue(mockQuestion as any);
+      vi.mocked(TestQuestion.findByIdAndDelete).mockReturnValue(sessionQuery({}) as any);
+      vi.mocked(Question.findByIdAndDelete).mockReturnValue(sessionQuery(mockQuestion) as any);
 
       await questionService.deleteQuestion(questionId);
 

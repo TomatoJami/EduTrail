@@ -25,6 +25,30 @@ vi.mock('../../src/models/QuestionProgress');
 vi.mock('../../src/models/CourseProgress');
 vi.mock('../../src/services/storageCleanupService');
 
+const mockMongooseSession = () => {
+  const session = {
+    withTransaction: vi.fn(async (callback: () => Promise<void>) => callback()),
+    endSession: vi.fn(),
+  };
+
+  vi.spyOn(mongoose, 'startSession').mockResolvedValue(session as any);
+  return session;
+};
+
+const sessionQuery = <T,>(value: T) => ({
+  session: vi.fn().mockResolvedValue(value),
+});
+
+const selectSessionQuery = <T,>(value: T) => ({
+  select: vi.fn().mockReturnValue(sessionQuery(value)),
+});
+
+const sessionPopulateQuery = <T,>(value: T) => ({
+  session: vi.fn().mockReturnValue({
+    populate: vi.fn().mockResolvedValue(value),
+  }),
+});
+
 describe('CourseService', () => {
   let courseService: CourseService;
 
@@ -171,6 +195,7 @@ describe('CourseService', () => {
 
   describe('deleteCourse', () => {
     it('should delete a course and all related data', async () => {
+      mockMongooseSession();
       const courseId = new mongoose.Types.ObjectId().toString();
       const mockCourse = {
         _id: courseId,
@@ -178,14 +203,10 @@ describe('CourseService', () => {
         subject_id: new mongoose.Types.ObjectId(),
       };
 
-      vi.mocked(Course.findById).mockReturnValue({
-        populate: vi.fn().mockResolvedValue(mockCourse),
-      } as any);
-      vi.mocked(Module.find).mockReturnValue({
-        select: vi.fn().mockResolvedValue([]),
-      } as any);
-      vi.mocked(Course.findByIdAndDelete).mockResolvedValue(mockCourse as any);
-      vi.mocked(CourseProgress.deleteMany).mockResolvedValue({} as any);
+      vi.mocked(Course.findById).mockReturnValue(sessionPopulateQuery(mockCourse) as any);
+      vi.mocked(Module.find).mockReturnValue(selectSessionQuery([]) as any);
+      vi.mocked(Course.findByIdAndDelete).mockReturnValue(sessionQuery(mockCourse) as any);
+      vi.mocked(CourseProgress.deleteMany).mockReturnValue(sessionQuery({}) as any);
 
       const result = await courseService.deleteCourse(courseId);
 
@@ -200,10 +221,9 @@ describe('CourseService', () => {
     });
 
     it('should return null when course not found', async () => {
+      mockMongooseSession();
       const courseId = new mongoose.Types.ObjectId().toString();
-      vi.mocked(Course.findById).mockReturnValue({
-        populate: vi.fn().mockResolvedValue(null),
-      } as any);
+      vi.mocked(Course.findById).mockReturnValue(sessionPopulateQuery(null) as any);
 
       const result = await courseService.deleteCourse(courseId);
 

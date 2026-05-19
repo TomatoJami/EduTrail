@@ -87,23 +87,47 @@ export class ChapterService {
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid chapter id');
     }
+    const chapterObjectId = new mongoose.Types.ObjectId(id);
 
-    const chapterToDelete = await Chapter.findById(id);
-    if (!chapterToDelete) {
-      return null;
+    const session = await mongoose.startSession();
+    let deletedChapter: IChapter | null = null;
+    let imagesToDelete: string[] = [];
+
+    try {
+      await session.withTransaction(async () => {
+        const chapter = await Chapter.findById(chapterObjectId).session(session);
+        if (!chapter) {
+          deletedChapter = null;
+          return;
+        }
+
+        // collect image content to delete after commit
+        if (chapter.content) imagesToDelete.push(chapter.content);
+
+        // delete chapter and reorder remaining chapters within transaction
+        const deleted = await Chapter.findByIdAndDelete(chapterObjectId).session(session).populate('module_id');
+        deletedChapter = deleted as IChapter | null;
+
+        if (deletedChapter) {
+          await Chapter.updateMany(
+            {
+              module_id: deletedChapter.module_id,
+              order: { $gt: deletedChapter.order },
+            },
+            { $inc: { order: -1 } }
+          ).session(session as any);
+        }
+      });
+    } finally {
+      session.endSession();
     }
 
-    const deletedChapter = await Chapter.findByIdAndDelete(id).populate('module_id');
-
     if (deletedChapter) {
-      await Chapter.updateMany(
-        {
-          module_id: deletedChapter.module_id,
-          order: { $gt: deletedChapter.order },
-        },
-        { $inc: { order: -1 } }
-      );
-      await deleteSupabaseImages(deletedChapter.content);
+      try {
+        await deleteSupabaseImages(...imagesToDelete);
+      } catch (err) {
+        console.error('Error deleting chapter images after commit for chapter', id, err);
+      }
     }
 
     return deletedChapter;

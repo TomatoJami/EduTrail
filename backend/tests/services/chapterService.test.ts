@@ -7,6 +7,26 @@ import * as storageCleanupService from '../../src/services/storageCleanupService
 vi.mock('../../src/models/Chapter');
 vi.mock('../../src/services/storageCleanupService');
 
+const mockMongooseSession = () => {
+  const session = {
+    withTransaction: vi.fn(async (callback: () => Promise<void>) => callback()),
+    endSession: vi.fn(),
+  };
+
+  vi.spyOn(mongoose, 'startSession').mockResolvedValue(session as any);
+  return session;
+};
+
+const sessionQuery = <T,>(value: T) => ({
+  session: vi.fn().mockResolvedValue(value),
+});
+
+const sessionPopulateQuery = <T,>(value: T) => ({
+  session: vi.fn().mockReturnValue({
+    populate: vi.fn().mockResolvedValue(value),
+  }),
+});
+
 describe('ChapterService', () => {
   let chapterService: ChapterService;
 
@@ -98,6 +118,7 @@ describe('ChapterService', () => {
   });
 
   it('deletes a chapter, reorders later chapters, and cleans images', async () => {
+    mockMongooseSession();
     const chapterId = new mongoose.Types.ObjectId().toString();
     const moduleId = new mongoose.Types.ObjectId();
     const chapterToDelete = {
@@ -107,11 +128,9 @@ describe('ChapterService', () => {
       content: 'Content with images',
     };
 
-    vi.mocked(Chapter.findById).mockResolvedValue(chapterToDelete as any);
-    vi.mocked(Chapter.findByIdAndDelete).mockReturnValue({
-      populate: vi.fn().mockResolvedValue(chapterToDelete),
-    } as any);
-    vi.mocked(Chapter.updateMany).mockResolvedValue({ modifiedCount: 1 } as any);
+    vi.mocked(Chapter.findById).mockReturnValue(sessionQuery(chapterToDelete) as any);
+    vi.mocked(Chapter.findByIdAndDelete).mockReturnValue(sessionPopulateQuery(chapterToDelete) as any);
+    vi.mocked(Chapter.updateMany).mockReturnValue(sessionQuery({ modifiedCount: 1 }) as any);
 
     const result = await chapterService.deleteChapter(chapterId);
 
@@ -121,8 +140,9 @@ describe('ChapterService', () => {
   });
 
   it('returns null when deleting a missing chapter', async () => {
+    mockMongooseSession();
     const chapterId = new mongoose.Types.ObjectId().toString();
-    vi.mocked(Chapter.findById).mockResolvedValue(null);
+    vi.mocked(Chapter.findById).mockReturnValue(sessionQuery(null) as any);
 
     const result = await chapterService.deleteChapter(chapterId);
 

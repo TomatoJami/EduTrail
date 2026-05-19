@@ -68,7 +68,8 @@ export class ProgressController {
       try {
         courseObjectId = new mongoose.Types.ObjectId(courseId);
         userObjectId = new mongoose.Types.ObjectId(userId);
-      } catch {
+      } catch (err) {
+        console.warn('Invalid ID format while parsing course/user id', err);
         res.status(400).json({
           success: false,
           message: "Invalid ID format",

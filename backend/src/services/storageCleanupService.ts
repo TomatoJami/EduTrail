@@ -33,7 +33,25 @@ export async function deleteSupabaseImages(...values: Array<string | null | unde
   // Collect direct URLs and Markdown image URLs, then delete each unique Supabase image.
   const imageUrls = [...new Set(values.flatMap((value) => extractSupabaseImageUrls(value)))];
 
-  await Promise.all(imageUrls.map((imageUrl) => supabaseService.deleteImage(imageUrl)));
+  // Delete images with retries and error logging so external failures don't crash DB operations.
+  async function tryDelete(imageUrl: string, attempts = 3): Promise<void> {
+    for (let i = 0; i < attempts; i++) {
+      try {
+        await supabaseService.deleteImage(imageUrl);
+        return;
+      } catch (err) {
+        // last attempt will fall through to logging
+        if (i === attempts - 1) {
+          console.error(`Failed to delete Supabase image ${imageUrl}:`, err);
+        } else {
+          // small backoff
+          await new Promise((res) => setTimeout(res, 200 * (i + 1)));
+        }
+      }
+    }
+  }
+
+  await Promise.all(imageUrls.map((imageUrl) => tryDelete(imageUrl)));
 }
 
 /** Deletes removed supabase images. */
@@ -45,5 +63,10 @@ export async function deleteRemovedSupabaseImages(
   const nextUrls = new Set(extractSupabaseImageUrls(nextValue));
   const removedUrls = extractSupabaseImageUrls(previousValue).filter((imageUrl) => !nextUrls.has(imageUrl));
 
-  await deleteSupabaseImages(...removedUrls);
+  try {
+    await deleteSupabaseImages(...removedUrls);
+  } catch (err) {
+    // Log but don't throw — caller code should decide whether to fail the request.
+    console.error('Error deleting removed Supabase images:', err);
+  }
 }

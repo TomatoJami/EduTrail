@@ -11,6 +11,9 @@ import { QuestionProgress } from '../models/QuestionProgress';
 import { CourseProgress } from '../models/CourseProgress';
 import { deleteRemovedSupabaseImages, deleteSupabaseImages } from './storageCleanupService';
 
+const isPresentString = (value: string | undefined | null): value is string =>
+  Boolean(value);
+
 /** Defines the TypeScript shape for course payload. */
 export interface CoursePayload {
   title: string;
@@ -81,63 +84,89 @@ export class CourseService {
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid course id');
     }
-
     const courseObjectId = new mongoose.Types.ObjectId(id);
-    const course = await Course.findById(courseObjectId).populate('subject_id');
 
-    if (!course) {
-      return null;
+    // We'll run DB mutations inside a transaction and perform external image deletions only
+    // after a successful commit to avoid inconsistent state.
+    const session = await mongoose.startSession();
+    let deletedCourse: ICourse | null = null;
+    const imagesToDelete: string[] = [];
+
+    try {
+      await session.withTransaction(async () => {
+        const course = await Course.findById(courseObjectId).session(session).populate('subject_id');
+        if (!course) {
+          // nothing to delete
+          deletedCourse = null;
+          return;
+        }
+
+        // collect the course image for deletion after commit
+        if (course.course_img) imagesToDelete.push(course.course_img);
+
+        const courseModules = await Module.find({ course_id: courseObjectId }).select('_id').session(session);
+        const moduleIds = courseModules.map((moduleItem) => moduleItem._id);
+
+        if (moduleIds.length > 0) {
+          const [courseChapters, courseQuestions] = await Promise.all([
+            Chapter.find({ module_id: { $in: moduleIds } }).select('_id content').session(session),
+            Question.find({ module_id: { $in: moduleIds } }).select('_id').session(session),
+          ]);
+
+          const chapterIds = courseChapters.map((chapter) => chapter._id);
+          const questionIds = courseQuestions.map((question) => question._id);
+
+          const [testQuestions, shortAnswerQuestions, fillInTheBlankQuestions] = await Promise.all([
+            TestQuestion.find({ module_id: { $in: moduleIds } }).select('question_img').session(session),
+            ShortAnswerQuestion.find({ module_id: { $in: moduleIds } }).select('question_img').session(session),
+            FillInTheBlankQuestion.find({ module_id: { $in: moduleIds } }).select('question_img').session(session),
+          ]);
+
+          // collect images from chapters and question types for deletion after commit
+          imagesToDelete.push(...courseChapters.map((c) => c.content).filter(isPresentString));
+          imagesToDelete.push(...testQuestions.map((q) => q.question_img).filter(isPresentString));
+          imagesToDelete.push(...shortAnswerQuestions.map((q) => q.question_img).filter(isPresentString));
+          imagesToDelete.push(...fillInTheBlankQuestions.map((q) => q.question_img).filter(isPresentString));
+
+          await Promise.all([
+            chapterIds.length > 0
+              ? ChapterProgress.deleteMany({ chapter_id: { $in: chapterIds } }).session(session as any)
+              : Promise.resolve(),
+            questionIds.length > 0
+              ? QuestionProgress.deleteMany({ question_id: { $in: questionIds } }).session(session as any)
+              : Promise.resolve(),
+            TestQuestion.deleteMany({ module_id: { $in: moduleIds } }).session(session as any),
+            ShortAnswerQuestion.deleteMany({ module_id: { $in: moduleIds } }).session(session as any),
+            FillInTheBlankQuestion.deleteMany({ module_id: { $in: moduleIds } }).session(session as any),
+            Question.deleteMany({ module_id: { $in: moduleIds } }).session(session as any),
+            Chapter.deleteMany({ module_id: { $in: moduleIds } }).session(session as any),
+            Module.deleteMany({ course_id: courseObjectId }).session(session as any),
+          ]);
+        }
+
+        await Promise.all([
+          CourseProgress.deleteMany({ course_id: courseObjectId }).session(session as any),
+          Course.findByIdAndDelete(courseObjectId).session(session as any),
+        ]);
+
+        // store deleted course to return after commit
+        deletedCourse = course as ICourse;
+      });
+    } finally {
+      session.endSession();
     }
 
-    const courseModules = await Module.find({ course_id: courseObjectId }).select('_id');
-    const moduleIds = courseModules.map((moduleItem) => moduleItem._id);
-
-    if (moduleIds.length > 0) {
-      const [courseChapters, courseQuestions] = await Promise.all([
-        Chapter.find({ module_id: { $in: moduleIds } }).select('_id content'),
-        Question.find({ module_id: { $in: moduleIds } }).select('_id'),
-      ]);
-
-      const chapterIds = courseChapters.map((chapter) => chapter._id);
-      const questionIds = courseQuestions.map((question) => question._id);
-
-      const [testQuestions, shortAnswerQuestions, fillInTheBlankQuestions] = await Promise.all([
-        TestQuestion.find({ module_id: { $in: moduleIds } }).select('question_img'),
-        ShortAnswerQuestion.find({ module_id: { $in: moduleIds } }).select('question_img'),
-        FillInTheBlankQuestion.find({ module_id: { $in: moduleIds } }).select('question_img'),
-      ]);
-
-      await Promise.all([
-        chapterIds.length > 0
-          ? ChapterProgress.deleteMany({ chapter_id: { $in: chapterIds } })
-          : Promise.resolve(),
-        questionIds.length > 0
-          ? QuestionProgress.deleteMany({ question_id: { $in: questionIds } })
-          : Promise.resolve(),
-        TestQuestion.deleteMany({ module_id: { $in: moduleIds } }),
-        ShortAnswerQuestion.deleteMany({ module_id: { $in: moduleIds } }),
-        FillInTheBlankQuestion.deleteMany({ module_id: { $in: moduleIds } }),
-        Question.deleteMany({ module_id: { $in: moduleIds } }),
-        Chapter.deleteMany({ module_id: { $in: moduleIds } }),
-        Module.deleteMany({ course_id: courseObjectId }),
-      ]);
-
-      await deleteSupabaseImages(
-        ...courseChapters.map((chapter) => chapter.content),
-        ...testQuestions.map((question) => question.question_img),
-        ...shortAnswerQuestions.map((question) => question.question_img),
-        ...fillInTheBlankQuestions.map((question) => question.question_img)
-      );
+    // After transaction commit, perform external image deletions. Failures here are logged
+    // but do not roll back the DB transaction (transaction already committed).
+    if (deletedCourse) {
+      try {
+        await deleteSupabaseImages(...imagesToDelete);
+      } catch (err) {
+        console.error('Error deleting course-related images after commit for course', id, err);
+      }
     }
 
-    await Promise.all([
-      CourseProgress.deleteMany({ course_id: courseObjectId }),
-      Course.findByIdAndDelete(courseObjectId),
-    ]);
-
-    await deleteSupabaseImages(course.course_img);
-
-    return course;
+    return deletedCourse;
   }
 
   /** Handles the get course by id request flow. */

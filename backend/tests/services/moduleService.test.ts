@@ -5,6 +5,26 @@ import { Module } from '../../src/models/Module';
 
 vi.mock('../../src/models/Module');
 
+const mockMongooseSession = () => {
+  const session = {
+    withTransaction: vi.fn(async (callback: () => Promise<void>) => callback()),
+    endSession: vi.fn(),
+  };
+
+  vi.spyOn(mongoose, 'startSession').mockResolvedValue(session as any);
+  return session;
+};
+
+const sessionQuery = <T,>(value: T) => ({
+  session: vi.fn().mockResolvedValue(value),
+});
+
+const sessionPopulateQuery = <T,>(value: T) => ({
+  session: vi.fn().mockReturnValue({
+    populate: vi.fn().mockResolvedValue(value),
+  }),
+});
+
 describe('ModuleService', () => {
   let moduleService: ModuleService;
 
@@ -205,6 +225,7 @@ describe('ModuleService', () => {
 
   describe('deleteModule', () => {
     it('should delete a module and reorder remaining modules', async () => {
+      mockMongooseSession();
       const moduleId = new mongoose.Types.ObjectId().toString();
       const courseId = new mongoose.Types.ObjectId().toString();
       const mockModule = {
@@ -214,15 +235,13 @@ describe('ModuleService', () => {
         course_id: courseId,
       };
 
-      vi.mocked(Module.findById).mockResolvedValue(mockModule as any);
-      vi.mocked(Module.findByIdAndDelete).mockReturnValue({
-        populate: vi.fn().mockResolvedValue(mockModule),
-      } as any);
-      vi.mocked(Module.updateMany).mockResolvedValue({} as any);
+      vi.mocked(Module.findById).mockReturnValue(sessionQuery(mockModule) as any);
+      vi.mocked(Module.findByIdAndDelete).mockReturnValue(sessionPopulateQuery(mockModule) as any);
+      vi.mocked(Module.updateMany).mockReturnValue(sessionQuery({}) as any);
 
       const result = await moduleService.deleteModule(moduleId);
 
-      expect(Module.findByIdAndDelete).toHaveBeenCalledWith(moduleId);
+      expect(Module.findByIdAndDelete).toHaveBeenCalledWith(new mongoose.Types.ObjectId(moduleId));
       expect(Module.updateMany).toHaveBeenCalledWith(
         {
           course_id: courseId,
@@ -240,8 +259,9 @@ describe('ModuleService', () => {
     });
 
     it('should return null when module not found', async () => {
+      mockMongooseSession();
       const moduleId = new mongoose.Types.ObjectId().toString();
-      vi.mocked(Module.findById).mockResolvedValue(null);
+      vi.mocked(Module.findById).mockReturnValue(sessionQuery(null) as any);
 
       const result = await moduleService.deleteModule(moduleId);
 

@@ -77,8 +77,10 @@ export class SupabaseService {
       if (error) {
         throw new Error(`Failed to delete image: ${error.message}`);
       }
-    } catch {
-      // Keep image cleanup non-blocking for course updates.
+    } catch (err) {
+      // Surface the error so callers can decide how to handle retries.
+      console.error('Supabase deleteImage failed for', imageUrl, err);
+      throw err instanceof Error ? err : new Error('Supabase delete failed');
     }
   }
 }

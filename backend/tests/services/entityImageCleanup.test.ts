@@ -22,6 +22,29 @@ vi.mock('../../src/services/storageCleanupService', () => ({
   deleteRemovedSupabaseImages: cleanupMock.deleteRemovedSupabaseImages,
 }));
 
+const mockMongooseSession = () => {
+  const session = {
+    withTransaction: vi.fn(async (callback: () => Promise<void>) => callback()),
+    endSession: vi.fn(),
+  };
+
+  vi.spyOn(mongoose, 'startSession').mockResolvedValue(session as any);
+};
+
+const sessionQuery = <T,>(value: T) => ({
+  session: vi.fn().mockResolvedValue(value),
+});
+
+const selectSessionQuery = <T,>(value: T) => ({
+  select: vi.fn().mockReturnValue(sessionQuery(value)),
+});
+
+const sessionPopulateQuery = <T,>(value: T) => ({
+  session: vi.fn().mockReturnValue({
+    populate: vi.fn().mockResolvedValue(value),
+  }),
+});
+
 describe('entity image cleanup', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -30,25 +53,30 @@ describe('entity image cleanup', () => {
   });
 
   it('deletes a subject image after the subject and nested courses are deleted', async () => {
+    mockMongooseSession();
     const subjectId = new mongoose.Types.ObjectId();
     const courseId = new mongoose.Types.ObjectId();
     const { subjectService } = await import('../../src/services/subjectService');
-    const { courseService } = await import('../../src/services/courseService');
 
-    vi.spyOn(Subject, 'findById').mockResolvedValue({ _id: subjectId } as any);
-    vi.spyOn(Course, 'find').mockReturnValue({
-      select: vi.fn().mockResolvedValue([{ _id: courseId }]),
-    } as any);
-    vi.spyOn(courseService, 'deleteCourse').mockResolvedValue({ _id: courseId } as any);
-    vi.spyOn(Subject, 'findByIdAndDelete').mockResolvedValue({
+    vi.spyOn(Subject, 'findById').mockResolvedValue({
       _id: subjectId,
       subject_img: 'https://example.supabase.co/storage/v1/object/public/images/subjects/math.jpg',
     } as any);
+    vi.spyOn(Course, 'find').mockReturnValue({
+      select: vi.fn().mockResolvedValue([{ _id: courseId }]),
+    } as any);
+    vi.spyOn(Module, 'find').mockReturnValue(selectSessionQuery([]) as any);
+    vi.spyOn(CourseProgress, 'deleteMany').mockReturnValue(sessionQuery({}) as any);
+    vi.spyOn(Course, 'deleteMany').mockReturnValue(sessionQuery({}) as any);
+    vi.spyOn(Subject, 'findByIdAndDelete').mockReturnValue(sessionQuery({
+      _id: subjectId,
+      subject_img: 'https://example.supabase.co/storage/v1/object/public/images/subjects/math.jpg',
+    }) as any);
 
     await subjectService.deleteSubject(String(subjectId));
 
     // Subject deletion cascades through CourseService, then removes the subject thumbnail.
-    expect(courseService.deleteCourse).toHaveBeenCalledWith(String(courseId));
+    expect(Course.deleteMany).toHaveBeenCalledWith({ _id: { $in: [courseId] } });
     expect(cleanupMock.deleteSupabaseImages).toHaveBeenCalledWith(
       'https://example.supabase.co/storage/v1/object/public/images/subjects/math.jpg'
     );
@@ -76,20 +104,22 @@ describe('entity image cleanup', () => {
   });
 
   it('deletes markdown images when a chapter is deleted', async () => {
+    mockMongooseSession();
     const chapterId = new mongoose.Types.ObjectId();
     const moduleId = new mongoose.Types.ObjectId();
     const { chapterService } = await import('../../src/services/chapterService');
 
-    vi.spyOn(Chapter, 'findById').mockResolvedValue({ _id: chapterId } as any);
-    vi.spyOn(Chapter, 'findByIdAndDelete').mockReturnValue({
-      populate: vi.fn().mockResolvedValue({
+    vi.spyOn(Chapter, 'findById').mockReturnValue(sessionQuery({
+      _id: chapterId,
+      content: 'Read this ![diagram](https://example.supabase.co/storage/v1/object/public/images/chapters/diagram.jpg)',
+    }) as any);
+    vi.spyOn(Chapter, 'findByIdAndDelete').mockReturnValue(sessionPopulateQuery({
         _id: chapterId,
         module_id: moduleId,
         order: 2,
         content: 'Read this ![diagram](https://example.supabase.co/storage/v1/object/public/images/chapters/diagram.jpg)',
-      }),
-    } as any);
-    vi.spyOn(Chapter, 'updateMany').mockResolvedValue({} as any);
+      }) as any);
+    vi.spyOn(Chapter, 'updateMany').mockReturnValue(sessionQuery({}) as any);
 
     await chapterService.deleteChapter(String(chapterId));
 
@@ -126,21 +156,22 @@ describe('entity image cleanup', () => {
   });
 
   it('deletes the type-specific question image when a question is deleted', async () => {
+    mockMongooseSession();
     const questionId = new mongoose.Types.ObjectId();
     const typeId = new mongoose.Types.ObjectId();
     const { questionService } = await import('../../src/services/questionService');
 
-    vi.spyOn(Question, 'findById').mockResolvedValue({
+    vi.spyOn(Question, 'findById').mockReturnValue(sessionQuery({
       _id: questionId,
       type: 'test',
       typeId,
-    } as any);
+    }) as any);
     vi.spyOn(TestQuestion, 'findById').mockResolvedValue({
       _id: typeId,
       question_img: 'https://example.supabase.co/storage/v1/object/public/images/questions/q.jpg',
     } as any);
-    vi.spyOn(TestQuestion, 'findByIdAndDelete').mockResolvedValue({ _id: typeId } as any);
-    vi.spyOn(Question, 'findByIdAndDelete').mockResolvedValue({ _id: questionId } as any);
+    vi.spyOn(TestQuestion, 'findByIdAndDelete').mockReturnValue(sessionQuery({ _id: typeId }) as any);
+    vi.spyOn(Question, 'findByIdAndDelete').mockReturnValue(sessionQuery({ _id: questionId }) as any);
 
     await questionService.deleteQuestion(String(questionId));
 
@@ -172,63 +203,48 @@ describe('entity image cleanup', () => {
   });
 
   it('deletes course, chapter, and question images when a course is deleted', async () => {
+    mockMongooseSession();
     const courseId = new mongoose.Types.ObjectId();
     const moduleId = new mongoose.Types.ObjectId();
     const chapterId = new mongoose.Types.ObjectId();
     const questionId = new mongoose.Types.ObjectId();
     const { courseService } = await import('../../src/services/courseService');
 
-    vi.spyOn(Course, 'findById').mockReturnValue({
-      populate: vi.fn().mockResolvedValue({
+    vi.spyOn(Course, 'findById').mockReturnValue(sessionPopulateQuery({
         _id: courseId,
         course_img: 'https://example.supabase.co/storage/v1/object/public/images/courses/cover.jpg',
-      }),
-    } as any);
-    vi.spyOn(Module, 'find').mockReturnValue({
-      select: vi.fn().mockResolvedValue([{ _id: moduleId }]),
-    } as any);
-    vi.spyOn(Chapter, 'find').mockReturnValue({
-      select: vi.fn().mockResolvedValue([
+      }) as any);
+    vi.spyOn(Module, 'find').mockReturnValue(selectSessionQuery([{ _id: moduleId }]) as any);
+    vi.spyOn(Chapter, 'find').mockReturnValue(selectSessionQuery([
         {
           _id: chapterId,
           content: '![chapter](https://example.supabase.co/storage/v1/object/public/images/chapters/chapter.jpg)',
         },
-      ]),
-    } as any);
-    vi.spyOn(Question, 'find').mockReturnValue({
-      select: vi.fn().mockResolvedValue([{ _id: questionId }]),
-    } as any);
-    vi.spyOn(TestQuestion, 'find').mockReturnValue({
-      select: vi.fn().mockResolvedValue([
+      ]) as any);
+    vi.spyOn(Question, 'find').mockReturnValue(selectSessionQuery([{ _id: questionId }]) as any);
+    vi.spyOn(TestQuestion, 'find').mockReturnValue(selectSessionQuery([
         { question_img: 'https://example.supabase.co/storage/v1/object/public/images/questions/test.jpg' },
-      ]),
-    } as any);
-    vi.spyOn(ShortAnswerQuestion, 'find').mockReturnValue({
-      select: vi.fn().mockResolvedValue([]),
-    } as any);
-    vi.spyOn(FillInTheBlankQuestion, 'find').mockReturnValue({
-      select: vi.fn().mockResolvedValue([]),
-    } as any);
-    vi.spyOn(ChapterProgress, 'deleteMany').mockResolvedValue({} as any);
-    vi.spyOn(QuestionProgress, 'deleteMany').mockResolvedValue({} as any);
-    vi.spyOn(TestQuestion, 'deleteMany').mockResolvedValue({} as any);
-    vi.spyOn(ShortAnswerQuestion, 'deleteMany').mockResolvedValue({} as any);
-    vi.spyOn(FillInTheBlankQuestion, 'deleteMany').mockResolvedValue({} as any);
-    vi.spyOn(Question, 'deleteMany').mockResolvedValue({} as any);
-    vi.spyOn(Chapter, 'deleteMany').mockResolvedValue({} as any);
-    vi.spyOn(Module, 'deleteMany').mockResolvedValue({} as any);
-    vi.spyOn(CourseProgress, 'deleteMany').mockResolvedValue({} as any);
-    vi.spyOn(Course, 'findByIdAndDelete').mockResolvedValue({ _id: courseId } as any);
+      ]) as any);
+    vi.spyOn(ShortAnswerQuestion, 'find').mockReturnValue(selectSessionQuery([]) as any);
+    vi.spyOn(FillInTheBlankQuestion, 'find').mockReturnValue(selectSessionQuery([]) as any);
+    vi.spyOn(ChapterProgress, 'deleteMany').mockReturnValue(sessionQuery({}) as any);
+    vi.spyOn(QuestionProgress, 'deleteMany').mockReturnValue(sessionQuery({}) as any);
+    vi.spyOn(TestQuestion, 'deleteMany').mockReturnValue(sessionQuery({}) as any);
+    vi.spyOn(ShortAnswerQuestion, 'deleteMany').mockReturnValue(sessionQuery({}) as any);
+    vi.spyOn(FillInTheBlankQuestion, 'deleteMany').mockReturnValue(sessionQuery({}) as any);
+    vi.spyOn(Question, 'deleteMany').mockReturnValue(sessionQuery({}) as any);
+    vi.spyOn(Chapter, 'deleteMany').mockReturnValue(sessionQuery({}) as any);
+    vi.spyOn(Module, 'deleteMany').mockReturnValue(sessionQuery({}) as any);
+    vi.spyOn(CourseProgress, 'deleteMany').mockReturnValue(sessionQuery({}) as any);
+    vi.spyOn(Course, 'findByIdAndDelete').mockReturnValue(sessionQuery({ _id: courseId }) as any);
 
     await courseService.deleteCourse(String(courseId));
 
     // Course deletion removes nested content in bulk, so image URLs must be collected before deleteMany runs.
     expect(cleanupMock.deleteSupabaseImages).toHaveBeenCalledWith(
+      'https://example.supabase.co/storage/v1/object/public/images/courses/cover.jpg',
       '![chapter](https://example.supabase.co/storage/v1/object/public/images/chapters/chapter.jpg)',
       'https://example.supabase.co/storage/v1/object/public/images/questions/test.jpg'
-    );
-    expect(cleanupMock.deleteSupabaseImages).toHaveBeenCalledWith(
-      'https://example.supabase.co/storage/v1/object/public/images/courses/cover.jpg'
     );
   });
 

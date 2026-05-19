@@ -3,13 +3,71 @@ import mongoose from 'mongoose';
 import { SubjectService, SubjectPayload } from '../../src/services/subjectService';
 import { Subject } from '../../src/models/Subject';
 import { Course } from '../../src/models/Course';
-import { courseService } from '../../src/services/courseService';
 import * as storageCleanupService from '../../src/services/storageCleanupService';
+import { Module } from '../../src/models/Module';
+import { Chapter } from '../../src/models/Chapter';
+import { Question } from '../../src/models/Question';
+import { TestQuestion } from '../../src/models/TestQuestion';
+import { ShortAnswerQuestion } from '../../src/models/ShortAnswerQuestion';
+import { FillInTheBlankQuestion } from '../../src/models/FillInTheBlankQuestion';
+import { ChapterProgress } from '../../src/models/ChapterProgress';
+import { QuestionProgress } from '../../src/models/QuestionProgress';
+import { CourseProgress } from '../../src/models/CourseProgress';
 
 vi.mock('../../src/models/Subject');
 vi.mock('../../src/models/Course');
-vi.mock('../../src/services/courseService');
 vi.mock('../../src/services/storageCleanupService');
+vi.mock('../../src/models/Module');
+vi.mock('../../src/models/Chapter');
+vi.mock('../../src/models/Question');
+vi.mock('../../src/models/TestQuestion');
+vi.mock('../../src/models/ShortAnswerQuestion');
+vi.mock('../../src/models/FillInTheBlankQuestion');
+vi.mock('../../src/models/ChapterProgress');
+vi.mock('../../src/models/QuestionProgress');
+vi.mock('../../src/models/CourseProgress');
+
+const mockMongooseSession = () => {
+  const session = {
+    withTransaction: vi.fn(async (callback: () => Promise<void>) => callback()),
+    endSession: vi.fn(),
+  };
+
+  vi.spyOn(mongoose, 'startSession').mockResolvedValue(session as any);
+  return session;
+};
+
+const sessionQuery = <T,>(value: T) => ({
+  session: vi.fn().mockResolvedValue(value),
+});
+
+const selectQuery = <T,>(value: T) => ({
+  select: vi.fn().mockResolvedValue(value),
+});
+
+const selectSessionQuery = <T,>(value: T) => ({
+  select: vi.fn().mockReturnValue(sessionQuery(value)),
+});
+
+const mockSubjectDeleteDependencies = (deletedSubject: unknown) => {
+  vi.mocked(Module.find).mockReturnValue(selectSessionQuery([]) as any);
+  vi.mocked(Chapter.find).mockReturnValue(selectSessionQuery([]) as any);
+  vi.mocked(Question.find).mockReturnValue(selectSessionQuery([]) as any);
+  vi.mocked(TestQuestion.find).mockReturnValue(selectSessionQuery([]) as any);
+  vi.mocked(ShortAnswerQuestion.find).mockReturnValue(selectSessionQuery([]) as any);
+  vi.mocked(FillInTheBlankQuestion.find).mockReturnValue(selectSessionQuery([]) as any);
+  vi.mocked(ChapterProgress.deleteMany).mockReturnValue(sessionQuery({}) as any);
+  vi.mocked(QuestionProgress.deleteMany).mockReturnValue(sessionQuery({}) as any);
+  vi.mocked(TestQuestion.deleteMany).mockReturnValue(sessionQuery({}) as any);
+  vi.mocked(ShortAnswerQuestion.deleteMany).mockReturnValue(sessionQuery({}) as any);
+  vi.mocked(FillInTheBlankQuestion.deleteMany).mockReturnValue(sessionQuery({}) as any);
+  vi.mocked(Question.deleteMany).mockReturnValue(sessionQuery({}) as any);
+  vi.mocked(Chapter.deleteMany).mockReturnValue(sessionQuery({}) as any);
+  vi.mocked(Module.deleteMany).mockReturnValue(sessionQuery({}) as any);
+  vi.mocked(CourseProgress.deleteMany).mockReturnValue(sessionQuery({}) as any);
+  vi.mocked(Course.deleteMany).mockReturnValue(sessionQuery({}) as any);
+  vi.mocked(Subject.findByIdAndDelete).mockReturnValue(sessionQuery(deletedSubject) as any);
+};
 
 describe('SubjectService', () => {
   let subjectService: SubjectService;
@@ -143,24 +201,23 @@ describe('SubjectService', () => {
 
   describe('deleteSubject', () => {
     it('should delete a subject and all related courses', async () => {
+      mockMongooseSession();
       const subjectId = new mongoose.Types.ObjectId().toString();
       const mockSubject = { _id: subjectId, subject_name: 'Math', subject_img: 'math.jpg' };
 
       vi.mocked(Subject.findById).mockResolvedValue(mockSubject as any);
-      vi.mocked(Course.find).mockReturnValue({
-        select: vi.fn().mockResolvedValue([
+      vi.mocked(Course.find).mockReturnValue(selectQuery([
           { _id: 'course-1' },
           { _id: 'course-2' },
-        ]),
-      } as any);
-      vi.mocked(Subject.findByIdAndDelete).mockResolvedValue(mockSubject as any);
+        ]) as any);
+      mockSubjectDeleteDependencies(mockSubject);
 
       const result = await subjectService.deleteSubject(subjectId);
 
       expect(Course.find).toHaveBeenCalledWith({
         subject_id: new mongoose.Types.ObjectId(subjectId),
       });
-      expect(courseService.deleteCourse).toHaveBeenCalledTimes(2);
+      expect(Course.deleteMany).toHaveBeenCalledWith({ _id: { $in: ['course-1', 'course-2'] } });
       expect(result).toEqual(mockSubject);
     });
 
@@ -180,14 +237,13 @@ describe('SubjectService', () => {
     });
 
     it('should cleanup subject image on delete', async () => {
+      mockMongooseSession();
       const subjectId = new mongoose.Types.ObjectId().toString();
       const mockSubject = { _id: subjectId, subject_name: 'Math', subject_img: 'math.jpg' };
 
       vi.mocked(Subject.findById).mockResolvedValue(mockSubject as any);
-      vi.mocked(Course.find).mockReturnValue({
-        select: vi.fn().mockResolvedValue([]),
-      } as any);
-      vi.mocked(Subject.findByIdAndDelete).mockResolvedValue(mockSubject as any);
+      vi.mocked(Course.find).mockReturnValue(selectQuery([]) as any);
+      mockSubjectDeleteDependencies(mockSubject);
 
       await subjectService.deleteSubject(subjectId);
 

@@ -142,7 +142,9 @@ export class QuestionService {
           await question.save();
         }
       }
-    } catch {
+    } catch (err) {
+      console.error('Error migrating questions for module', moduleId, err);
+      // Do not rethrow to preserve existing lazy-migration behavior, but surface to logs
     }
   }
 
@@ -159,7 +161,8 @@ export class QuestionService {
         const data = await FillInTheBlankQuestion.findById(question.typeId);
         return data;
       }
-    } catch {
+    } catch (err) {
+      console.error('Error populating type data for question', question._id, err);
     }
     return null;
   }
@@ -290,27 +293,44 @@ export class QuestionService {
     if (!mongoose.isValidObjectId(id)) {
       throw new Error('Invalid question id');
     }
+    const questionObjectId = new mongoose.Types.ObjectId(id);
 
-    const question = await Question.findById(id);
-    if (!question) {
-      throw new Error('Question not found');
+    const session = await mongoose.startSession();
+    let imagesToDelete: string[] = [];
+
+    try {
+      await session.withTransaction(async () => {
+        const question = await Question.findById(questionObjectId).session(session);
+        if (!question) {
+          throw new Error('Question not found');
+        }
+
+        const typeData = await this.populateTypeData(question);
+        if (typeData && typeData.question_img) imagesToDelete.push(typeData.question_img);
+
+        // Delete type-specific document within transaction
+        if (question.type === 'test') {
+          await TestQuestion.findByIdAndDelete(question.typeId).session(session as any);
+        } else if (question.type === 'short-answer') {
+          await ShortAnswerQuestion.findByIdAndDelete(question.typeId).session(session as any);
+        } else if (question.type === 'fill-blank') {
+          await FillInTheBlankQuestion.findByIdAndDelete(question.typeId).session(session as any);
+        }
+
+        // Delete the wrapper question
+        await Question.findByIdAndDelete(questionObjectId).session(session as any);
+      });
+    } finally {
+      session.endSession();
     }
 
-    const typeData = await this.populateTypeData(question);
-
-    // Delete the specific type question
-    if (question.type === 'test') {
-      await TestQuestion.findByIdAndDelete(question.typeId);
-    } else if (question.type === 'short-answer') {
-      await ShortAnswerQuestion.findByIdAndDelete(question.typeId);
-    } else if (question.type === 'fill-blank') {
-      await FillInTheBlankQuestion.findByIdAndDelete(question.typeId);
+    if (imagesToDelete.length > 0) {
+      try {
+        await deleteSupabaseImages(...imagesToDelete);
+      } catch (err) {
+        console.error('Error deleting question images after commit for question', id, err);
+      }
     }
-
-    // Delete the base question
-    await Question.findByIdAndDelete(id);
-
-    await deleteSupabaseImages(typeData?.question_img);
   }
 
   /** Handles the update question request flow. */

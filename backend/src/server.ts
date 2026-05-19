@@ -20,7 +20,9 @@ async function startServer() {
     app.listen(PORT, () => {
       console.info(`EduTrail backend is running on http://localhost:${PORT}`);
     });
-  } catch {
+  } catch (err) {
+    // Log startup failure for diagnostics before exiting
+    console.error('Failed to start server', err);
     process.exit(1);
   }
 }
