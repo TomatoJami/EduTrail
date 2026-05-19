@@ -95,8 +95,10 @@ export default function RegisterPage() {
             <Image
               src="/logoblack.png"
               alt="EduTrail Logo"
-              width={200}
-              height={100}
+              width={216}
+              height={70}
+              loading="eager"
+              style={{ height: "auto" }}
             />
           </Link>
         </div>

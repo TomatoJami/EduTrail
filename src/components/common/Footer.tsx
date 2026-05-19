@@ -14,7 +14,13 @@ export function Footer() {
           {/* Brand */}
           <div>
             <Link href="/" className="flex items-center gap-2 text-xl font-bold mb-2">
-              <Image src="/logowhite.png" alt="EduTrail Logo" width={100} height={50} />
+              <Image
+                src="/logowhite.png"
+                alt="EduTrail Logo"
+                width={124}
+                height={58}
+                style={{ height: "auto" }}
+              />
             </Link>
             <p className="text-gray-400 text-sm max-w-xs">
               Learn the courses you need without any hassle

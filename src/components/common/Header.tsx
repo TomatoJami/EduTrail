@@ -105,7 +105,15 @@ export function Header() {
         <div className="flex h-16 items-center justify-between gap-3">
           {/* Logo */}
           <Link href="/" className="flex min-w-0 items-center gap-2 text-2xl font-bold">
-            <Image src="/logoblack.png" alt="EduTrail Logo" width={200} height={100} className="h-auto w-36 sm:w-48" />
+            <Image
+              src="/logoblack.png"
+              alt="EduTrail Logo"
+              width={216}
+              height={70}
+              loading="eager"
+              className="h-auto w-36 sm:w-48"
+              style={{ height: "auto" }}
+            />
           </Link>
           {/* Auth buttons */}
           {!isAccountPage && !isChapterPage && (

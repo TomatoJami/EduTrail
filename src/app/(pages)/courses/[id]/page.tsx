@@ -444,7 +444,7 @@ export default function CourseDetailPage() {
 												<h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{course.title}</h1>
 												<button
 													type="button"
-													aria-label="Bookmark course"
+													aria-label={isBookmarked ? "Remove bookmark" : "Bookmark course"}
 													onClick={handleBookmark}
 													className={`mt-1 rounded-full border transition p-2 ${
 														isBookmarked

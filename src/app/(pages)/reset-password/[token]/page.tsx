@@ -88,7 +88,14 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
         <div className="flex justify-center mb-8">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logoblack.png" alt="EduTrail Logo" width={200} height={100} />
+            <Image
+              src="/logoblack.png"
+              alt="EduTrail Logo"
+              width={216}
+              height={70}
+              loading="eager"
+              style={{ height: "auto" }}
+            />
           </Link>
         </div>
 

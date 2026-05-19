@@ -50,7 +50,7 @@ export default function LoginPage() {
         window.dispatchEvent(new Event('auth-state-changed'));
       }
 
-      router.push('/preferences');
+      router.push('/');
     } catch {
       setError('An error occurred. Please try again.');
     } finally {
@@ -68,8 +68,10 @@ export default function LoginPage() {
             <Image
               src="/logoblack.png"
               alt="EduTrail Logo"
-              width={200}
-              height={100}
+              width={216}
+              height={70}
+              loading="eager"
+              style={{ height: "auto" }}
             />
           </Link>
         </div>

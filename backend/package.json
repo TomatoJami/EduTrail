@@ -5,6 +5,8 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn src/server.ts",
+    "dev:test": "set NODE_ENV=test&& ts-node-dev --respawn src/server.ts",
+    "seed:e2e": "set NODE_ENV=test&& set ALLOW_E2E_DB_RESET=true&& ts-node-dev --transpile-only --exit-child src/scripts/seedE2E.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint \"src/**/*.ts\"",

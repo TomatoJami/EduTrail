@@ -152,6 +152,7 @@ export function CourseCard({
               <button
                 onClick={handleBookmark}
                 disabled={isBookmarkLoading}
+                aria-label={isBookmarked ? "Remove bookmark" : "Bookmark course"}
                 className={`rounded-full p-1.5 transition ${
                   isBookmarked
                     ? "text-indigo-600 hover:text-indigo-700"
