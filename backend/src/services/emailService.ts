@@ -1,35 +1,31 @@
 import nodemailer from 'nodemailer';
 
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-
-const smtpHost = process.env.SMTP_HOST;
-const smtpPort = Number(process.env.SMTP_PORT || 587);
-const smtpSecure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
-const smtpUser = process.env.SMTP_USER;
-const smtpPass = process.env.SMTP_PASS;
-const mailFrom = process.env.MAIL_FROM || smtpUser;
-
-const isConfigured = Boolean(smtpHost && smtpUser && smtpPass && mailFrom);
-
-const transporter = isConfigured
-  ? nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpSecure,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    })
-  : null;
-
 /** Keeps the send password reset email logic isolated and reusable. */
 export async function sendPasswordResetEmail(email: string, resetToken: string) {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = Number(process.env.SMTP_PORT || 587);
+  const smtpSecure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const mailFrom = process.env.MAIL_FROM || smtpUser;
+  const isConfigured = Boolean(smtpHost && smtpUser && smtpPass && mailFrom);
+
   // Builds the frontend reset URL and sends it via the configured SMTP transport.
   // Send the reset link only after the controller has created a valid reset token.
-  if (!transporter || !mailFrom) {
+  if (!isConfigured || !mailFrom) {
     throw new Error('SMTP is not configured');
   }
+
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpSecure,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+  });
 
   const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 

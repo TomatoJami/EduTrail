@@ -170,6 +170,14 @@ export class QuestionService {
       throw new Error('Invalid module id');
     }
 
+    if (
+      !Number.isInteger(payload.correctAnswer) ||
+      payload.correctAnswer < 0 ||
+      payload.correctAnswer >= payload.options.length
+    ) {
+      throw new Error('Invalid correct answer index');
+    }
+
     const testQuestion = new TestQuestion({
       module_id: new mongoose.Types.ObjectId(payload.module_id),
       question: payload.question,
