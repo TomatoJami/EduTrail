@@ -1,8 +1,21 @@
 # EduTrail
 
-EduTrail is a full-stack educational platform for managing subjects, courses, modules, chapters, questions, user progress, feedback, and uploaded learning images.
+EduTrail is a full-stack educational platform for managing subjects, courses, modules, chapters, questions, user progress and feedback. The project contains a Next.js frontend and an Express/MongoDB backend.
 
-The project contains a Next.js frontend and an Express/MongoDB backend. Images are uploaded to Supabase Storage and are cleaned up when related entities are updated or deleted.
+## What EduTrail Is For
+
+EduTrail helps organize online learning content into a clear path: subjects contain courses, courses contain modules, modules contain chapters and questions, and students can move through that content while the system tracks their progress.
+
+The project is useful for small educational platforms, school-style course catalogs, internal training portals, or demo projects that need authentication, admin content management, progress tracking, feedback, and image uploads in one app.
+
+## How The Project Is Organized
+
+The application is split into two main parts:
+
+- The frontend in `src/` is a Next.js app. It renders public pages, student pages, admin pages, reusable UI components, and Next.js API proxy routes.
+- The backend in `backend/src/` is an Express API. It owns database models, validation, authentication, business logic, file uploads, email delivery, Swagger docs, and cleanup of stored images.
+
+Most browser requests go through `src/app/api/*` proxy routes first. Those routes forward requests to the backend API, attach auth headers/cookies where needed, and return the backend response to the UI. The backend then uses controllers for HTTP handling, services for business logic, and Mongoose models for MongoDB persistence.
 
 ## Technology Stack
 
@@ -34,9 +47,10 @@ Backend:
 ```text
 .
 |-- src/                         # Next.js frontend
-|   |-- app/                     # App Router pages and API proxy routes
-|   |-- components/              # Reusable UI components
-|   |-- hooks/                   # React hooks
+|   |-- app/                     # App Router pages, layouts, and API proxy routes
+|   |-- components/              # Reusable UI components and shared navigation
+|   |-- constants/               # Frontend constants used across pages
+|   |-- hooks/                   # React hooks such as authentication state
 |   |-- types/                   # Frontend TypeScript types
 |   `-- utils/                   # Frontend helpers and API client
 |-- tests/                       # Frontend tests
@@ -47,7 +61,7 @@ Backend:
 |   |   |-- middleware/          # Authentication and rate limiting
 |   |   |-- models/              # Mongoose models
 |   |   |-- routes/              # Express routes
-|   |   |-- services/            # Business logic and integrations
+|   |   |-- services/            # Business logic, storage cleanup, email, auth helpers
 |   |   `-- types/               # Backend TypeScript types
 |   `-- tests/                   # Backend tests
 |-- public/                      # Static frontend assets
@@ -101,7 +115,7 @@ SMTP_SECURE=false
 SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password_here
 MAIL_FROM="EduTrail <your_email@gmail.com>"
-DEFAULT_ADMIN_EMAIL=admin@edutrail.local
+DEFAULT_ADMIN_EMAIL=admin@test.com
 DEFAULT_ADMIN_PASSWORD=12345678A!
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
