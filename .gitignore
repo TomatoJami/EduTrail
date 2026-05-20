@@ -49,6 +49,7 @@ next-env.d.ts
 # Backend
 backend/node_modules/
 backend/dist/
+backend/outputs/
 backend/.env
 backend/.env.local
 
@@ -62,6 +63,7 @@ dist/
 build/
 .next/
 out/
+/outputs/
 
 # IDE
 .vscode/
