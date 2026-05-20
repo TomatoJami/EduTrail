@@ -8,6 +8,7 @@ export interface User {
   email: string;
   name: string;
   role: 'student' | 'admin';
+  hasCompletedOnboarding?: boolean;
 }
 
 /** Keeps the save auth session logic isolated and reusable. */
@@ -78,6 +79,9 @@ export const useAuth = (): UseAuthReturn => {
       email: String(input.email),
       name: String(input.name),
       role: input.role === 'admin' ? 'admin' : 'student',
+      ...(typeof input.hasCompletedOnboarding === 'boolean' && {
+        hasCompletedOnboarding: input.hasCompletedOnboarding,
+      }),
     };
   }, []);
 

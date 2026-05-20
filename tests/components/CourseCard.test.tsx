@@ -39,7 +39,7 @@ describe("CourseCard", () => {
     render(<CourseCard course={course} />);
 
     expect(screen.getByText("Math Basics")).toBeInTheDocument();
-    expect(screen.getByText("Ages 10-12")).toBeInTheDocument();
+    expect(screen.getByText("Grades 10-12")).toBeInTheDocument();
     expect(screen.getByText("View")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });

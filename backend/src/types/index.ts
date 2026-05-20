@@ -161,6 +161,7 @@ export interface AuthResponse {
   email: string;
   name: string;
   role: 'student' | 'admin';
+  hasCompletedOnboarding?: boolean;
   token?: string;
   expiresAt?: string;
 }

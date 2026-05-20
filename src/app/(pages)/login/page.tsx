@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getPostLoginRedirect } from "@/utils/authRedirect";
 
 /** Renders the login page interface. */
 export default function LoginPage() {
@@ -50,7 +51,7 @@ export default function LoginPage() {
         window.dispatchEvent(new Event('auth-state-changed'));
       }
 
-      router.push('/');
+      router.push(getPostLoginRedirect(data?.data));
     } catch {
       setError('An error occurred. Please try again.');
     } finally {

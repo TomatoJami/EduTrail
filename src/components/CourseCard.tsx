@@ -172,7 +172,7 @@ export function CourseCard({
 
           <div className="flex items-end justify-between gap-2 mt-auto">
             <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
-              Ages {course.ageGroup}
+              Grades {course.ageGroup}
             </span>
 
             {userId && courseProgress ? (

@@ -75,6 +75,7 @@ describe('UserController', () => {
       email: 'student@example.com',
       name: 'Student',
       role: 'student',
+      hasCompletedOnboarding: false,
     } as any);
     const res = createMockResponse();
 
@@ -97,6 +98,7 @@ describe('UserController', () => {
       message: 'User created successfully',
       data: expect.objectContaining({
         id: userId,
+        hasCompletedOnboarding: false,
         token: expect.any(String),
       }),
     }));
@@ -152,6 +154,7 @@ describe('UserController', () => {
       email: 'student@example.com',
       name: 'Student',
       role: 'student',
+      hasCompletedOnboarding: true,
       loginAttempts: 2,
       lockUntil: null,
       comparePassword: vi.fn().mockResolvedValue(true),
@@ -173,6 +176,7 @@ describe('UserController', () => {
       message: 'Login successful',
       data: expect.objectContaining({
         id: userId,
+        hasCompletedOnboarding: true,
         token: expect.any(String),
       }),
     }));
