@@ -1,9 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import mongoose from 'mongoose';
 import { User } from '../../src/models/User';
+import { CourseProgress } from '../../src/models/CourseProgress';
+import { ChapterProgress } from '../../src/models/ChapterProgress';
+import { QuestionProgress } from '../../src/models/QuestionProgress';
+import { Feedback } from '../../src/models/Feedback';
 import {
   getDefaultAdminCredentials,
   userService,
 } from '../../src/services/userService';
+
+const mockMongooseSession = () => {
+  const session = {
+    withTransaction: vi.fn(async (callback: () => Promise<void>) => callback()),
+    endSession: vi.fn(),
+  };
+
+  vi.spyOn(mongoose, 'startSession').mockResolvedValue(session as any);
+  return session;
+};
+
+const sessionQuery = <T,>(value: T) => ({
+  session: vi.fn().mockResolvedValue(value),
+});
 
 describe('UserService', () => {
   beforeEach(() => {
@@ -60,5 +79,27 @@ describe('UserService', () => {
     expect(() => getDefaultAdminCredentials()).toThrow(
       'DEFAULT_ADMIN_EMAIL and DEFAULT_ADMIN_PASSWORD must be set'
     );
+  });
+
+  it('deletes user feedback with account-owned records', async () => {
+    mockMongooseSession();
+    const userId = new mongoose.Types.ObjectId();
+    const user = { _id: userId, email: 'student@example.com' };
+
+    vi.spyOn(User, 'findById').mockReturnValue(sessionQuery(user) as any);
+    vi.spyOn(CourseProgress, 'deleteMany').mockReturnValue(sessionQuery({ deletedCount: 1 }) as any);
+    vi.spyOn(ChapterProgress, 'deleteMany').mockReturnValue(sessionQuery({ deletedCount: 1 }) as any);
+    vi.spyOn(QuestionProgress, 'deleteMany').mockReturnValue(sessionQuery({ deletedCount: 1 }) as any);
+    vi.spyOn(Feedback, 'deleteMany').mockReturnValue(sessionQuery({ deletedCount: 2 }) as any);
+    vi.spyOn(User, 'findByIdAndDelete').mockReturnValue(sessionQuery(user) as any);
+
+    const result = await userService.deleteUser(userId.toString());
+
+    expect(CourseProgress.deleteMany).toHaveBeenCalledWith({ user_id: userId });
+    expect(ChapterProgress.deleteMany).toHaveBeenCalledWith({ user_id: userId });
+    expect(QuestionProgress.deleteMany).toHaveBeenCalledWith({ user_id: userId });
+    expect(Feedback.deleteMany).toHaveBeenCalledWith({ user_id: userId });
+    expect(User.findByIdAndDelete).toHaveBeenCalledWith(userId);
+    expect(result).toEqual(user);
   });
 });

@@ -4,6 +4,7 @@ import { User, IUser } from '../models/User';
 import { CourseProgress } from '../models/CourseProgress';
 import { ChapterProgress } from '../models/ChapterProgress';
 import { QuestionProgress } from '../models/QuestionProgress';
+import { Feedback } from '../models/Feedback';
 import { SignupPayload, User as UserType } from '../types';
 
 /** Retrieves error message data. */
@@ -174,11 +175,12 @@ export class UserService {
           return;
         }
 
-        // Remove all learning progress owned by this user before deleting the account.
+        // Remove account-owned records before deleting the user document.
         await Promise.all([
           CourseProgress.deleteMany({ user_id: user._id }).session(session),
           ChapterProgress.deleteMany({ user_id: user._id }).session(session),
           QuestionProgress.deleteMany({ user_id: user._id }).session(session),
+          Feedback.deleteMany({ user_id: user._id }).session(session),
         ]);
 
         await User.findByIdAndDelete(user._id).session(session);
